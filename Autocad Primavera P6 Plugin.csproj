@@ -1,0 +1,208 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="Current" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>
+    </ProductVersion>
+    <SchemaVersion>
+    </SchemaVersion>
+    <ProjectGuid>{EF78A7A7-0612-46CC-8F47-A0DBC2CB84DA}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Autocad_Primavera_P6_Plugin</RootNamespace>
+    <AssemblyName>Autocad Primavera P6 Plugin</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation />
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="AcCoreMgd">
+      <SpecificVersion>False</SpecificVersion>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="AcDbMgd">
+      <SpecificVersion>False</SpecificVersion>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="AcMgd">
+      <SpecificVersion>False</SpecificVersion>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="AdWindows">
+      <SpecificVersion>False</SpecificVersion>
+      <Private>False</Private>
+    </Reference>
+    <!--ACA References Begin-->
+    <!--ACA Refences End-->
+    <!--AME Referebces Begin-->
+    <!--AME Reference End-->
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="WindowsFormsIntegration" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Services\RibbonService\RCDATA_16_MODIFY.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="myCommands.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>myCommands.resx</DependentUpon>
+    </Compile>
+    <Compile Include="myPlugin.cs" />
+    <Compile Include="myCommands.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\LiteDBService\LiteDBService.cs" />
+    <Compile Include="Services\P6ApiService\P6ApiService.cs" />
+    <Compile Include="Services\RibbonService\RibbonService.cs" />
+    <Compile Include="UserInterface\UI_InsertBlocksWindowView\InsertBlocksWindowView.xaml.cs">
+      <DependentUpon>InsertBlocksWindowView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserInterface\UI_InsertBlocksWindowView\InsertBlocksWindowViewModel.cs" />
+    <Compile Include="UserInterface\UI_InsertBlocksWindowView\InsertBlocksWindowModel.cs" />
+    <Compile Include="UserInterface\UI_LinkedFoldersManagerView\LinkedFoldersManagerView.xaml.cs">
+      <DependentUpon>LinkedFoldersManagerView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserInterface\UI_LinkedFoldersManagerView\LinkedFoldersManagerViewModel.cs" />
+    <Compile Include="UserInterface\UI_LinkedFoldersManagerView\LinkedFoldersManagerModel.cs" />
+    <Compile Include="UserInterface\UI_P6ConnectionManagerView\P6ConnectionManagerView.xaml.cs">
+      <DependentUpon>P6ConnectionManagerView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserInterface\UI_P6ConnectionManagerView\P6ConnectionManagerViewModel.cs" />
+    <Compile Include="UserInterface\UI_P6ConnectionManagerView\P6ConnectionManagerModel.cs" />
+    <Compile Include="UserInterface\UI_PropertiesPalateView\PropertiesPalateView.xaml.cs">
+      <DependentUpon>PropertiesPalateView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserInterface\UI_PropertiesPalateView\PropertiesPalateViewModel.cs" />
+    <Compile Include="UserInterface\UI_PropertiesPalateView\PropertiesPalateModel.cs" />
+    <Compile Include="UserInterface\UI_PluginStatusWindowView\PluginStatusWindowView.xaml.cs">
+      <DependentUpon>PluginStatusWindowView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserInterface\UI_PluginStatusWindowView\PluginStatusWindowViewModel.cs" />
+    <Compile Include="UserInterface\UI_PluginStatusWindowView\PluginStatusWindowModel.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="myCommands.resx">
+      <DependentUpon>myCommands.cs</DependentUpon>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>myCommands.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.0">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4 %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
+      <Visible>False</Visible>
+      <ProductName>Windows Installer 3.1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Services\RibbonService\RCDATA_32_MODIFY.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Services\RibbonService\RCDATA_16_BLOCK.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Services\RibbonService\RCDATA_32_BLOCK.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Services\RibbonService\RCDATA_16_CHECKSTD.png" />
+    <EmbeddedResource Include="Services\RibbonService\RCDATA_32_CHECKSTD.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Services\RibbonService\RCDATA_16_DBCONNECT.png" />
+    <EmbeddedResource Include="Services\RibbonService\RCDATA_32_DBCONNECT.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Services\RibbonService\RCDATA_16_ONLINE_OPEN_FOLDER.png" />
+    <EmbeddedResource Include="Services\RibbonService\RCDATA_32_ONLINE_OPEN_FOLDER.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="UserInterface\UI_InsertBlocksWindowView\InsertBlocksWindowView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserInterface\UI_LinkedFoldersManagerView\LinkedFoldersManagerView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserInterface\UI_P6ConnectionManagerView\P6ConnectionManagerView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserInterface\UI_PropertiesPalateView\PropertiesPalateView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserInterface\UI_PluginStatusWindowView\PluginStatusWindowView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
