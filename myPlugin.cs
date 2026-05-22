@@ -3,6 +3,8 @@
 using System;
 using Autodesk.AutoCAD.Runtime;
 using Autocad_Primavera_P6_Plugin.Services;
+using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
+
 
 [assembly: ExtensionApplication(typeof(Autocad_Primavera_P6_Plugin.MyPlugin))]
 

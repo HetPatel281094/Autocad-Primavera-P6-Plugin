@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Autocad_Primavera_P6_Plugin.Services
+namespace Autocad_Primavera_P6_Plugin.Services.P6ApiService
 {
     public class P6ApiService
     {
