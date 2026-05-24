@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Controls;
 
 namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 {
@@ -8,6 +9,10 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         {
             InitializeComponent();
             DataContext = new InsertBlocksWindowViewModel();
+        }
+
+        private void sample()
+        {
         }
     }
 }

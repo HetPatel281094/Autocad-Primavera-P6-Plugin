@@ -2,9 +2,10 @@
 //
 using System;
 using Autodesk.AutoCAD.Runtime;
+using Autodesk.AutoCAD.ApplicationServices;
 using Autocad_Primavera_P6_Plugin.Services;
 using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
-
+using Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView;
 
 [assembly: ExtensionApplication(typeof(Autocad_Primavera_P6_Plugin.MyPlugin))]
 
@@ -31,6 +32,12 @@ namespace Autocad_Primavera_P6_Plugin
             MyLiteDBService = null;  //LiteDBService instance cleanup
             MyP6ApiService = null;  //P6ApiService instance cleanup
             MyRibbonService = null; //RibbonService instance cleanup
+        }
+
+        public void P6InsertBlocks()
+        {
+            var _view = new InsertBlocksWindowView();
+            Application.ShowModalWindow(_view);
         }
 
     }
