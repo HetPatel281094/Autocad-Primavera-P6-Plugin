@@ -4,8 +4,10 @@ using System;
 using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autocad_Primavera_P6_Plugin.Services;
+using Autocad_Primavera_P6_Plugin.Services.LiteDBService;
 using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
 using Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView;
+using Autocad_Primavera_P6_Plugin.UserInterface.UI_LinkedFoldersManagerView;
 
 [assembly: ExtensionApplication(typeof(Autocad_Primavera_P6_Plugin.MyPlugin))]
 
@@ -14,9 +16,9 @@ namespace Autocad_Primavera_P6_Plugin
     public class MyPlugin : IExtensionApplication
     {
         public static MyPlugin Instance { get; private set; } = null;
-        public static LiteDBService MyLiteDBService { get; private set; } = null;
-        public static P6ApiService MyP6ApiService { get; private set; } = null;
-        public static RibbonService MyRibbonService { get; private set; } = null;
+        public LiteDBService MyLiteDBService { get; private set; } = null;
+        public P6ApiService MyP6ApiService { get; private set; } = null;
+        public RibbonService MyRibbonService { get; private set; } = null;
 
         void IExtensionApplication.Initialize()
         {
@@ -36,8 +38,14 @@ namespace Autocad_Primavera_P6_Plugin
 
         public void P6InsertBlocks()
         {
-            var _view = new InsertBlocksWindowView();
+            var _view = new InsertBlocksWindowView(this);
             Application.ShowModalWindow(_view);
+        }
+
+        public void OpenLinkedFoldersManager()
+        {
+            var view = new LinkedFoldersManagerView();
+            Application.ShowModalWindow(view);
         }
 
     }

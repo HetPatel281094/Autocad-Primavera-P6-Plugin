@@ -245,11 +245,7 @@ namespace Autocad_Primavera_P6_Plugin.Services
 
         private static void ButtonHandler_LinkedFolders()
         {
-            // Create the view
-            var view = new Autocad_Primavera_P6_Plugin.UserInterface.UI_LinkedFoldersManagerView.LinkedFoldersManagerView();
-
-            // Show as modal window using AutoCAD's Application.ShowModalWindow
-            Autodesk.AutoCAD.ApplicationServices.Application.ShowModalWindow(view);
+            _pluginInstance.OpenLinkedFoldersManager();
         }
 
 

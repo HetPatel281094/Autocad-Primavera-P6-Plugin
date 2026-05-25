@@ -12,13 +12,16 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_LinkedFoldersManagerView
 {
     class LinkedFoldersManagerViewModel : INotifyPropertyChanged
     {
+        private static MyPlugin _pluginInstance = null;
+
         private LinkedFoldersManagerModel _model;
 
         public ObservableCollection<string> LinkedFolders => _model.LinkedFolders;
 
-        public LinkedFoldersManagerViewModel()
+        public LinkedFoldersManagerViewModel(MyPlugin pluginInstance)
         {
             _model = new LinkedFoldersManagerModel();
+            _pluginInstance = pluginInstance;
         }
 
         // Example command for adding a folder
