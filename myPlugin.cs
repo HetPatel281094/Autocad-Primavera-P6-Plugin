@@ -44,7 +44,7 @@ namespace Autocad_Primavera_P6_Plugin
 
         public void OpenLinkedFoldersManager()
         {
-            var view = new LinkedFoldersManagerView();
+            var view = new LinkedFoldersManagerView(this);
             Application.ShowModalWindow(view);
         }
 

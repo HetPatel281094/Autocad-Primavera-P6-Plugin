@@ -12,6 +12,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.LiteDBService
     {
         [BsonId]
         public int Id { get; set; }
+        public string LinkName { get; set; }
         public string ProjectObjectId { get; set; }
         public string ProjectId { get; set; }
         public string ProjectName { get; set; }

@@ -48,7 +48,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
         private void initViewModel()
         {
-            var _projectConfig = _liteDBService.GetProjectConfigByAcadDoc(_document);
+            var _projectConfig = _liteDBService.Find_byAcadDWG(_document);
             var _breakPoint = ""; // For debugging purposes
         }
 

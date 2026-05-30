@@ -132336,7 +132336,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.P6ApiService
         }
 
     }
-
+        
     /// <summary>
     /// Project Entity
     /// </summary>
