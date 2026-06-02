@@ -8,6 +8,8 @@ using Autocad_Primavera_P6_Plugin.Services.LiteDBService;
 using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
 using Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView;
 using Autocad_Primavera_P6_Plugin.UserInterface.UI_LinkedFoldersManagerView;
+using System.Reflection;
+using System.IO;
 
 [assembly: ExtensionApplication(typeof(Autocad_Primavera_P6_Plugin.MyPlugin))]
 
@@ -22,6 +24,7 @@ namespace Autocad_Primavera_P6_Plugin
 
         void IExtensionApplication.Initialize()
         {
+            // Plugin Code
             Instance = this;  //Singleton Class pattern
             MyLiteDBService = new LiteDBService(pluginInstance: this);  //LiteDBService instance initialization
             MyP6ApiService = new P6ApiService(pluginInstance: this);  //P6ApiService instance initialization
@@ -30,6 +33,7 @@ namespace Autocad_Primavera_P6_Plugin
 
         void IExtensionApplication.Terminate()
         {
+            // Plugin Code
             Instance = null;  //Singleton Class pattern
             MyLiteDBService = null;  //LiteDBService instance cleanup
             MyP6ApiService = null;  //P6ApiService instance cleanup
@@ -47,7 +51,6 @@ namespace Autocad_Primavera_P6_Plugin
             var view = new LinkedFoldersManagerView(this);
             Application.ShowModalWindow(view);
         }
-
     }
 
 }

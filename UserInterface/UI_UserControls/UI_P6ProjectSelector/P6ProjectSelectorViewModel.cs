@@ -1,101 +1,116 @@
-﻿using Autocad_Primavera_P6_Plugin.Services.LiteDBService;
-using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
+﻿using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
+using PropertyChanged;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Input;
 
 namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_UserControls.UI_P6ProjectSelector
 {
-    public sealed class P6ProjectSelectorViewModel : INotifyPropertyChanged
+    [AddINotifyPropertyChangedInterface]
+    public sealed class P6ProjectSelectorViewModel
     {
         private readonly MyPlugin _pluginInstance;
         private readonly P6ApiService _p6ApiService;
-        private readonly LiteDBService _liteDBService;
 
         private readonly ObservableCollection<EPS> _epsCollection = new ObservableCollection<EPS>();
         private readonly ObservableCollection<Project> _projectCollection = new ObservableCollection<Project>();
-        private readonly ObservableCollection<P6NodeViewModel> _rootNodes = new ObservableCollection<P6NodeViewModel>();
 
-        private P6NodeViewModel _selectedNode;
-        private bool _isLoading;
-        private string _statusMessage;
+        public ObservableCollection<P6NodeViewModel> RootNodes { get; } = new ObservableCollection<P6NodeViewModel>();
+        public P6NodeViewModel SelectedNode { get; set; }
+        public bool IsProjectSelected => SelectedNode != null && SelectedNode.IsProject;
+        public Project SelectedProject => IsProjectSelected ? SelectedNode?.ProjectInstance : null;
+        public bool IsLoading { get; private set; }
+        public string StatusMessage { get; private set; }
+        public string SearchString { get; set; } = string.Empty;
+
+        public bool IsCancelled { get; private set; }
+        public event Action<bool?> RequestClose;
+
+        public ICommand SearchButtonCommand { get; }
+        public ICommand OkButtonCommand { get; }
+        public ICommand CancelButtonCommand { get; }
 
         public P6ProjectSelectorViewModel(MyPlugin pluginInstance)
         {
             _pluginInstance = pluginInstance ?? throw new ArgumentNullException(nameof(pluginInstance));
             _p6ApiService = _pluginInstance.MyP6ApiService;
-            _liteDBService = _pluginInstance.MyLiteDBService;
+
+            // Initialize Commands
+            SearchButtonCommand = new RelayCommand(SearchButton);
+            OkButtonCommand = new RelayCommand(OkButton);
+            CancelButtonCommand = new RelayCommand(CancelButton);
 
             _ = LoadAsync();
         }
 
-        public ObservableCollection<P6NodeViewModel> RootNodes
+        private void OkButton(object parameter)
         {
-            get { return _rootNodes; }
+            if (SelectedProject == null) return;
+            RequestClose?.Invoke(true);
         }
 
-        public P6NodeViewModel SelectedNode
+        private void CancelButton(object parameter)
         {
-            get => _selectedNode;
-            set
+            SelectedNode = null;
+            IsCancelled = true;
+            RequestClose?.Invoke(false);
+        }
+        private void SearchButton(object parameter)
+        {
+            string searchTerm = SearchString?.Trim() ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(searchTerm))
             {
-                if (ReferenceEquals(_selectedNode, value))
+                foreach (var root in RootNodes)
                 {
-                    return;
+                    ResetVisibility(root);
                 }
 
-                if (_selectedNode != null)
+                return;
+            }
+            else
+            {
+                foreach (var root in RootNodes)
                 {
-                    _selectedNode.IsSelected = false;
+                    FilterNode(root, searchTerm);
                 }
-
-                _selectedNode = value;
-
-                if (_selectedNode != null)
-                {
-                    _selectedNode.IsSelected = true;
-                }
-
-                OnPropertyChanged();
             }
         }
 
-        public bool IsLoading
+        private void ResetVisibility(P6NodeViewModel node)
         {
-            get => _isLoading;
-            private set
-            {
-                if (_isLoading == value)
-                {
-                    return;
-                }
+            node.IsVisible = true;
+            node.IsExpanded = true;
 
-                _isLoading = value;
-                OnPropertyChanged();
+            foreach (var child in node.Children)
+            {
+                ResetVisibility(child);
             }
         }
 
-        public string StatusMessage
+        private bool FilterNode(P6NodeViewModel node, string filter)
         {
-            get => _statusMessage;
-            private set
+            bool selfMatch = node.Name.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0;
+
+            bool childMatch = false;
+
+            foreach (var child in node.Children)
             {
-                if (_statusMessage == value)
-                {
-                    return;
-                }
-
-                _statusMessage = value;
-                OnPropertyChanged();
+                if (FilterNode(child, filter))
+                    childMatch = true;
             }
-        }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+            node.IsVisible = selfMatch || childMatch;
+
+            node.IsExpanded = childMatch;
+
+            return node.IsVisible;
+        }
 
         public async Task LoadAsync()
         {
@@ -192,7 +207,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_UserControls.UI_P6Project
 
             foreach (var eps in epsItems)
             {
-                var epsNode = new P6NodeViewModel(eps.Id, eps.Name, isEps: true, isExpanded: true);
+                var epsNode = new P6NodeViewModel(P6Instance: eps, onSelectedCallback: NodeSelectedHandler);
                 epsNodesByObjectId.Add(eps.ObjectId.Value, epsNode);
             }
 
@@ -217,7 +232,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_UserControls.UI_P6Project
 
             foreach (var project in projectItems)
             {
-                var projectNode = new P6NodeViewModel(project.Id, project.Name, isEps: false);
+                var projectNode = new P6NodeViewModel(P6Instance: project, onSelectedCallback: NodeSelectedHandler);
 
                 if (project.ParentEPSObjectId > 0 &&
                     epsNodesByObjectId.TryGetValue(project.ParentEPSObjectId, out var parentEpsNode))
@@ -236,9 +251,33 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_UserControls.UI_P6Project
             }
         }
 
-        private void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        private void NodeSelectedHandler(P6NodeViewModel newlySelectedNode)
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            // Update the globally tracked selected node
+            SelectedNode = newlySelectedNode;
+        }
+    }
+
+    // Simple RelayCommand implementation
+    public class RelayCommand : ICommand
+    {
+        private readonly Action<object> _execute;
+        private readonly Predicate<object> _canExecute;
+
+        public RelayCommand(Action<object> execute, Predicate<object> canExecute = null)
+        {
+            _execute = execute;
+            _canExecute = canExecute;
+        }
+
+        public bool CanExecute(object parameter) => _canExecute == null || _canExecute(parameter);
+
+        public void Execute(object parameter) => _execute(parameter);
+
+        public event EventHandler CanExecuteChanged
+        {
+            add { CommandManager.RequerySuggested += value; }
+            remove { CommandManager.RequerySuggested -= value; }
         }
     }
 }

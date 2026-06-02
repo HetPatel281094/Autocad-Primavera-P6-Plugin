@@ -1,86 +1,69 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
+using PropertyChanged;
+
 
 namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_UserControls.UI_P6ProjectSelector
 {
-    [DebuggerDisplay("{DebuggerDisplay,nq}")]
-    public sealed class P6NodeViewModel : INotifyPropertyChanged
+    [AddINotifyPropertyChangedInterface]
+    public class P6NodeViewModel
     {
-        private bool _isSelected;
-        private bool _isExpanded;
-        public P6NodeViewModel(string projectId, string projectName, bool isEps, bool isExpanded = false)
+        public Project ProjectInstance { get; set; } 
+        public EPS EPSInstance { get; set; }
+        public bool IsProject => ProjectInstance != null;
+        public bool IsSelected { get; set; } = false;
+        public bool IsExpanded { get; set; } = true;
+        public bool IsVisible { get; set; } = true;
+
+        public string Id => IsProject ? ProjectInstance.Id : EPSInstance.Id;
+        public string Name => IsProject ? ProjectInstance.Name : EPSInstance.Name;
+        public ObservableCollection<P6NodeViewModel> Children { get; set; }
+
+        public string DisplayText => _DisplayText();
+        public string _DisplayText()
         {
-            ProjectId = projectId ?? string.Empty;
-            ProjectName = projectName ?? string.Empty;
-            IsEPS = isEps;
-            _isExpanded = isExpanded;
+            if (string.IsNullOrWhiteSpace(Id))
+            {
+                return Name;
+            }
+
+            if (string.IsNullOrWhiteSpace(Name))
+            {
+                return Id;
+            }
+
+            return Id + " - " + Name;
+        }
+
+        private readonly Action<P6NodeViewModel> _onSelectedCallback;
+
+        public P6NodeViewModel(object P6Instance, Action<P6NodeViewModel> onSelectedCallback)
+        {
             Children = new ObservableCollection<P6NodeViewModel>();
-        }
+            _onSelectedCallback = onSelectedCallback;
 
-        public string ProjectId { get; }
-        public string ProjectName { get; }
-        public bool IsEPS { get; }
-
-        public ObservableCollection<P6NodeViewModel> Children { get; }
-
-        public bool IsSelected
-        {
-            get => _isSelected;
-            set
+            if (P6Instance is Project)
             {
-                if (_isSelected == value)
-                {
-                    return;
-                }
-
-                _isSelected = value;
-                OnPropertyChanged();
-            }
-        }
-
-        public bool IsExpanded
-        {
-            get => _isExpanded;
-            set
+                ProjectInstance = (Project)P6Instance;
+            }else //(P6Instance is EPS)
             {
-                if (_isExpanded == value)
-                {
-                    return;
-                }
+                EPSInstance = (EPS)P6Instance;
+            };
 
-                _isExpanded = value;
-                OnPropertyChanged();
-            }
         }
 
-        public string DisplayText
+        // Fody automatically executes this method whenever IsSelected changes
+        public void OnIsSelectedChanged()
         {
-            get
+            if (IsSelected && _onSelectedCallback != null)
             {
-                if (string.IsNullOrWhiteSpace(ProjectName))
-                {
-                    return ProjectId;
-                }
-
-                if (string.IsNullOrWhiteSpace(ProjectId))
-                {
-                    return ProjectName;
-                }
-
-                return ProjectId + " - " + ProjectName;
+                _onSelectedCallback(this);
             }
-        }
-
-        private string DebuggerDisplay => (IsEPS ? "EPS: " : "Project: ") + DisplayText;
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        private void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
+
 }

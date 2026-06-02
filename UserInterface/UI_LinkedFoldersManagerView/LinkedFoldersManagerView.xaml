@@ -5,28 +5,82 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui_linkedfoldersmanagerview="clr-namespace:Autocad_Primavera_P6_Plugin.UserInterface.UI_LinkedFoldersManagerView"
-    Title="Linked Folders Manager - Enhanced"
+    Title="Linked Folders Manager"
     Width="900"
-    Height="600"
-    d:DataContext="{d:DesignInstance Type=ui_linkedfoldersmanagerview:LinkedFoldersManagerViewModel}"
+    Height="620"
     ResizeMode="CanResize"
     WindowStartupLocation="CenterOwner"
     mc:Ignorable="d">
 
     <Window.Resources>
-        <!--  Status color converter  -->
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+
+        <!--  ListBox item template: shows LinkName, P6 project, and folder path  -->
+        <DataTemplate x:Key="ProjectConfigItemTemplate">
+            <Grid Margin="2,4">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!--  Link name  -->
+                <TextBlock
+                    Grid.Row="0"
+                    FontSize="13"
+                    FontWeight="SemiBold"
+                    Foreground="#2C3E50"
+                    Text="{Binding LinkName}" />
+
+                <!--  P6 project: "(ProjectId) ProjectName"  -->
+                <StackPanel
+                    Grid.Row="1"
+                    Margin="8,2,0,0"
+                    Orientation="Horizontal">
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="#7F8C8D"
+                        Text="P6: " />
+                    <TextBlock FontSize="11" Foreground="#7F8C8D">
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="({0})  {1}">
+                                <Binding Path="ProjectId" />
+                                <Binding Path="ProjectName" />
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                </StackPanel>
+
+                <!--  Folder path  -->
+                <StackPanel
+                    Grid.Row="2"
+                    Margin="8,2,0,0"
+                    Orientation="Horizontal">
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="#7F8C8D"
+                        Text="📁  " />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="#7F8C8D"
+                        Text="{Binding ProjectPlanningDWGFolderPath}" />
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
     </Window.Resources>
 
     <Grid Margin="15">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <!--  Header  -->
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="200*" />
+            <!--  Form  -->
+            <RowDefinition Height="*" />
+            <!--  List section  -->
         </Grid.RowDefinitions>
 
-        <!--  Header  -->
-        <StackPanel Margin="0,0,0,15">
+        <!--  ── Header ────────────────────────────────────────────────────────  -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,15">
             <TextBlock
                 FontSize="20"
                 FontWeight="Bold"
@@ -39,60 +93,72 @@
                 Text="Manage AutoCAD Primavera P6 Plugin folder links" />
         </StackPanel>
 
+        <!--  ── Form ──────────────────────────────────────────────────────────  -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
+                <!--  Label prefix  -->
                 <ColumnDefinition Width="Auto" />
+                <!--  Label text  -->
                 <ColumnDefinition Width="*" />
+                <!--  Input field  -->
                 <ColumnDefinition Width="100" />
+                <!--  Action button  -->
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <RowDefinition Height="5" />
                 <RowDefinition Height="Auto" />
+                <!--  LINK row  -->
                 <RowDefinition Height="5" />
                 <RowDefinition Height="Auto" />
+                <!--  FOLDER row  -->
                 <RowDefinition Height="5" />
                 <RowDefinition Height="Auto" />
+                <!--  P6 PROJECT row  -->
                 <RowDefinition Height="5" />
             </Grid.RowDefinitions>
+
+            <!--  LINK label  -->
             <TextBlock
                 Grid.Row="1"
-                Grid.Column="0"
+                Grid.Column="1"
                 VerticalAlignment="Center"
                 Text="LINK" />
+
+            <!--  LINK text box  -->
             <TextBox
                 Grid.Row="1"
-                Grid.Column="1"
-                Grid.ColumnSpan="2"
+                Grid.Column="2"
                 Margin="20,0,20,0"
                 IsEnabled="{Binding IsLinkNameTextBoxEnabled}"
-                Text="{Binding LinkNameText}" />
+                Text="{Binding LinkNameText, UpdateSourceTrigger=PropertyChanged}" />
+
+            <!--  Save + Reset(+) buttons  -->
             <Grid Grid.Row="1" Grid.Column="3">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="25" />
+                    <ColumnDefinition Width="28" />
                 </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
                 <Button
-                    Grid.Row="0"
                     Grid.Column="0"
-                    Margin="0,0,2,0"
+                    Margin="0,0,3,0"
                     Command="{Binding SaveProjectConfigCommand}"
-                    Content="Save" />
+                    Content="Save"
+                    ToolTip="Save the current link configuration" />
                 <Button
-                    Grid.Row="0"
                     Grid.Column="1"
-                    Margin="2,0,0,0"
                     Command="{Binding ResetProjectConfigCommand}"
-                    Content="+" />
+                    Content="+"
+                    ToolTip="Create a new link configuration" />
             </Grid>
+
+            <!--  FOLDER label  -->
             <TextBlock
                 Grid.Row="3"
                 Grid.Column="0"
                 HorizontalAlignment="Right"
                 VerticalAlignment="Center"
+                Foreground="#7F8C8D"
                 Text=" |- " />
             <TextBlock
                 Grid.Row="3"
@@ -100,6 +166,8 @@
                 HorizontalAlignment="Right"
                 VerticalAlignment="Center"
                 Text="FOLDER" />
+
+            <!--  FOLDER path (read-only; set via dialog)  -->
             <TextBox
                 Grid.Row="3"
                 Grid.Column="2"
@@ -113,18 +181,23 @@
                 Grid.Column="3"
                 Command="{Binding SelectFolderCommand}"
                 Content="Select Folder" />
+
+            <!--  P6-PROJECT label  -->
             <TextBlock
                 Grid.Row="5"
                 Grid.Column="0"
                 HorizontalAlignment="Right"
                 VerticalAlignment="Center"
+                Foreground="#7F8C8D"
                 Text=" |- " />
             <TextBlock
                 Grid.Row="5"
                 Grid.Column="1"
                 HorizontalAlignment="Right"
                 VerticalAlignment="Center"
-                Text=" P6-PROJECT" />
+                Text="P6 PROJECT" />
+
+            <!--  P6-PROJECT display (read-only; set via picker dialog)  -->
             <TextBox
                 Grid.Row="5"
                 Grid.Column="2"
@@ -140,11 +213,50 @@
                 Content="Select Project" />
         </Grid>
 
-        <!--  Input Section  -->
-        <ListBox
-            Grid.Row="2"
-            Margin="0,5,0,10"
-            ScrollViewer.VerticalScrollBarVisibility="Auto" />
+        <!--  ── List section ───────────────────────────────────────────────────  -->
+        <Grid Grid.Row="2" Margin="0,10,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <!--  Section header + Delete  -->
+                <RowDefinition Height="*" />
+                <!--  ListBox  -->
+            </Grid.RowDefinitions>
+
+            <!--  Section header with Delete button  -->
+            <Grid Grid.Row="0" Margin="0,0,0,5">
+                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                    <TextBlock
+                        FontSize="13"
+                        FontWeight="SemiBold"
+                        Foreground="#2C3E50"
+                        Text="Saved Links" />
+                    <TextBlock
+                        Margin="8,0,0,0"
+                        VerticalAlignment="Center"
+                        FontSize="11"
+                        Foreground="#7F8C8D"
+                        Text="— select a row to edit it" />
+                </StackPanel>
+
+                <Button
+                    Width="110"
+                    HorizontalAlignment="Right"
+                    BorderBrush="#E74C3C"
+                    Command="{Binding DeleteProjectConfigCommand}"
+                    Content="Delete Selected"
+                    Foreground="#E74C3C"
+                    ToolTip="Delete the selected link configuration" />
+            </Grid>
+
+            <!--  List of saved configs  -->
+            <ListBox
+                Grid.Row="1"
+                BorderBrush="#BDC3C7"
+                ItemTemplate="{StaticResource ProjectConfigItemTemplate}"
+                ItemsSource="{Binding AllProjectConfigs}"
+                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                SelectedItem="{Binding SelectedListItem}" />
+        </Grid>
 
     </Grid>
 </Window>

@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Autocad Primavera P6 Plugin")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Location Based Services for Primavera P6 using Autocad Plugin")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("Autocad Primavera P6 Plugin")]
