@@ -46,13 +46,11 @@ namespace Autocad_Primavera_P6_Plugin.Services.P6ApiService
                     Client = null;
                     Console.WriteLine("P6ApiService InIt: Default P6 connection config found but login failed.");
                 }
-                //Client = new Client("http://localhost:8206/p6ws/restapi/", httpClient);
-                //Client.LoginAsync("admin", "Uvpce2006", "PMDB");
             }
 
         }
 
-        private async Task<LoginResult> TryLoginAsync(P6ConnectionConfig _p6ConnectionConfig)
+        public async Task<LoginResult> TryLoginAsync(P6ConnectionConfig _p6ConnectionConfig)
         {
             try
             {

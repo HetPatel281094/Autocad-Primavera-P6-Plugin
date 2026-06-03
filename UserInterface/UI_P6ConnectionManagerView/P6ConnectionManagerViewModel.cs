@@ -6,11 +6,12 @@ using System.Windows.Input;
 using PropertyChanged;
 using Autocad_Primavera_P6_Plugin.Services.LiteDBService;
 using MessageBox = System.Windows.MessageBox;
+using System.ComponentModel;
 
 namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_P6ConnectionManagerView
 {
     [AddINotifyPropertyChangedInterface]
-    public class P6ConnectionManagerViewModel
+    public class P6ConnectionManagerViewModel: INotifyPropertyChanged
     {
         // ── Private state ──────────────────────────────────────────────────────
         private readonly MyPlugin _pluginInstance;
@@ -21,6 +22,8 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_P6ConnectionManagerView
         /// OnXxxChanged callbacks keep it in sync as the user types.
         /// </summary>
         private P6ConnectionConfig _workingConfig = new P6ConnectionConfig();
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         // ── Form-bound auto-properties (Fody injects OnPropertyChanged) ────────
 
@@ -104,7 +107,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_P6ConnectionManagerView
                 Username = SelectedConnection.Username,
                 Password = SelectedConnection.Password,
                 DatabaseName = SelectedConnection.DatabaseName,
-                IsActive = SelectedConnection.IsActive,
+                IsDefault = SelectedConnection.IsDefault,
             };
 
             // Each setter triggers OnXxxChanged → _workingConfig stays in sync
@@ -174,13 +177,15 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_P6ConnectionManagerView
 
             try
             {
-                _pluginInstance.MyLiteDBService.SetActive_P6ConnectionConfig(SelectedConnection.Id);
+                _pluginInstance.MyLiteDBService.SetDefault_P6ConnectionConfig(SelectedConnection.Id);
                 LoadConnections();
                 SelectedConnection = AllConnections.FirstOrDefault(c => c.Id == _workingConfig.Id);
 
-                // Re-initialise the P6 API client with the new connection
-                _pluginInstance.MyP6ApiService.ReInitWithConfig(
-                    _pluginInstance.MyLiteDBService.GetActive_P6ConnectionConfig());
+                //_pluginInstance.MyP6ApiService.in
+
+                //// Re-initialise the P6 API client with the new connection
+                //_pluginInstance.MyP6ApiService..ReInitWithConfig(
+                //    _pluginInstance.MyLiteDBService.GetActive_P6ConnectionConfig());
             }
             catch (Exception ex)
             {
@@ -197,8 +202,16 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_P6ConnectionManagerView
             try
             {
                 var ok = await _pluginInstance.MyP6ApiService
-                    .TestConnectionAsync(ServerUrlText, UsernameText, PasswordText, DatabaseNameText);
-                TestStatusMessage = ok ? "✓ Connection successful" : "✗ Login failed — check credentials";
+                    .TryLoginAsync(
+                        new P6ConnectionConfig
+                        {
+                            ServerUrl = ServerUrlText,
+                            Username = UsernameText,
+                            Password = PasswordText,
+                            DatabaseName = DatabaseNameText
+                        }
+                    );
+                TestStatusMessage = ok.IsLoggedIn ? "✓ Connection successful" : "✗ Login failed — check credentials";
             }
             catch (Exception ex)
             {
@@ -245,6 +258,8 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_P6ConnectionManagerView
                 .Max();
             return $"Connection_{maxN + 1}";
         }
+
+
     }
 
     // ── RelayCommand ─────────────────────────────────────────────────────────────

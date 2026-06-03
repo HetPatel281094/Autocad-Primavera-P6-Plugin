@@ -6,9 +6,8 @@
     xmlns:local="clr-namespace:Autocad_Primavera_P6_Plugin.UserInterface.UI_P6ConnectionManagerView"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     Title="P6 Connection Manager"
-    Width="900"
-    Height="640"
-    d:DataContext="{d:DesignInstance Type=local:P6ConnectionManagerViewModel}"
+    Width="600"
+    Height="600"
     ResizeMode="CanResize"
     WindowStartupLocation="CenterOwner"
     mc:Ignorable="d">
@@ -314,7 +313,7 @@
                         Width="90"
                         Margin="0,0,8,0"
                         Command="{Binding SetActiveCommand}"
-                        Content="Set Active"
+                        Content="Set Default"
                         ToolTip="Make this the active P6 connection" />
                     <Button
                         Width="110"
