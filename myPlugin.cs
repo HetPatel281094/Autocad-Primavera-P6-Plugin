@@ -51,6 +51,12 @@ namespace Autocad_Primavera_P6_Plugin
             var view = new LinkedFoldersManagerView(this);
             Application.ShowModalWindow(view);
         }
+
+        public void OpenP6ConnectionManager()
+        {
+            var view = new UserInterface.UI_P6ConnectionManagerView.P6ConnectionManagerView(this);
+            Application.ShowModalWindow(view);
+        }
     }
 
 }

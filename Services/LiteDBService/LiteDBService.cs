@@ -40,6 +40,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.LiteDBService
             {
                 this.pluginDb = new LiteDatabase(liteDbFilePath);
                 init_ProjectConfigsColn();
+                init_P6ConnectionConfigsColn();
             }
             catch (System.Exception ex)
             {

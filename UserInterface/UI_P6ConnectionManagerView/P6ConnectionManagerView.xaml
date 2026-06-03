@@ -1,4 +1,4 @@
-<Window
+﻿<Window
     x:Class="Autocad_Primavera_P6_Plugin.UserInterface.UI_P6ConnectionManagerView.P6ConnectionManagerView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -6,42 +6,333 @@
     xmlns:local="clr-namespace:Autocad_Primavera_P6_Plugin.UserInterface.UI_P6ConnectionManagerView"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     Title="P6 Connection Manager"
-    Width="800"
-    Height="450"
+    Width="900"
+    Height="640"
     d:DataContext="{d:DesignInstance Type=local:P6ConnectionManagerViewModel}"
     ResizeMode="CanResize"
     WindowStartupLocation="CenterOwner"
     mc:Ignorable="d">
-    <Grid Margin="10">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <!--  List item template — mirrors ProjectConfigItemTemplate in LinkedFolders  -->
+        <DataTemplate x:Key="ConnectionItemTemplate">
+            <Grid Margin="2,4">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!--  Connection name + active badge  -->
+                <StackPanel Grid.Row="0" Orientation="Horizontal">
+                    <TextBlock
+                        FontSize="13"
+                        FontWeight="SemiBold"
+                        Foreground="#2C3E50"
+                        Text="{Binding ConnectionName}" />
+                    <Border
+                        Margin="8,0,0,0"
+                        Padding="6,1"
+                        Background="#27AE60"
+                        CornerRadius="3"
+                        Visibility="{Binding IsActive, Converter={StaticResource BoolToVis}}">
+                        <TextBlock
+                            FontSize="10"
+                            Foreground="White"
+                            Text="ACTIVE" />
+                    </Border>
+                </StackPanel>
+
+                <!--  Server URL  -->
+                <StackPanel
+                    Grid.Row="1"
+                    Margin="8,2,0,0"
+                    Orientation="Horizontal">
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="#7F8C8D"
+                        Text="🌐  " />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="#7F8C8D"
+                        Text="{Binding ServerUrl}" />
+                </StackPanel>
+
+                <!--  Username @ Database  -->
+                <StackPanel
+                    Grid.Row="2"
+                    Margin="8,2,0,0"
+                    Orientation="Horizontal">
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="#7F8C8D"
+                        Text="👤  " />
+                    <TextBlock FontSize="11" Foreground="#7F8C8D">
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="{}{0}  @  {1}">
+                                <Binding Path="Username" />
+                                <Binding Path="DatabaseName" />
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Grid Margin="15" IsEnabled="{Binding IsFormEnabled}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
+            <!--  Header  -->
             <RowDefinition Height="Auto" />
+            <!--  Form  -->
+            <RowDefinition Height="*" />
+            <!--  List  -->
         </Grid.RowDefinitions>
 
-        <TextBlock
-            Margin="0,0,0,10"
-            FontSize="18"
-            FontWeight="Bold"
-            Text="P6 Connections" />
-
-        <ListBox
-            Grid.Row="1"
-            MinHeight="200"
-            Margin="0,0,0,10"
-            ItemsSource="{Binding P6Connections}"
-            SelectedItem="{Binding SelectedConnection, Mode=TwoWay}" />
-
-        <StackPanel
-            Grid.Row="2"
-            Margin="0,10,0,0"
-            HorizontalAlignment="Right"
-            Orientation="Horizontal">
-            <Button
-                Width="110"
-                Margin="0,0,10,0"
-                Command="{Binding AddConnectionCommand}"
-                Content="Add Connection" />
+        <!--  ── Header ─────────────────────────────────────────────────────────  -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,15">
+            <TextBlock
+                FontSize="20"
+                FontWeight="Bold"
+                Foreground="#2C3E50"
+                Text="P6 Connection Manager" />
+            <TextBlock
+                Margin="0,5,0,0"
+                FontSize="12"
+                Foreground="#7F8C8D"
+                Text="Manage Primavera P6 REST API connections" />
         </StackPanel>
+
+        <!--  ── Form ───────────────────────────────────────────────────────────  -->
+        <Grid Grid.Row="1" Grid.IsSharedSizeScope="True">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <!--  label  -->
+                <ColumnDefinition Width="*" />
+                <!--  input  -->
+                <ColumnDefinition Width="110" />
+                <!--  button  -->
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="5" />
+                <RowDefinition Height="Auto" />
+                <!--  CONNECTION NAME  -->
+                <RowDefinition Height="5" />
+                <RowDefinition Height="Auto" />
+                <!--  SERVER URL  -->
+                <RowDefinition Height="5" />
+                <RowDefinition Height="Auto" />
+                <!--  USERNAME  -->
+                <RowDefinition Height="5" />
+                <RowDefinition Height="Auto" />
+                <!--  PASSWORD  -->
+                <RowDefinition Height="5" />
+                <RowDefinition Height="Auto" />
+                <!--  DATABASE  -->
+                <RowDefinition Height="8" />
+                <RowDefinition Height="Auto" />
+                <!--  status + action buttons  -->
+                <RowDefinition Height="5" />
+            </Grid.RowDefinitions>
+
+            <!--  CONNECTION NAME row  -->
+            <TextBlock
+                Grid.Row="1"
+                Grid.Column="0"
+                VerticalAlignment="Center"
+                Text="CONNECTION NAME" />
+            <TextBox
+                Grid.Row="1"
+                Grid.Column="1"
+                Margin="20,0,20,0"
+                Text="{Binding ConnectionNameText, UpdateSourceTrigger=PropertyChanged}" />
+            <!--  Save + Reset buttons — same Save/+ pattern as LinkedFolders  -->
+            <Grid Grid.Row="1" Grid.Column="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="28" />
+                </Grid.ColumnDefinitions>
+                <Button
+                    Grid.Column="0"
+                    Margin="0,0,3,0"
+                    Command="{Binding SaveConnectionCommand}"
+                    Content="Save"
+                    ToolTip="Save the current connection" />
+                <Button
+                    Grid.Column="1"
+                    Command="{Binding ResetConnectionCommand}"
+                    Content="+"
+                    ToolTip="Create a new connection" />
+            </Grid>
+
+            <!--  SERVER URL row  -->
+            <Grid
+                Grid.Row="3"
+                Grid.Column="0"
+                HorizontalAlignment="Right">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" SharedSizeGroup="GraphLine" />
+                    <ColumnDefinition Width="Auto" SharedSizeGroup="GraphText" />
+                </Grid.ColumnDefinitions>
+                <TextBlock
+                    Grid.Row="0"
+                    Grid.Column="0"
+                    Foreground="#7F8C8D"
+                    Text=" |- " />
+                <TextBlock
+                    Grid.Row="0"
+                    Grid.Column="1"
+                    Text="SERVER URL" />
+            </Grid>
+            <TextBox
+                Grid.Row="3"
+                Grid.Column="1"
+                Margin="20,0,20,0"
+                Text="{Binding ServerUrlText, UpdateSourceTrigger=PropertyChanged}" />
+            <Button
+                Grid.Row="3"
+                Grid.Column="2"
+                Command="{Binding TestConnectionCommand}"
+                Content="Test Connection"
+                ToolTip="Test this connection without saving" />
+
+            <!--  USERNAME row  -->
+            <Grid
+                Grid.Row="5"
+                Grid.Column="0"
+                HorizontalAlignment="Right">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" SharedSizeGroup="GraphLine" />
+                    <ColumnDefinition Width="Auto" SharedSizeGroup="GraphText" />
+                </Grid.ColumnDefinitions>
+                <TextBlock
+                    Grid.Row="0"
+                    Grid.Column="0"
+                    Foreground="#7F8C8D"
+                    Text=" |- " />
+                <TextBlock
+                    Grid.Row="0"
+                    Grid.Column="1"
+                    Text="USERNAME" />
+            </Grid>
+            <TextBox
+                Grid.Row="5"
+                Grid.Column="1"
+                Margin="20,0,20,0"
+                Text="{Binding UsernameText, UpdateSourceTrigger=PropertyChanged}" />
+
+            <!--  PASSWORD row  -->
+            <Grid
+                Grid.Row="7"
+                Grid.Column="0"
+                HorizontalAlignment="Right">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" SharedSizeGroup="GraphLine" />
+                    <ColumnDefinition Width="Auto" SharedSizeGroup="GraphText" />
+                </Grid.ColumnDefinitions>
+                <TextBlock
+                    Grid.Row="0"
+                    Grid.Column="0"
+                    Foreground="#7F8C8D"
+                    Text=" |- " />
+                <TextBlock
+                    Grid.Row="0"
+                    Grid.Column="1"
+                    Text="PASSWORD" />
+            </Grid>
+            <!--  PasswordBox needs code-behind helper — see xaml.cs note below  -->
+            <PasswordBox
+                x:Name="PasswordBoxField"
+                Grid.Row="7"
+                Grid.Column="1"
+                Margin="20,0,20,0" />
+
+            <!--  DATABASE row  -->
+            <Grid
+                Grid.Row="9"
+                Grid.Column="0"
+                HorizontalAlignment="Right">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" SharedSizeGroup="GraphLine" />
+                    <ColumnDefinition Width="Auto" SharedSizeGroup="GraphText" />
+                </Grid.ColumnDefinitions>
+                <TextBlock
+                    Grid.Row="0"
+                    Grid.Column="0"
+                    Foreground="#7F8C8D"
+                    Text=" |- " />
+                <TextBlock
+                    Grid.Row="0"
+                    Grid.Column="1"
+                    Text="DATABASE" />
+            </Grid>
+            <TextBox
+                Grid.Row="9"
+                Grid.Column="1"
+                Margin="20,0,20,0"
+                Text="{Binding DatabaseNameText, UpdateSourceTrigger=PropertyChanged}" />
+
+            <!--  Status message  -->
+            <TextBlock
+                Grid.Row="11"
+                Grid.Column="0"
+                Grid.ColumnSpan="2"
+                Margin="0,0,20,0"
+                VerticalAlignment="Center"
+                FontSize="11"
+                Foreground="#7F8C8D"
+                Text="{Binding TestStatusMessage}" />
+        </Grid>
+
+        <!--  ── List section ────────────────────────────────────────────────────  -->
+        <Grid Grid.Row="2" Margin="0,10,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!--  Section header with Delete + Set Active buttons  -->
+            <Grid Grid.Row="0" Margin="0,0,0,5">
+                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                    <TextBlock
+                        FontSize="13"
+                        FontWeight="SemiBold"
+                        Foreground="#2C3E50"
+                        Text="Saved Connections" />
+                    <TextBlock
+                        Margin="8,0,0,0"
+                        VerticalAlignment="Center"
+                        FontSize="11"
+                        Foreground="#7F8C8D"
+                        Text="— select a row to edit it" />
+                </StackPanel>
+                <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                    <Button
+                        Width="90"
+                        Margin="0,0,8,0"
+                        Command="{Binding SetActiveCommand}"
+                        Content="Set Active"
+                        ToolTip="Make this the active P6 connection" />
+                    <Button
+                        Width="110"
+                        BorderBrush="#E74C3C"
+                        Command="{Binding DeleteConnectionCommand}"
+                        Content="Delete Selected"
+                        Foreground="#E74C3C"
+                        ToolTip="Delete the selected connection" />
+                </StackPanel>
+            </Grid>
+
+            <ListBox
+                Grid.Row="1"
+                BorderBrush="#BDC3C7"
+                ItemTemplate="{StaticResource ConnectionItemTemplate}"
+                ItemsSource="{Binding AllConnections}"
+                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                SelectedItem="{Binding SelectedConnection}" />
+        </Grid>
     </Grid>
 </Window>

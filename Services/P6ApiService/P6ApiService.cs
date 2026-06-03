@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using Autocad_Primavera_P6_Plugin.Services.LiteDBService;
 
 namespace Autocad_Primavera_P6_Plugin.Services.P6ApiService
 {
@@ -12,35 +13,83 @@ namespace Autocad_Primavera_P6_Plugin.Services.P6ApiService
     {
         private MyPlugin _pluginInstance = null;
 
-        
-        private CookieContainer cookieContainer;                // 1. Create a container to store the cookies
-        private HttpClientHandler handler;                      // 2. Setup the handler to use that container
-        private HttpClient httpClient;                          // 3. Create the HttpClient using the handler
-        public Client Client;                                   // 4. Create the P6 REST API client using the HttpClient
+        public Client Client;                                   // 1. Create the P6 REST API client using the HttpClient
+        public bool IsLoggedIn;                                 // 2. Track login state (optional but useful)
+        public P6ConnectionConfig LoginConnectionConfig;        // 3. Store the current login connection config (optional but useful)
 
         public P6ApiService(MyPlugin pluginInstance)
         {
             // Initialize P6 API connection and setup here
             _pluginInstance = pluginInstance;
-            InIt();
+            _ = InIt();
         }
 
-        private void InIt()
+        private async Task InIt()
         {
-            cookieContainer = new CookieContainer();
-
-            handler = new HttpClientHandler()
             {
-                CookieContainer = cookieContainer,
-                UseCookies = true // This ensures the client automatically sends/receives cookies
-            };
+                var _defaultConfig = _pluginInstance.MyLiteDBService.GetDefault_P6ConnectionConfig();
 
-            httpClient = new HttpClient(handler);
+                if (_defaultConfig == null) return;
 
-            Client = new Client("http://localhost:8206/p6ws/restapi/", httpClient);
+                var _loginResult = await TryLoginAsync(_defaultConfig);
 
-            Client.LoginAsync("admin", "Uvpce2006", "PMDB");
+                if(_loginResult.IsLoggedIn)
+                {
+                    IsLoggedIn = _loginResult.IsLoggedIn;
+                    LoginConnectionConfig = _loginResult.LoginConnectionConfig;
+                    Client = _loginResult.Client;
+                }
+                else
+                {
+                    IsLoggedIn = false;
+                    LoginConnectionConfig = null;
+                    Client = null;
+                    Console.WriteLine("P6ApiService InIt: Default P6 connection config found but login failed.");
+                }
+                //Client = new Client("http://localhost:8206/p6ws/restapi/", httpClient);
+                //Client.LoginAsync("admin", "Uvpce2006", "PMDB");
+            }
+
         }
 
+        private async Task<LoginResult> TryLoginAsync(P6ConnectionConfig _p6ConnectionConfig)
+        {
+            try
+            {
+                var _cookieContainer = new CookieContainer();
+                var _handler = new HttpClientHandler() { CookieContainer = _cookieContainer, UseCookies = true };
+                var _httpClient = new HttpClient(_handler);
+                var _client = new Client(_p6ConnectionConfig.ServerUrl, _httpClient);
+
+                await _client.LoginAsync(
+                    _p6ConnectionConfig.Username, 
+                    _p6ConnectionConfig.Password, 
+                    _p6ConnectionConfig.DatabaseName
+                );
+
+                return new LoginResult
+                {
+                    IsLoggedIn = true,
+                    Client = _client,
+                    LoginConnectionConfig = _p6ConnectionConfig
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"P6ApiService Login failed: {ex.Message}");
+                return new LoginResult
+                {
+                    IsLoggedIn = false
+                };
+            }
+        }
+
+    }
+
+    public class LoginResult
+    {
+        public bool IsLoggedIn { get; set; }
+        public P6ConnectionConfig LoginConnectionConfig { get; set; }
+        public Client Client { get; set; }
     }
 }

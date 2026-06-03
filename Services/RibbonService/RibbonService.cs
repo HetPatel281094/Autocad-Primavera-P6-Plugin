@@ -219,11 +219,7 @@ namespace Autocad_Primavera_P6_Plugin.Services
 
         private static void ButtonHandler_P6ConnectionManager()
         {
-            // Create the view
-            var view = new Autocad_Primavera_P6_Plugin.UserInterface.UI_P6ConnectionManagerView.P6ConnectionManagerView();
-
-            // Show as modal window using AutoCAD's Application.ShowModalWindow
-            Autodesk.AutoCAD.ApplicationServices.Application.ShowModalWindow(view);
+            _pluginInstance.OpenP6ConnectionManager();   // ← was: new view directly
         }
 
         // Button 5 : Linked Folders
