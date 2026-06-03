@@ -24,23 +24,30 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <!--  Connection name + active badge  -->
+                <!--  Connection name + default badge  -->
                 <StackPanel Grid.Row="0" Orientation="Horizontal">
                     <TextBlock
                         FontSize="13"
                         FontWeight="SemiBold"
                         Foreground="#2C3E50"
                         Text="{Binding ConnectionName}" />
+                    <!--
+                        BUG WAS HERE: was bound to {Binding IsActive} which does not exist
+                        on P6ConnectionConfig. WPF could not resolve the property so
+                        Visibility fell back to its default value (Visible), making every
+                        row show the "DEFAULT" badge regardless of IsDefault's real value.
+                        Fix: bind to the correct property — IsDefault.
+                    -->
                     <Border
                         Margin="8,0,0,0"
                         Padding="6,1"
                         Background="#27AE60"
                         CornerRadius="3"
-                        Visibility="{Binding IsActive, Converter={StaticResource BoolToVis}}">
+                        Visibility="{Binding IsDefault, Converter={StaticResource BoolToVis}}">
                         <TextBlock
                             FontSize="10"
                             Foreground="White"
-                            Text="ACTIVE" />
+                            Text="DEFAULT" />
                     </Border>
                 </StackPanel>
 
@@ -293,7 +300,7 @@
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <!--  Section header with Delete + Set Active buttons  -->
+            <!--  Section header with Delete + Set Default buttons  -->
             <Grid Grid.Row="0" Margin="0,0,0,5">
                 <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
                     <TextBlock
@@ -312,9 +319,9 @@
                     <Button
                         Width="90"
                         Margin="0,0,8,0"
-                        Command="{Binding SetActiveCommand}"
+                        Command="{Binding SetDefaultCommand}"
                         Content="Set Default"
-                        ToolTip="Make this the active P6 connection" />
+                        ToolTip="Make this the default P6 connection" />
                     <Button
                         Width="110"
                         BorderBrush="#E74C3C"
