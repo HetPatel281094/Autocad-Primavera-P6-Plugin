@@ -1,0 +1,111 @@
+<Window
+    x:Class="Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView.ActivityCodePickerView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView"
+    Title="{Binding Title}"
+    Width="680"
+    Height="560"
+    ResizeMode="CanResize"
+    WindowStartupLocation="CenterOwner">
+
+    <Grid Background="#F4F4F4" Grid.IsSharedSizeScope="True">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="130" />
+        </Grid.ColumnDefinitions>
+
+        <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="8,8,8,4">
+            <TextBlock FontSize="15" FontWeight="SemiBold" Text="{Binding Title}" />
+            <TextBlock Margin="0,4,0,0" Foreground="#555" Text="{Binding InstructionText}" TextWrapping="Wrap" />
+            <TextBlock Margin="0,4,0,0" Foreground="#8A5A00" Text="{Binding StatusMessage}" TextWrapping="Wrap" />
+        </StackPanel>
+
+        <Grid Grid.Row="1" Grid.ColumnSpan="2" Margin="8,4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="110" />
+            </Grid.ColumnDefinitions>
+            <TextBox Grid.Column="0" Height="26" VerticalContentAlignment="Center" Text="{Binding SearchString, UpdateSourceTrigger=PropertyChanged}" />
+            <Button Grid.Column="1" Margin="6,0,0,0" Command="{Binding SearchButtonCommand}" Content="Search" />
+        </Grid>
+
+        <Grid Grid.Row="2" Grid.Column="0" Margin="8,4,4,8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="24" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Background="#E2E2E2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="130" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="160" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Margin="6,0" VerticalAlignment="Center" FontWeight="SemiBold" Text="Object Id" />
+                <TextBlock Grid.Column="1" Margin="6,0" VerticalAlignment="Center" FontWeight="SemiBold" Text="Code / Type" />
+                <TextBlock Grid.Column="2" Margin="6,0" VerticalAlignment="Center" FontWeight="SemiBold" Text="Info" />
+            </Grid>
+
+            <TreeView
+                Grid.Row="1"
+                Background="White"
+                BorderBrush="#CACACA"
+                BorderThickness="1"
+                ItemsSource="{Binding RootNodes}"
+                VirtualizingPanel.IsVirtualizing="True"
+                VirtualizingPanel.VirtualizationMode="Recycling">
+                <TreeView.ItemContainerStyle>
+                    <Style TargetType="TreeViewItem">
+                        <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+                        <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
+                        <Setter Property="Visibility" Value="{Binding IsVisible, Mode=TwoWay}" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Style.Resources>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="Transparent" />
+                            <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="Transparent" />
+                        </Style.Resources>
+                    </Style>
+                </TreeView.ItemContainerStyle>
+                <TreeView.Resources>
+                    <HierarchicalDataTemplate DataType="{x:Type local:ActivityCodePickerNodeViewModel}" ItemsSource="{Binding Children}">
+                        <Border x:Name="RowBorder" MinHeight="24" BorderBrush="#EFEFEF" BorderThickness="0,0,0,1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="130" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="160" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Margin="6,0" VerticalAlignment="Center" Text="{Binding Id}" />
+                                <TextBlock Grid.Column="1" Margin="6,0" VerticalAlignment="Center" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                                <TextBlock Grid.Column="2" Margin="6,0" VerticalAlignment="Center" Foreground="#555" Text="{Binding Description}" TextTrimming="CharacterEllipsis" />
+                            </Grid>
+                        </Border>
+                        <HierarchicalDataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsCodeType}" Value="True">
+                                <Setter TargetName="RowBorder" Property="Background" Value="#EAF2FF" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=TreeViewItem}, Path=IsSelected}" Value="True">
+                                <Setter TargetName="RowBorder" Property="Background" Value="#0078D7" />
+                                <Setter Property="TextElement.Foreground" Value="White" />
+                            </DataTrigger>
+                        </HierarchicalDataTemplate.Triggers>
+                    </HierarchicalDataTemplate>
+                </TreeView.Resources>
+            </TreeView>
+        </Grid>
+
+        <StackPanel Grid.Row="2" Grid.Column="1" Margin="4,28,8,8">
+            <Button Height="28" Margin="0,0,0,6" Command="{Binding OkButtonCommand}" Content="Ok" IsEnabled="{Binding IsSelectionValid}" />
+            <Button Height="28" Command="{Binding CancelButtonCommand}" Content="Cancel" />
+        </StackPanel>
+
+        <ProgressBar Grid.Row="3" Grid.ColumnSpan="2" Height="4" IsIndeterminate="{Binding IsLoading}" />
+    </Grid>
+</Window>

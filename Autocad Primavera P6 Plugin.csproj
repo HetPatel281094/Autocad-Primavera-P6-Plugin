@@ -122,11 +122,19 @@
     <Compile Include="Services\P6ApiService\PrimaveraP6Client.cs" />
     <Compile Include="Services\P6ApiService\PrimaveraP6Client.Extension.cs" />
     <Compile Include="Services\RibbonService\RibbonService.cs" />
+    <Compile Include="UserInterface\UI_InsertBlocksWindowView\ActivityCodePickerNodeViewModel.cs" />
+    <Compile Include="UserInterface\UI_InsertBlocksWindowView\ActivityCodePickerView.xaml.cs">
+      <DependentUpon>ActivityCodePickerView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserInterface\UI_InsertBlocksWindowView\ActivityCodePickerViewModel.cs" />
+    <Compile Include="UserInterface\UI_InsertBlocksWindowView\ActivityCodeSectionViewModel.cs" />
+    <Compile Include="UserInterface\UI_InsertBlocksWindowView\Converters.cs" />
     <Compile Include="UserInterface\UI_InsertBlocksWindowView\InsertBlocksWindowView.xaml.cs">
       <DependentUpon>InsertBlocksWindowView.xaml</DependentUpon>
     </Compile>
     <Compile Include="UserInterface\UI_InsertBlocksWindowView\InsertBlocksWindowViewModel.cs" />
     <Compile Include="UserInterface\UI_InsertBlocksWindowView\InsertBlocksWindowModel.cs" />
+    <Compile Include="UserInterface\UI_InsertBlocksWindowView\RelayCommand.cs" />
     <Compile Include="UserInterface\UI_LinkedFoldersManagerView\LinkedFoldersManagerView.xaml.cs">
       <DependentUpon>LinkedFoldersManagerView.xaml</DependentUpon>
     </Compile>
@@ -204,6 +212,10 @@
     <EmbeddedResource Include="Services\RibbonService\RCDATA_32_ONLINE_OPEN_FOLDER.png" />
   </ItemGroup>
   <ItemGroup>
+    <Page Include="UserInterface\UI_InsertBlocksWindowView\ActivityCodePickerView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="UserInterface\UI_InsertBlocksWindowView\InsertBlocksWindowView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

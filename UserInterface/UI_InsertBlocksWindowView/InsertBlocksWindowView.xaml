@@ -2,44 +2,50 @@
     x:Class="Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView.InsertBlocksWindowView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    Title="P6 Autocad - Insert Blocks"
-    Width="450"
-    Height="900"
+    xmlns:local="clr-namespace:Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView"
+    Title="P6 AutoCAD - Insert Blocks"
+    Width="520"
+    Height="760"
+    MinWidth="500"
+    MinHeight="620"
     ResizeMode="CanResize"
     Topmost="True"
-    WindowStartupLocation="CenterOwner"
-    mc:Ignorable="d">
+    WindowStartupLocation="CenterOwner">
+
+    <Window.Resources>
+        <local:EnumToBoolConverter x:Key="EnumToBoolConverter" />
+        <local:EnumToVisibilityConverter x:Key="EnumToVisibilityConverter" />
+
+        <Style x:Key="SectionBorderStyle" TargetType="Border">
+            <Setter Property="Margin" Value="8,6" />
+            <Setter Property="Padding" Value="8" />
+            <Setter Property="BorderBrush" Value="#B8B8B8" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Background" Value="#FAFAFA" />
+        </Style>
+
+        <Style x:Key="ValueTextStyle" TargetType="TextBlock">
+            <Setter Property="Margin" Value="4,3" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+
+        <Style x:Key="FieldLabelStyle" TargetType="TextBlock" BasedOn="{StaticResource ValueTextStyle}">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#333333" />
+        </Style>
+    </Window.Resources>
+
     <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="6">
 
-        <StackPanel
-            Margin="5"
-            HorizontalAlignment="Stretch"
-            Orientation="Vertical">
+            <Border Style="{StaticResource SectionBorderStyle}">
+                <StackPanel>
+                    <TextBlock FontWeight="Bold" Text="BOUNDARY ACTIVITY CODE" />
 
-            <TextBlock Margin="0" TextWrapping="Wrap">
-                Use this window to insert blocks into your AutoCAD drawing.<LineBreak />
-                -<Bold>BOUNDRY ACTIVITY CODE :</Bold>
-                Select/auto-create "Boundry-Activity-Codes".<LineBreak />
-                -<Bold>ITEM ID ACTIVITY CODE :</Bold>
-                Select/auto-create "ItemId-Activity-Codes".<LineBreak />
-                -<Bold>BLOCK TYPE :</Bold>
-                Select from predefined or select desired block to copy from.<LineBreak />
-                -<Bold>INSERT OPTIONS :</Bold><LineBreak />
-                - Click to cintinuously insert blocks one by one.<LineBreak />
-                - Click to enable managing leaders for the inserted blocks after insert.<LineBreak />
-            </TextBlock>
-            <Border
-                Margin="0,0,0,5"
-                VerticalAlignment="Stretch"
-                BorderBrush="Gray"
-                BorderThickness="1,1,1,1">
-                <StackPanel Width="440" Height="212">
-                    <Label Content="BOUNDRY ACTIVITY CODE :" FontWeight="Bold" />
-                    <Grid>
+                    <Grid Margin="0,6,0,0">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="130" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
@@ -47,56 +53,44 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <Label
-                            Grid.Row="0"
-                            Grid.Column="0"
-                            Content="Code Value :" />
-                        <Label
-                            Grid.Row="0"
-                            Grid.Column="1"
-                            Content="-- Code Value --" />
-                        <Label
-                            Grid.Row="1"
-                            Grid.Column="0"
-                            Content="Code Path :" />
-                        <Label
-                            Grid.Row="1"
-                            Grid.Column="1"
-                            Content="-- Code Path --" />
-                        <Label
-                            Grid.Row="2"
-                            Grid.Column="0"
-                            Content="Code Value Id :" />
-                        <Label
-                            Grid.Row="2"
-                            Grid.Column="1"
-                            Content="-- Code Value Id --" />
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Setter Property="Opacity" Value="1" />
+                                <Setter Property="IsEnabled" Value="True" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding BoundaryCode.IsAutoGenerate}" Value="True">
+                                        <Setter Property="Opacity" Value="0.45" />
+                                        <Setter Property="IsEnabled" Value="False" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
+                        <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource FieldLabelStyle}" Text="Code Value" />
+                        <TextBlock Grid.Row="0" Grid.Column="1" Style="{StaticResource ValueTextStyle}" Text="{Binding BoundaryCode.SelectedCodeValue}" />
+                        <TextBlock Grid.Row="1" Grid.Column="0" Style="{StaticResource FieldLabelStyle}" Text="Code Path" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" Style="{StaticResource ValueTextStyle}" Text="{Binding BoundaryCode.SelectedCodePath}" />
+                        <TextBlock Grid.Row="2" Grid.Column="0" Style="{StaticResource FieldLabelStyle}" Text="Code Value Id" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" Style="{StaticResource ValueTextStyle}" Text="{Binding BoundaryCode.SelectedCodeValueId}" />
                     </Grid>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1*" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
+
+                    <DockPanel Margin="0,6">
                         <Button
-                            Grid.Row="0"
-                            Grid.Column="2"
-                            Width="100"
-                            Margin="5"
-                            Content="Select" />
+                            Width="96"
+                            Margin="6,0,0,0"
+                            HorizontalAlignment="Right"
+                            Command="{Binding BoundaryCode.SelectCommand}"
+                            CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
+                            Content="Select"
+                            DockPanel.Dock="Right" />
                         <CheckBox
-                            Grid.Row="0"
-                            Grid.Column="1"
-                            Margin="5,5,25,5"
                             VerticalAlignment="Center"
-                            Content="Auto Generate New Code Value" />
-                    </Grid>
+                            Content="Auto Generate New Code Value"
+                            IsChecked="{Binding BoundaryCode.IsAutoGenerate, Mode=TwoWay}" />
+                    </DockPanel>
+
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="130" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
@@ -104,42 +98,34 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <Label
-                            Grid.Row="0"
-                            Grid.Column="0"
-                            Content="Code Value :" />
-                        <Label
-                            Grid.Row="0"
-                            Grid.Column="1"
-                            Content="-- Code Value --" />
-                        <Label
-                            Grid.Row="1"
-                            Grid.Column="0"
-                            Content="Code Path :" />
-                        <Label
-                            Grid.Row="1"
-                            Grid.Column="1"
-                            Content="-- Code Path --" />
-                        <Label
-                            Grid.Row="2"
-                            Grid.Column="0"
-                            Content="Info :" />
-                        <Label
-                            Grid.Row="2"
-                            Grid.Column="1"
-                            Content="-- Info --" />
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Setter Property="Opacity" Value="0.65" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding BoundaryCode.IsAutoGenerate}" Value="True">
+                                        <Setter Property="Opacity" Value="1" />
+                                        <Setter Property="TextElement.FontWeight" Value="SemiBold" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
+                        <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource FieldLabelStyle}" Text="Code Value" />
+                        <TextBlock Grid.Row="0" Grid.Column="1" Style="{StaticResource ValueTextStyle}" Text="{Binding BoundaryCode.AutoGeneratedCodeValue}" />
+                        <TextBlock Grid.Row="1" Grid.Column="0" Style="{StaticResource FieldLabelStyle}" Text="Code Path" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" Style="{StaticResource ValueTextStyle}" Text="{Binding BoundaryCode.AutoGeneratedCodePath}" />
+                        <TextBlock Grid.Row="2" Grid.Column="0" Style="{StaticResource FieldLabelStyle}" Text="Info" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" Style="{StaticResource ValueTextStyle}" Text="{Binding BoundaryCode.Info}" />
                     </Grid>
                 </StackPanel>
             </Border>
-            <Border
-                Margin="0,0,0,5"
-                BorderBrush="Gray"
-                BorderThickness="1,1,1,1">
-                <StackPanel Width="440" Height="212">
-                    <Label Content="ITEM ID ACTIVITY CODE :" FontWeight="Bold" />
-                    <Grid>
+
+            <Border Style="{StaticResource SectionBorderStyle}">
+                <StackPanel>
+                    <TextBlock FontWeight="Bold" Text="ITEM ID ACTIVITY CODE" />
+
+                    <Grid Margin="0,6,0,0">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="130" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
@@ -147,56 +133,44 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <Label
-                            Grid.Row="0"
-                            Grid.Column="0"
-                            Content="Code Value :" />
-                        <Label
-                            Grid.Row="0"
-                            Grid.Column="1"
-                            Content="-- Code Value --" />
-                        <Label
-                            Grid.Row="1"
-                            Grid.Column="0"
-                            Content="Code Path :" />
-                        <Label
-                            Grid.Row="1"
-                            Grid.Column="1"
-                            Content="-- Code Path --" />
-                        <Label
-                            Grid.Row="2"
-                            Grid.Column="0"
-                            Content="Code Value Id :" />
-                        <Label
-                            Grid.Row="2"
-                            Grid.Column="1"
-                            Content="-- Code Value Id --" />
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Setter Property="Opacity" Value="1" />
+                                <Setter Property="IsEnabled" Value="True" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ItemIdCode.IsAutoGenerate}" Value="True">
+                                        <Setter Property="Opacity" Value="0.45" />
+                                        <Setter Property="IsEnabled" Value="False" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
+                        <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource FieldLabelStyle}" Text="Code Value" />
+                        <TextBlock Grid.Row="0" Grid.Column="1" Style="{StaticResource ValueTextStyle}" Text="{Binding ItemIdCode.SelectedCodeValue}" />
+                        <TextBlock Grid.Row="1" Grid.Column="0" Style="{StaticResource FieldLabelStyle}" Text="Code Path" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" Style="{StaticResource ValueTextStyle}" Text="{Binding ItemIdCode.SelectedCodePath}" />
+                        <TextBlock Grid.Row="2" Grid.Column="0" Style="{StaticResource FieldLabelStyle}" Text="Code Value Id" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" Style="{StaticResource ValueTextStyle}" Text="{Binding ItemIdCode.SelectedCodeValueId}" />
                     </Grid>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1*" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
+
+                    <DockPanel Margin="0,6">
                         <Button
-                            Grid.Row="0"
-                            Grid.Column="2"
-                            Width="100"
-                            Margin="5"
-                            Content="Select" />
+                            Width="96"
+                            Margin="6,0,0,0"
+                            HorizontalAlignment="Right"
+                            Command="{Binding ItemIdCode.SelectCommand}"
+                            CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
+                            Content="Select"
+                            DockPanel.Dock="Right" />
                         <CheckBox
-                            Grid.Row="0"
-                            Grid.Column="1"
-                            Margin="5,5,25,5"
                             VerticalAlignment="Center"
-                            Content="Auto Generate New Code Value" />
-                    </Grid>
+                            Content="Auto Generate New Code Value"
+                            IsChecked="{Binding ItemIdCode.IsAutoGenerate, Mode=TwoWay}" />
+                    </DockPanel>
+
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="130" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
@@ -204,102 +178,105 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <Label
-                            Grid.Row="0"
-                            Grid.Column="0"
-                            Content="Code Value :" />
-                        <Label
-                            Grid.Row="0"
-                            Grid.Column="1"
-                            Content="-- Code Value --" />
-                        <Label
-                            Grid.Row="1"
-                            Grid.Column="0"
-                            Content="Code Path :" />
-                        <Label
-                            Grid.Row="1"
-                            Grid.Column="1"
-                            Content="-- Code Path --" />
-                        <Label
-                            Grid.Row="2"
-                            Grid.Column="0"
-                            Content="Info :" />
-                        <Label
-                            Grid.Row="2"
-                            Grid.Column="1"
-                            Content="-- Info --" />
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Setter Property="Opacity" Value="0.65" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ItemIdCode.IsAutoGenerate}" Value="True">
+                                        <Setter Property="Opacity" Value="1" />
+                                        <Setter Property="TextElement.FontWeight" Value="SemiBold" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
+                        <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource FieldLabelStyle}" Text="Code Value" />
+                        <TextBlock Grid.Row="0" Grid.Column="1" Style="{StaticResource ValueTextStyle}" Text="{Binding ItemIdCode.AutoGeneratedCodeValue}" />
+                        <TextBlock Grid.Row="1" Grid.Column="0" Style="{StaticResource FieldLabelStyle}" Text="Code Path" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" Style="{StaticResource ValueTextStyle}" Text="{Binding ItemIdCode.AutoGeneratedCodePath}" />
+                        <TextBlock Grid.Row="2" Grid.Column="0" Style="{StaticResource FieldLabelStyle}" Text="Info" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" Style="{StaticResource ValueTextStyle}" Text="{Binding ItemIdCode.Info}" />
                     </Grid>
                 </StackPanel>
             </Border>
-            <Border
-                Margin="0,0,0,5"
-                BorderBrush="Gray"
-                BorderThickness="1,1,1,1">
-                <StackPanel Width="440">
-                    <Label Content="BLOCK TYPE :" FontWeight="Bold" />
-                    <Grid>
+
+            <Border Style="{StaticResource SectionBorderStyle}">
+                <StackPanel>
+                    <TextBlock FontWeight="Bold" Text="BLOCK TYPE" />
+                    <UniformGrid Margin="0,8,0,6" Columns="3">
+                        <RadioButton
+                            Margin="2"
+                            Content="Predefined"
+                            IsChecked="{Binding BlockTypeMode, Mode=TwoWay, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=Predefined}" />
+                        <RadioButton
+                            Margin="2"
+                            Content="From Drawing"
+                            IsChecked="{Binding BlockTypeMode, Mode=TwoWay, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=SelectFromDrawing}" />
+                        <RadioButton
+                            Margin="2"
+                            Content="Copy Block"
+                            IsChecked="{Binding BlockTypeMode, Mode=TwoWay, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=CopyBlock}" />
+                    </UniformGrid>
+
+                    <Grid Visibility="{Binding BlockTypeMode, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Predefined}">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1*" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="15" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="92" />
                         </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <RadioButton
-                            Grid.Row="0"
-                            Grid.Column="1"
-                            Content="Predefined Blocks" />
-                        <RadioButton
-                            Grid.Row="0"
-                            Grid.Column="3"
-                            Content="Select Block to Copy" />
+                        <ComboBox
+                            Grid.Column="0"
+                            Margin="0,0,6,0"
+                            DisplayMemberPath="Name"
+                            ItemsSource="{Binding AvailableBlocks}"
+                            SelectedItem="{Binding SelectedPredefinedBlock, Mode=TwoWay}" />
+                        <Button Grid.Column="1" Command="{Binding BrowseBlocksFolderCommand}" Content="Browse..." />
                     </Grid>
-                    <ComboBox Margin="5" HorizontalAlignment="Stretch" />
-                    <Button
-                        Width="200"
-                        Margin="5"
-                        Content="Select Block from Drawing" />
+
+                    <Grid Visibility="{Binding BlockTypeMode, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=SelectFromDrawing}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="140" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Button
+                            Grid.Column="0"
+                            Command="{Binding SelectDrawingBlockCommand}"
+                            CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
+                            Content="Select Block" />
+                        <TextBlock Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center" Text="{Binding SelectedDrawingBlockName}" TextTrimming="CharacterEllipsis" />
+                    </Grid>
+
+                    <Grid Visibility="{Binding BlockTypeMode, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=CopyBlock}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="140" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Button
+                            Grid.Column="0"
+                            Command="{Binding SelectCopyBlockCommand}"
+                            CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
+                            Content="Copy Source" />
+                        <TextBlock Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center" Text="{Binding SelectedDrawingBlockName}" TextTrimming="CharacterEllipsis" />
+                    </Grid>
                 </StackPanel>
             </Border>
-            <Border Margin="5,20,5,20">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1*" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="1*" />
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
+
+            <Border Style="{StaticResource SectionBorderStyle}">
+                <StackPanel>
+                    <TextBlock FontWeight="Bold" Text="INSERT OPTIONS" />
                     <Button
-                        Grid.Row="0"
-                        Grid.Column="1"
-                        Width="200"
-                        Content="Insert Block" />
-                    <CheckBox
-                        Grid.Row="1"
-                        Grid.Column="1"
-                        Margin="5,5,25,5"
-                        VerticalAlignment="Center"
-                        Content="Continuously Insert Blocks" />
-                    <CheckBox
-                        Grid.Row="2"
-                        Grid.Column="1"
-                        Margin="5,5,25,5"
-                        VerticalAlignment="Center"
-                        Content="Edit Legend Position" />
+                        Height="32"
+                        Margin="0,8,0,6"
+                        Command="{Binding InsertBlockCommand}"
+                        CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
+                        Content="{Binding InsertButtonText}" />
+                    <CheckBox Margin="0,2" Content="Continuously Insert Blocks" IsChecked="{Binding ContinuousInsert, Mode=TwoWay}" />
+                    <CheckBox Margin="0,2" Content="Edit Legend Position" IsChecked="{Binding EditLegendPosition, Mode=TwoWay}" />
                     <Button
-                        Grid.Row="3"
-                        Grid.Column="1"
-                        Width="200"
+                        Height="30"
+                        Margin="0,8,0,0"
+                        Command="{Binding CancelCommand}"
                         Content="Cancel" />
-                </Grid>
+                    <TextBlock Margin="0,8,0,0" Foreground="#555" Text="{Binding StatusMessage}" TextWrapping="Wrap" />
+                </StackPanel>
             </Border>
         </StackPanel>
     </ScrollViewer>
