@@ -2,16 +2,14 @@
 //
 using System;
 using Autodesk.AutoCAD.Runtime;
+using Autodesk.AutoCAD.ApplicationServices;
 using Autocad_Primavera_P6_Plugin.Services;
-<<<<<<< Updated upstream
-=======
 using Autocad_Primavera_P6_Plugin.Services.LiteDBService;
 using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
 using Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView;
 using Autocad_Primavera_P6_Plugin.UserInterface.UI_LinkedFoldersManagerView;
 using System.Reflection;
 using System.IO;
->>>>>>> Stashed changes
 
 [assembly: ExtensionApplication(typeof(Autocad_Primavera_P6_Plugin.MyPlugin))]
 
@@ -20,9 +18,9 @@ namespace Autocad_Primavera_P6_Plugin
     public class MyPlugin : IExtensionApplication
     {
         public static MyPlugin Instance { get; private set; } = null;
-        public static LiteDBService MyLiteDBService { get; private set; } = null;
-        public static P6ApiService MyP6ApiService { get; private set; } = null;
-        public static RibbonService MyRibbonService { get; private set; } = null;
+        public LiteDBService MyLiteDBService { get; private set; } = null;
+        public P6ApiService MyP6ApiService { get; private set; } = null;
+        public RibbonService MyRibbonService { get; private set; } = null;
 
         void IExtensionApplication.Initialize()
         {
@@ -42,8 +40,6 @@ namespace Autocad_Primavera_P6_Plugin
             MyRibbonService = null; //RibbonService instance cleanup
         }
 
-<<<<<<< Updated upstream
-=======
         public void P6InsertBlocks()
         {
             var _view = new InsertBlocksWindowView(this);
@@ -55,7 +51,12 @@ namespace Autocad_Primavera_P6_Plugin
             var view = new LinkedFoldersManagerView(this);
             Application.ShowModalWindow(view);
         }
->>>>>>> Stashed changes
+
+        public void OpenP6ConnectionManager()
+        {
+            var view = new UserInterface.UI_P6ConnectionManagerView.P6ConnectionManagerView(this);
+            Application.ShowModalWindow(view);
+        }
     }
 
 }

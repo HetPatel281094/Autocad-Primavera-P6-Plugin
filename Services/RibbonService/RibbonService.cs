@@ -18,7 +18,7 @@ namespace Autocad_Primavera_P6_Plugin.Services
 {
     public class RibbonService
     {
-        private MyPlugin _pluginInstance = null;
+        private static MyPlugin _pluginInstance = null;
         private static bool _isTabCreated = false;
 
         private const string _TabId = "Autocad_Primavera_P6_Plugin_Tab";
@@ -37,7 +37,6 @@ namespace Autocad_Primavera_P6_Plugin.Services
 
         //Temp
         static PaletteSet _PropertiesPalette = null;
-        static Palette _SomePalate = null;
 
         public RibbonService(MyPlugin pluginInstance)
         {
@@ -172,11 +171,7 @@ namespace Autocad_Primavera_P6_Plugin.Services
 
         private static void ButtonHandler_InsertBlocks()
         {
-            // Create the view
-            var view = new Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView.InsertBlocksWindowView();
-
-            // Show as modal window using AutoCAD's Application.ShowModalWindow
-            Autodesk.AutoCAD.ApplicationServices.Application.ShowModalWindow(view);
+            _pluginInstance.P6InsertBlocks();
         }
 
         // Button 3 : Plugin Status
@@ -224,11 +219,7 @@ namespace Autocad_Primavera_P6_Plugin.Services
 
         private static void ButtonHandler_P6ConnectionManager()
         {
-            // Create the view
-            var view = new Autocad_Primavera_P6_Plugin.UserInterface.UI_P6ConnectionManagerView.P6ConnectionManagerView();
-
-            // Show as modal window using AutoCAD's Application.ShowModalWindow
-            Autodesk.AutoCAD.ApplicationServices.Application.ShowModalWindow(view);
+            _pluginInstance.OpenP6ConnectionManager();   // ← was: new view directly
         }
 
         // Button 5 : Linked Folders
@@ -250,11 +241,7 @@ namespace Autocad_Primavera_P6_Plugin.Services
 
         private static void ButtonHandler_LinkedFolders()
         {
-            // Create the view
-            var view = new Autocad_Primavera_P6_Plugin.UserInterface.UI_LinkedFoldersManagerView.LinkedFoldersManagerView();
-
-            // Show as modal window using AutoCAD's Application.ShowModalWindow
-            Autodesk.AutoCAD.ApplicationServices.Application.ShowModalWindow(view);
+            _pluginInstance.OpenLinkedFoldersManager();
         }
 
 
