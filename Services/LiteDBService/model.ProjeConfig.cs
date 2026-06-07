@@ -75,35 +75,62 @@ namespace Autocad_Primavera_P6_Plugin.Services.LiteDBService
         {
             if (document == null) return null;
 
-            // BUG 1 FIX: Path.GetDirectoryName() can return null (unsaved/new drawing).
-            // Guard with null-conditional and an early return.
-            var _docFolderPath = Path.GetDirectoryName(document.Name)
-                                     ?.Trim()
-                                     .TrimEnd('\\', '/');
+            var rawDir = Path.GetDirectoryName(document.Name);   // can return null for unsaved docs
+            if (string.IsNullOrWhiteSpace(rawDir)) return null;
 
-            if (string.IsNullOrEmpty(_docFolderPath)) return null;
+            string docFolderPath;
+            try
+            {
+                // GetFullPath normalises separators, strips trailing slashes,
+                // and resolves any '.' / '..' segments in one call.
+                docFolderPath = Path.GetFullPath(rawDir);
+            }
+            catch (Exception)   // ArgumentException, PathTooLongException, SecurityException, �
+            {
+                return null;
+            }
 
-            var _colln = pluginDb.GetCollection<ProjectConfig>(projectConfigsCollectionName);
+            var colln = pluginDb.GetCollection<ProjectConfig>(projectConfigsCollectionName);
 
-            // BUG 2 FIX: LiteDB cannot translate a private method call into a BsonExpression.
-            // Materialise to IEnumerable first, then filter in memory with FirstOrDefault.
-            return _colln.FindAll()
-                         .FirstOrDefault(config =>
-                             IsSameOrChildPath(config.ProjectPlanningDWGFolderPath, _docFolderPath));
+            // Materialise to IEnumerable so LiteDB doesn't try to translate
+            // the private helper into a BsonExpression.
+            return colln.FindAll()
+                        .FirstOrDefault(config =>
+                            IsSameOrChildPath(config.ProjectPlanningDWGFolderPath, docFolderPath));
         }
 
-        private bool IsSameOrChildPath(string parentPath, string childPath)
+        private static bool IsSameOrChildPath(string parentPath, string childPath)
         {
-            var normalizedParent = parentPath?.Trim().TrimEnd('\\', '/') ?? string.Empty;
-            var normalizedChild = childPath?.Trim().TrimEnd('\\', '/') ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(parentPath) || string.IsNullOrWhiteSpace(childPath))
+                return false;
 
-            if (string.IsNullOrEmpty(normalizedParent)) return false;
+            string normalizedParent, normalizedChild;
+            try
+            {
+                // GetFullPath makes both paths fully canonical and uses a single,
+                // consistent separator � no need to check both '\\' and '/'.
+                normalizedParent = Path.GetFullPath(parentPath);
+                normalizedChild = Path.GetFullPath(childPath);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
 
-            // BUG 3 FIX: Check both '\' and '/' as child separators so the match works
-            // regardless of which path separator GetDirectoryName produced.
-            return string.Equals(normalizedParent, normalizedChild, StringComparison.OrdinalIgnoreCase)
-                || normalizedChild.StartsWith(normalizedParent + "\\", StringComparison.OrdinalIgnoreCase)
-                || normalizedChild.StartsWith(normalizedParent + "/", StringComparison.OrdinalIgnoreCase);
+            // Strip any trailing separator so both sides are in the same form.
+            normalizedParent = normalizedParent.TrimEnd(
+                Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            normalizedChild = normalizedChild.TrimEnd(
+                Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+            // Exact match  -OR-  child lives under parent.
+            // The appended DirectorySeparatorChar prevents "C:\Foo" from
+            // falsely matching "C:\FooBar".
+            return string.Equals(normalizedParent, normalizedChild,
+                                 StringComparison.OrdinalIgnoreCase)
+                || normalizedChild.StartsWith(
+                       normalizedParent + Path.DirectorySeparatorChar,
+                       StringComparison.OrdinalIgnoreCase);
         }
     }
 }

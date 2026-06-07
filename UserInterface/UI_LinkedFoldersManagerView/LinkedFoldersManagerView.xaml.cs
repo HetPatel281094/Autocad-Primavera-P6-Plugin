@@ -16,10 +16,10 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_LinkedFoldersManagerView
 {
     public partial class LinkedFoldersManagerView : Window
     {
-        public LinkedFoldersManagerView()
+        public LinkedFoldersManagerView(MyPlugin pluginInstance)
         {
             InitializeComponent();
-            DataContext = new LinkedFoldersManagerViewModel();
+            DataContext = new LinkedFoldersManagerViewModel(pluginInstance);
         }
     }
 }

@@ -1,37 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Collections.ObjectModel;
-<<<<<<< Updated upstream
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using System.Windows.Input;
-
-namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_LinkedFoldersManagerView
-{
-    class LinkedFoldersManagerViewModel : INotifyPropertyChanged
-    {
-        private LinkedFoldersManagerModel _model;
-
-        public ObservableCollection<string> LinkedFolders => _model.LinkedFolders;
-
-        public LinkedFoldersManagerViewModel()
-        {
-            _model = new LinkedFoldersManagerModel();
-        }
-
-        // Example command for adding a folder
-        private ICommand _addFolderCommand;
-        public ICommand AddFolderCommand => _addFolderCommand ?? (_addFolderCommand = new RelayCommand(AddFolder));
-
-        private void AddFolder(object parameter)
-        {
-            // Add folder logic here
-=======
 using System.Linq;
 using System.Windows;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using System.Windows.Forms;
 using PropertyChanged;
@@ -197,7 +169,6 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_LinkedFoldersManagerView
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
             }
->>>>>>> Stashed changes
         }
 
         private void ResetProjectConfig(object _) => InitNewConfig();
@@ -215,8 +186,6 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_LinkedFoldersManagerView
                 // OnFolderPathTextChanged() fires automatically and updates _workingConfig
             }
         }
-<<<<<<< Updated upstream
-=======
 
         private void SelectProject(object _)
         {
@@ -241,6 +210,23 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_LinkedFoldersManagerView
 
         private void DeleteProjectConfig(object _)
         {
+        }
+
+        private void ResetProjectConfig(object _) => InitNewConfig();
+
+        private void SelectFolder(object _)
+        {
+            using (var dialog = new FolderBrowserDialog
+            {
+                Description = "Select the AutoCAD DWG folder to link",
+                ShowNewFolderButton = true,
+            })
+            {
+                if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                    FolderPathText = dialog.SelectedPath;
+                // OnFolderPathTextChanged() fires automatically and updates _workingConfig
+            }
+        }
             if (SelectedListItem == null) return;
 
             var confirm = MessageBox.Show(
@@ -361,7 +347,72 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_LinkedFoldersManagerView
             }
             return string.Empty;
         }
->>>>>>> Stashed changes
+
+        /// <summary>
+        /// Check if current autocad file belong to any linked folder config.
+        /// if exist load that config else load new config 
+        /// </summary>
+        private void InitNewConfigFirstTime()
+        {
+            // Clear list selection first; OnSelectedListItemChanged guards against null
+            SelectedListItem = null;
+
+            var drawingFile = AcadApp.DocumentManager.MdiActiveDocument;
+            var projectConfig = _pluginInstance.MyLiteDBService.Find_byAcadDWG(drawingFile);
+
+            if (projectConfig != null)
+            {
+                _workingConfig = new ProjectConfig
+                {
+                    Id = projectConfig.Id,
+                    LinkName = projectConfig.LinkName,
+                    ProjectObjectId = projectConfig.ProjectObjectId,
+                    ProjectId = projectConfig.ProjectId,
+                    ProjectName = projectConfig.ProjectName,
+                    ProjectPlanningDWGFolderPath = projectConfig.ProjectPlanningDWGFolderPath,
+                };
+
+                // Fody picks up each setter call below and raises PropertyChanged
+                // for that property, so the UI updates automatically.
+                LinkNameText = _workingConfig.LinkName ?? string.Empty;
+                FolderPathText = _workingConfig.ProjectPlanningDWGFolderPath ?? string.Empty;
+                ProjectSelectorText = BuildProjectSelectorText();
+                IsLinkNameTextBoxEnabled = true;
+            }
+            else
+            {
+                InitNewConfig();
+            }
+        }
+
+        /// <summary>
+        /// Generates a unique "Link_N" name that doesn't collide with any
+        /// existing config in the list.
+        /// </summary>
+        private string GenerateNewLinkName()
+        {
+            int maxN = AllProjectConfigs
+                .Select(c => c.LinkName)
+                .Where(name => name != null
+                            && name.StartsWith("Link_", StringComparison.OrdinalIgnoreCase)
+                            && int.TryParse(name.Substring("Link_".Length), out _))
+                .Select(name => int.Parse(name.Substring("Link_".Length)))
+                .DefaultIfEmpty(0)
+                .Max();
+
+            return $"Link_{maxN + 1}";
+        }
+
+        /// <summary>Formats the P6 project display string from _workingConfig.</summary>
+        private string BuildProjectSelectorText()
+        {
+            if (!string.IsNullOrWhiteSpace(_workingConfig?.ProjectId) &&
+                !string.IsNullOrWhiteSpace(_workingConfig?.ProjectName))
+            {
+                return $"({_workingConfig.ProjectId}) {_workingConfig.ProjectName}";
+            }
+            return string.Empty;
+        }
     }
 
     // ── RelayCommand ─────────────────────────────────────────────────────────────
@@ -386,4 +437,3 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_LinkedFoldersManagerView
         }
     }
 }
-
