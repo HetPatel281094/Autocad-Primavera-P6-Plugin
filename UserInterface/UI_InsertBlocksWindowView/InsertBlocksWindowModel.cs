@@ -6,8 +6,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
     public enum BlockTypeMode
     {
         Predefined,
-        SelectFromDrawing,
-        CopyBlock
+        SelectFromDrawing
     }
 
     public sealed class PredefinedBlockInfo

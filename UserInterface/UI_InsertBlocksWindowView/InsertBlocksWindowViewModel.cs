@@ -25,6 +25,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         private PredefinedBlockInfo _selectedPredefinedBlock;
         private ObjectId _selectedDrawingBlockId;
         private string _selectedDrawingBlockName;
+        private bool _copyBlockDefinition;
         private bool _continuousInsert;
         private bool _editLegendPosition;
         private bool _isInserting;
@@ -87,6 +88,16 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             }
         }
 
+        public bool CopyBlockDefinition
+        {
+            get => _copyBlockDefinition;
+            set
+            {
+                _copyBlockDefinition = value;
+                OnPropertyChanged(nameof(CopyBlockDefinition));
+            }
+        }
+
         public bool EditLegendPosition
         {
             get => _editLegendPosition;
@@ -125,7 +136,6 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         public ICommand CancelCommand { get; private set; }
         public ICommand BrowseBlocksFolderCommand { get; private set; }
         public ICommand SelectDrawingBlockCommand { get; private set; }
-        public ICommand SelectCopyBlockCommand { get; private set; }
 
         public event Action<bool?> RequestClose;
         public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
@@ -146,8 +156,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             InsertBlockCommand = new RelayCommand(async parameter => await InsertBlockAsync(parameter), _ => !IsInserting);
             CancelCommand = new RelayCommand(Cancel);
             BrowseBlocksFolderCommand = new RelayCommand(BrowseBlocksFolder);
-            SelectDrawingBlockCommand = new RelayCommand(parameter => SelectBlockFromDrawing(parameter, BlockTypeMode.SelectFromDrawing));
-            SelectCopyBlockCommand = new RelayCommand(parameter => SelectBlockFromDrawing(parameter, BlockTypeMode.CopyBlock));
+            SelectDrawingBlockCommand = new RelayCommand(parameter => SelectBlockFromDrawing(parameter));
 
             InitViewModel();
         }
@@ -196,7 +205,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             }
         }
 
-        private void SelectBlockFromDrawing(object parameter, BlockTypeMode mode)
+        private void SelectBlockFromDrawing(object parameter)
         {
             var owner = parameter as Window;
             var doc = App.DocumentManager.MdiActiveDocument;
@@ -235,7 +244,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                         var blockDef = (BlockTableRecord)tr.GetObject(blockRef.BlockTableRecord, OpenMode.ForRead);
                         SelectedDrawingBlockId = blockRef.BlockTableRecord;
                         SelectedDrawingBlockName = blockDef.Name;
-                        BlockTypeMode = mode;
+                        BlockTypeMode = BlockTypeMode.SelectFromDrawing;
                         tr.Commit();
                         return;
                     }
@@ -320,7 +329,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                 failures.Add("Select a predefined .dwg block file.");
             }
 
-            if ((BlockTypeMode == BlockTypeMode.SelectFromDrawing || BlockTypeMode == BlockTypeMode.CopyBlock) && !HasValidDrawingBlockSelection())
+            if (BlockTypeMode == BlockTypeMode.SelectFromDrawing && !HasValidDrawingBlockSelection())
             {
                 failures.Add("Select a valid plugin block from the drawing.");
             }
@@ -412,27 +421,27 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
         private BlockSourceResult ResolveBlockSourceForInsert(Database db)
         {
+            BlockSourceResult source;
+
             if (BlockTypeMode == BlockTypeMode.Predefined)
             {
-                return ResolvePredefinedBlockSource(db);
+                source = ResolvePredefinedBlockSource(db);
             }
-
-            if (BlockTypeMode == BlockTypeMode.CopyBlock)
+            else
             {
-                return CopyDrawingBlockDefinition(db);
-            }
-
-            using (var tr = db.TransactionManager.StartTransaction())
-            {
-                var blockDef = (BlockTableRecord)tr.GetObject(SelectedDrawingBlockId, OpenMode.ForRead);
-                var result = new BlockSourceResult
+                using (var tr = db.TransactionManager.StartTransaction())
                 {
-                    BlockDefinitionId = SelectedDrawingBlockId,
-                    BlockName = blockDef.Name
-                };
-                tr.Commit();
-                return result;
+                    var blockDef = (BlockTableRecord)tr.GetObject(SelectedDrawingBlockId, OpenMode.ForRead);
+                    source = new BlockSourceResult
+                    {
+                        BlockDefinitionId = SelectedDrawingBlockId,
+                        BlockName = blockDef.Name
+                    };
+                    tr.Commit();
+                }
             }
+
+            return CopyBlockDefinition ? CopyBlockDefinitionToUniqueRecord(db, source.BlockDefinitionId) : source;
         }
 
         private BlockSourceResult ResolvePredefinedBlockSource(Database db)
@@ -466,11 +475,11 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             }
         }
 
-        private BlockSourceResult CopyDrawingBlockDefinition(Database db)
+        private BlockSourceResult CopyBlockDefinitionToUniqueRecord(Database db, ObjectId sourceBlockDefinitionId)
         {
             using (var tr = db.TransactionManager.StartTransaction())
             {
-                var sourceBtr = (BlockTableRecord)tr.GetObject(SelectedDrawingBlockId, OpenMode.ForRead);
+                var sourceBtr = (BlockTableRecord)tr.GetObject(sourceBlockDefinitionId, OpenMode.ForRead);
                 var blockTable = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
                 string newName = MakeUniqueBlockName(blockTable, sourceBtr.Name);
 

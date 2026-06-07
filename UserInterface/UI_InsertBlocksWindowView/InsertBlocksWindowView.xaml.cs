@@ -11,7 +11,6 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             var viewModel = new InsertBlocksWindowViewModel(pluginInstance);
             viewModel.RequestClose += result =>
             {
-                DialogResult = result;
                 Close();
             };
 
