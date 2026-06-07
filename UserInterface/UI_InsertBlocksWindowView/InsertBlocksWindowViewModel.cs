@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,127 +11,36 @@ using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
+using Autocad_Primavera_P6_Plugin.Services.LiteDBService;
+using PropertyChanged;
 using App = Autodesk.AutoCAD.ApplicationServices.Application;
-using WinForms = System.Windows.Forms;
 
 namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 {
-    public sealed class InsertBlocksWindowViewModel : System.ComponentModel.INotifyPropertyChanged
+    [AddINotifyPropertyChangedInterface]
+    public sealed class InsertBlocksWindowViewModel
     {
         private readonly MyPlugin _pluginInstance;
         private readonly InsertBlocksWindowModel _model;
         private readonly Document _document;
         private bool _isCancelled;
-        private BlockTypeMode _blockTypeMode;
-        private PredefinedBlockInfo _selectedPredefinedBlock;
-        private ObjectId _selectedDrawingBlockId;
-        private string _selectedDrawingBlockName;
-        private bool _copyBlockDefinition;
-        private bool _continuousInsert;
-        private bool _editLegendPosition;
-        private bool _isInserting;
-        private string _statusMessage;
+        private string _blocksFolder;
 
         public ActivityCodeSectionViewModel BoundaryCode { get; private set; }
         public ActivityCodeSectionViewModel ItemIdCode { get; private set; }
+        public ProjectConfig ProjectConfig { get; private set; }
         public ObservableCollection<PredefinedBlockInfo> AvailableBlocks => _model.AvailableBlocks;
 
-        public BlockTypeMode BlockTypeMode
-        {
-            get => _blockTypeMode;
-            set
-            {
-                _blockTypeMode = value;
-                OnPropertyChanged(nameof(BlockTypeMode));
-                CommandManager.InvalidateRequerySuggested();
-            }
-        }
-
-        public PredefinedBlockInfo SelectedPredefinedBlock
-        {
-            get => _selectedPredefinedBlock;
-            set
-            {
-                _selectedPredefinedBlock = value;
-                OnPropertyChanged(nameof(SelectedPredefinedBlock));
-                CommandManager.InvalidateRequerySuggested();
-            }
-        }
-
-        public ObjectId SelectedDrawingBlockId
-        {
-            get => _selectedDrawingBlockId;
-            set
-            {
-                _selectedDrawingBlockId = value;
-                OnPropertyChanged(nameof(SelectedDrawingBlockId));
-                CommandManager.InvalidateRequerySuggested();
-            }
-        }
-
-        public string SelectedDrawingBlockName
-        {
-            get => _selectedDrawingBlockName;
-            set
-            {
-                _selectedDrawingBlockName = value;
-                OnPropertyChanged(nameof(SelectedDrawingBlockName));
-            }
-        }
-
-        public bool ContinuousInsert
-        {
-            get => _continuousInsert;
-            set
-            {
-                _continuousInsert = value;
-                OnPropertyChanged(nameof(ContinuousInsert));
-            }
-        }
-
-        public bool CopyBlockDefinition
-        {
-            get => _copyBlockDefinition;
-            set
-            {
-                _copyBlockDefinition = value;
-                OnPropertyChanged(nameof(CopyBlockDefinition));
-            }
-        }
-
-        public bool EditLegendPosition
-        {
-            get => _editLegendPosition;
-            set
-            {
-                _editLegendPosition = value;
-                OnPropertyChanged(nameof(EditLegendPosition));
-            }
-        }
-
-        public bool IsInserting
-        {
-            get => _isInserting;
-            set
-            {
-                _isInserting = value;
-                OnPropertyChanged(nameof(IsInserting));
-                OnPropertyChanged(nameof(InsertButtonText));
-                CommandManager.InvalidateRequerySuggested();
-            }
-        }
-
-        public string InsertButtonText => IsInserting ? "Inserting..." : "Insert Block";
-
-        public string StatusMessage
-        {
-            get => _statusMessage;
-            set
-            {
-                _statusMessage = value;
-                OnPropertyChanged(nameof(StatusMessage));
-            }
-        }
+        public BlockTypeMode BlockTypeMode { get; set; }
+        public PredefinedBlockInfo SelectedPredefinedBlock { get; set; }
+        public ObjectId SelectedDrawingBlockId { get; set; }
+        public string SelectedDrawingBlockName { get; set; }
+        public bool ContinuousInsert { get; set; }
+        public bool CopyBlockDefinition { get; set; }
+        public bool EditLegendPosition { get; set; }
+        public bool IsInserting { get; set; }
+        public string InsertButtonText { get; private set; } = "Insert Block";
+        public string StatusMessage { get; set; }
 
         public ICommand InsertBlockCommand { get; private set; }
         public ICommand CancelCommand { get; private set; }
@@ -138,14 +48,13 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         public ICommand SelectDrawingBlockCommand { get; private set; }
 
         public event Action<bool?> RequestClose;
-        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
 
         public InsertBlocksWindowViewModel(MyPlugin pluginInstance)
         {
             _pluginInstance = pluginInstance ?? throw new ArgumentNullException(nameof(pluginInstance));
             _model = new InsertBlocksWindowModel();
             _document = App.DocumentManager.MdiActiveDocument;
-            _selectedDrawingBlockId = ObjectId.Null;
+            SelectedDrawingBlockId = ObjectId.Null;
 
             BoundaryCode = new ActivityCodeSectionViewModel(_pluginInstance, "Boundary");
             ItemIdCode = new ActivityCodeSectionViewModel(_pluginInstance, "Item ID");
@@ -161,9 +70,32 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             InitViewModel();
         }
 
+        private void OnBlockTypeModeChanged()
+        {
+            CommandManager.InvalidateRequerySuggested();
+        }
+
+        private void OnSelectedPredefinedBlockChanged()
+        {
+            CommandManager.InvalidateRequerySuggested();
+        }
+
+        private void OnSelectedDrawingBlockIdChanged()
+        {
+            CommandManager.InvalidateRequerySuggested();
+        }
+
+        private void OnIsInsertingChanged()
+        {
+            InsertButtonText = IsInserting ? "Inserting..." : "Insert Block";
+            CommandManager.InvalidateRequerySuggested();
+        }
+
         private void InitViewModel()
         {
-            LoadPredefinedBlocks(GetDefaultBlocksFolder());
+            ProjectConfig = _pluginInstance.MyLiteDBService.Find_byAcadDWG(_document);
+            _blocksFolder = GetDefaultBlocksFolder();
+            LoadPredefinedBlocks(_blocksFolder);
         }
 
         private void LoadPredefinedBlocks(string folder)
@@ -194,15 +126,20 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
         private void BrowseBlocksFolder(object parameter)
         {
-            using (var dialog = new WinForms.FolderBrowserDialog())
+            string folder = _blocksFolder;
+            if (SelectedPredefinedBlock != null && !string.IsNullOrWhiteSpace(SelectedPredefinedBlock.FilePath))
             {
-                dialog.Description = "Select folder containing .dwg block files";
-                dialog.SelectedPath = Directory.Exists(GetDefaultBlocksFolder()) ? GetDefaultBlocksFolder() : string.Empty;
-                if (dialog.ShowDialog() == WinForms.DialogResult.OK)
-                {
-                    LoadPredefinedBlocks(dialog.SelectedPath);
-                }
+                folder = Path.GetDirectoryName(SelectedPredefinedBlock.FilePath);
             }
+
+            if (string.IsNullOrWhiteSpace(folder))
+            {
+                folder = GetDefaultBlocksFolder();
+            }
+
+            Directory.CreateDirectory(folder);
+            Process.Start("explorer.exe", folder);
+            LoadPredefinedBlocks(folder);
         }
 
         private void SelectBlockFromDrawing(object parameter)
@@ -679,11 +616,6 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         {
             _isCancelled = true;
             RequestClose?.Invoke(false);
-        }
-
-        private void OnPropertyChanged(string propertyName)
-        {
-            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
         }
     }
 }

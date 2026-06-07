@@ -326,7 +326,7 @@
                         <Button
                             Grid.Column="1"
                             Command="{Binding BrowseBlocksFolderCommand}"
-                            Content="Browse..." />
+                            Content="Open Folder" />
                     </Grid>
 
                     <Grid Visibility="{Binding BlockTypeMode, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=SelectFromDrawing}">
