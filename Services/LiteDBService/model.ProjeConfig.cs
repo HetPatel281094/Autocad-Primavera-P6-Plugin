@@ -85,7 +85,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.LiteDBService
                 // and resolves any '.' / '..' segments in one call.
                 docFolderPath = Path.GetFullPath(rawDir);
             }
-            catch (Exception)   // ArgumentException, PathTooLongException, SecurityException, ï¿½
+            catch (Exception)   // ArgumentException, PathTooLongException, SecurityException, …
             {
                 return null;
             }
@@ -108,7 +108,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.LiteDBService
             try
             {
                 // GetFullPath makes both paths fully canonical and uses a single,
-                // consistent separator ï¿½ no need to check both '\\' and '/'.
+                // consistent separator — no need to check both '\\' and '/'.
                 normalizedParent = Path.GetFullPath(parentPath);
                 normalizedChild = Path.GetFullPath(childPath);
             }
