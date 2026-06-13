@@ -344,6 +344,12 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                 }
                 while (ContinuousInsert && !_isCancelled);
             }
+            catch (Exception ex)
+            {
+                // Alert the user and log to the AutoCAD command line
+                MessageBox.Show($"An error occurred during block insertion:\n{ex.Message}", "Insert Blocks Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ed.WriteMessage($"\n[Plugin] Error during insertion: {ex.Message}\n");
+            }
             finally
             {
                 if (owner != null)
