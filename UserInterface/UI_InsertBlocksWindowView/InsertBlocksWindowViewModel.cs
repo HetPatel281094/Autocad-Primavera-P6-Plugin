@@ -25,6 +25,8 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         private readonly Document _document;
         private bool _isCancelled;
         private string _blocksFolder;
+        private const string MoveInfoXPropertyName = "MoveInfo X";
+        private const string MoveInfoYPropertyName = "MoveInfo Y";
 
         public ActivityCodeSectionViewModel BoundaryCode { get; private set; }
         public ActivityCodeSectionViewModel ItemIdCode { get; private set; }
@@ -572,20 +574,30 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         private void EditLegendForBlock(Document doc, ObjectId blockRefId)
         {
             var ed = doc.Editor;
-            PromptPointResult crossResult = ed.GetPoint("\nPick legend cross anchor: ");
-            if (crossResult.Status != PromptStatus.OK)
+            Point3d blockBasePoint;
+
+            using (doc.LockDocument())
+            using (var tr = doc.Database.TransactionManager.StartTransaction())
             {
-                return;
+                var blockRef = tr.GetObject(blockRefId, OpenMode.ForRead) as BlockReference;
+                if (blockRef == null || !HasWritableMoveInfoProperties(blockRef))
+                {
+                    tr.Commit();
+                    return;
+                }
+
+                blockBasePoint = blockRef.Position;
+                tr.Commit();
             }
 
-            var textOptions = new PromptPointOptions("\nPick legend text anchor: ")
+            var pointOptions = new PromptPointOptions("\nPick MoveInfo point or press Esc to keep current value: ")
             {
                 UseBasePoint = true,
-                BasePoint = crossResult.Value
+                BasePoint = blockBasePoint
             };
 
-            PromptPointResult textResult = ed.GetPoint(textOptions);
-            if (textResult.Status != PromptStatus.OK)
+            PromptPointResult pointResult = ed.GetPoint(pointOptions);
+            if (pointResult.Status != PromptStatus.OK)
             {
                 return;
             }
@@ -599,23 +611,66 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                     return;
                 }
 
-                Vector3d delta = textResult.Value - crossResult.Value;
-                foreach (ObjectId attributeId in blockRef.AttributeCollection)
+                if (SetMoveInfoDynamicProperty(blockRef, pointResult.Value - blockBasePoint))
                 {
-                    var attribute = tr.GetObject(attributeId, OpenMode.ForWrite) as AttributeReference;
-                    if (attribute != null && !attribute.Invisible)
-                    {
-                        attribute.Position = attribute.Position + delta;
-                    }
+                    tr.Commit();
+                }
+            }
+        }
+
+        private bool HasWritableMoveInfoProperties(BlockReference blockRef)
+        {
+            DynamicBlockReferenceProperty xProperty;
+            DynamicBlockReferenceProperty yProperty;
+            return TryGetWritableMoveInfoProperties(blockRef, out xProperty, out yProperty);
+        }
+
+        private bool SetMoveInfoDynamicProperty(BlockReference blockRef, Vector3d relativeValue)
+        {
+            DynamicBlockReferenceProperty xProperty;
+            DynamicBlockReferenceProperty yProperty;
+
+            if (!TryGetWritableMoveInfoProperties(blockRef, out xProperty, out yProperty))
+            {
+                return false;
+            }
+
+            xProperty.Value = relativeValue.X;
+            yProperty.Value = relativeValue.Y;
+            return true;
+        }
+
+        private bool TryGetWritableMoveInfoProperties(
+            BlockReference blockRef,
+            out DynamicBlockReferenceProperty xProperty,
+            out DynamicBlockReferenceProperty yProperty)
+        {
+            xProperty = null;
+            yProperty = null;
+
+            if (!blockRef.IsDynamicBlock)
+            {
+                return false;
+            }
+
+            foreach (DynamicBlockReferenceProperty property in blockRef.DynamicBlockReferencePropertyCollection)
+            {
+                if (property.ReadOnly)
+                {
+                    continue;
                 }
 
-                var modelSpace = (BlockTableRecord)tr.GetObject(SymbolUtilityServices.GetBlockModelSpaceId(doc.Database), OpenMode.ForWrite);
-                var leader = new Line(crossResult.Value, textResult.Value);
-                modelSpace.AppendEntity(leader);
-                tr.AddNewlyCreatedDBObject(leader, true);
-
-                tr.Commit();
+                if (string.Equals(property.PropertyName, MoveInfoXPropertyName, StringComparison.OrdinalIgnoreCase))
+                {
+                    xProperty = property;
+                }
+                else if (string.Equals(property.PropertyName, MoveInfoYPropertyName, StringComparison.OrdinalIgnoreCase))
+                {
+                    yProperty = property;
+                }
             }
+
+            return xProperty != null && yProperty != null;
         }
 
         private void Cancel(object parameter)
