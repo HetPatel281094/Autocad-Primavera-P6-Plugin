@@ -14,6 +14,7 @@ using Autodesk.AutoCAD.Geometry;
 using Autocad_Primavera_P6_Plugin.Services.LiteDBService;
 using PropertyChanged;
 using App = Autodesk.AutoCAD.ApplicationServices.Application;
+using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
 
 namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 {
@@ -22,7 +23,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
     {
         private readonly MyPlugin _pluginInstance;
         private readonly InsertBlocksWindowModel _model;
-        private readonly Document _document;
+        private readonly Autodesk.AutoCAD.ApplicationServices.Document _document;
         private bool _isCancelled;
         private string _blocksFolder;
         private const string MoveInfoXPropertyName = "MoveInfo X";
@@ -31,6 +32,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         public ActivityCodeSectionViewModel BoundaryCode { get; private set; }
         public ActivityCodeSectionViewModel ItemIdCode { get; private set; }
         public ProjectConfig ProjectConfig { get; private set; }
+        public Project CurrentProject { get; private set; }
         public ObservableCollection<PredefinedBlockInfo> AvailableBlocks => _model.AvailableBlocks;
 
         public BlockTypeMode BlockTypeMode { get; set; }
@@ -58,8 +60,10 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             _document = App.DocumentManager.MdiActiveDocument;
             SelectedDrawingBlockId = ObjectId.Null;
 
-            BoundaryCode = new ActivityCodeSectionViewModel(_pluginInstance, "Boundary");
-            ItemIdCode = new ActivityCodeSectionViewModel(_pluginInstance, "Item ID");
+            LoadProjectConfig();
+
+            BoundaryCode = new ActivityCodeSectionViewModel(_pluginInstance, "Boundary", CurrentProject);
+            ItemIdCode = new ActivityCodeSectionViewModel(_pluginInstance, "Item ID", CurrentProject);
             BlockTypeMode = BlockTypeMode.Predefined;
             SelectedDrawingBlockName = "No drawing block selected.";
             StatusMessage = string.Empty;
@@ -95,9 +99,22 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
         private void InitViewModel()
         {
-            ProjectConfig = _pluginInstance.MyLiteDBService.Find_byAcadDWG(_document);
             _blocksFolder = GetDefaultBlocksFolder();
             LoadPredefinedBlocks(_blocksFolder);
+        }
+
+        private void LoadProjectConfig()
+        {
+            ProjectConfig = _pluginInstance.MyLiteDBService.Find_byAcadDWG(_document);
+
+            var client = _pluginInstance.MyP6ApiService.Client;
+            var filter = $"Id :eq: '{ ProjectConfig.ProjectId }'";
+            var fields = "ObjectId, Id, Name";
+
+            var projects = client.GetProjectAsync(filter, fields, null, null).Result;
+            var project = projects.First();
+
+            CurrentProject = project;
         }
 
         private void LoadPredefinedBlocks(string folder)
@@ -180,14 +197,21 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                             continue;
                         }
 
-                        var blockDef = (BlockTableRecord)tr.GetObject(blockRef.BlockTableRecord, OpenMode.ForRead);
-                        SelectedDrawingBlockId = blockRef.BlockTableRecord;
+                        ObjectId blockDefinitionId = GetSourceDefinitionId(blockRef);
+                        var blockDef = (BlockTableRecord)tr.GetObject(blockDefinitionId, OpenMode.ForRead);
+                        SelectedDrawingBlockId = blockDefinitionId;
                         SelectedDrawingBlockName = blockDef.Name;
                         BlockTypeMode = BlockTypeMode.SelectFromDrawing;
                         tr.Commit();
                         return;
                     }
                 }
+            }
+            catch (System.Exception ex)
+            {
+                StatusMessage = "Failed to select drawing block: " + ex.Message;
+                ed.WriteMessage("\n[Plugin] Failed to select drawing block: " + ex.Message);
+                MessageBox.Show(StatusMessage, "Insert Blocks", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -232,6 +256,12 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                 }
 
                 await RunInsertLoopAsync(owner, doc).ConfigureAwait(true);
+            }
+            catch (System.Exception ex)
+            {
+                StatusMessage = "Failed before block insertion: " + ex.Message;
+                MessageBox.Show(StatusMessage, "Insert Blocks", MessageBoxButton.OK, MessageBoxImage.Error);
+                doc.Editor.WriteMessage("\n[Plugin] Failed before block insertion: " + ex.Message);
             }
             finally
             {
@@ -303,7 +333,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             return !SelectedDrawingBlockId.IsNull && SelectedDrawingBlockId.IsValid;
         }
 
-        private Task RunInsertLoopAsync(Window owner, Document doc)
+        private Task RunInsertLoopAsync(Window owner, Autodesk.AutoCAD.ApplicationServices.Document doc)
         {
             var ed = doc.Editor;
 
@@ -366,27 +396,30 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
         private BlockSourceResult ResolveBlockSourceForInsert(Database db)
         {
-            BlockSourceResult source;
-
             if (BlockTypeMode == BlockTypeMode.Predefined)
             {
-                source = ResolvePredefinedBlockSource(db);
-            }
-            else
-            {
-                using (var tr = db.TransactionManager.StartTransaction())
-                {
-                    var blockDef = (BlockTableRecord)tr.GetObject(SelectedDrawingBlockId, OpenMode.ForRead);
-                    source = new BlockSourceResult
-                    {
-                        BlockDefinitionId = SelectedDrawingBlockId,
-                        BlockName = blockDef.Name
-                    };
-                    tr.Commit();
-                }
+                return CopyBlockDefinition
+                    ? ResolveCopiedPredefinedBlockSource(db)
+                    : ResolvePredefinedBlockSource(db);
             }
 
+            var source = ResolveDrawingBlockSource(db);
             return CopyBlockDefinition ? CopyBlockDefinitionToUniqueRecord(db, source.BlockDefinitionId) : source;
+        }
+
+        private BlockSourceResult ResolveDrawingBlockSource(Database db)
+        {
+            using (var tr = db.TransactionManager.StartTransaction())
+            {
+                var blockDef = (BlockTableRecord)tr.GetObject(SelectedDrawingBlockId, OpenMode.ForRead);
+                var source = new BlockSourceResult
+                {
+                    BlockDefinitionId = SelectedDrawingBlockId,
+                    BlockName = blockDef.Name
+                };
+                tr.Commit();
+                return source;
+            }
         }
 
         private BlockSourceResult ResolvePredefinedBlockSource(Database db)
@@ -420,6 +453,22 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             }
         }
 
+        private BlockSourceResult ResolveCopiedPredefinedBlockSource(Database db)
+        {
+            string blockName = MakeUniqueBlockName(db, SelectedPredefinedBlock.Name);
+
+            using (var sourceDb = new Database(false, true))
+            {
+                sourceDb.ReadDwgFile(SelectedPredefinedBlock.FilePath, FileOpenMode.OpenForReadAndAllShare, true, null);
+                ObjectId importedId = db.Insert(blockName, sourceDb, false);
+                return new BlockSourceResult
+                {
+                    BlockDefinitionId = importedId,
+                    BlockName = blockName
+                };
+            }
+        }
+
         private BlockSourceResult CopyBlockDefinitionToUniqueRecord(Database db, ObjectId sourceBlockDefinitionId)
         {
             using (var tr = db.TransactionManager.StartTransaction())
@@ -429,6 +478,8 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                 string newName = MakeUniqueBlockName(blockTable, sourceBtr.Name);
 
                 var newBtr = new BlockTableRecord { Name = newName };
+                CopyBlockDefinitionProperties(sourceBtr, newBtr);
+
                 ObjectId newBtrId = blockTable.Add(newBtr);
                 tr.AddNewlyCreatedDBObject(newBtr, true);
 
@@ -439,7 +490,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                 }
 
                 var idMapping = new IdMapping();
-                db.WblockCloneObjects(cloneIds, newBtrId, idMapping, DuplicateRecordCloning.Ignore, false);
+                db.DeepCloneObjects(cloneIds, newBtrId, idMapping, false);
 
                 tr.Commit();
                 return new BlockSourceResult
@@ -450,17 +501,67 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             }
         }
 
+        private ObjectId GetSourceDefinitionId(BlockReference blockRef)
+        {
+            if (blockRef.IsDynamicBlock && !blockRef.DynamicBlockTableRecord.IsNull)
+            {
+                return blockRef.DynamicBlockTableRecord;
+            }
+
+            return blockRef.BlockTableRecord;
+        }
+
+        private void CopyBlockDefinitionProperties(BlockTableRecord sourceBtr, BlockTableRecord newBtr)
+        {
+            newBtr.Origin = sourceBtr.Origin;
+            newBtr.Units = sourceBtr.Units;
+            newBtr.BlockScaling = sourceBtr.BlockScaling;
+            newBtr.Explodable = sourceBtr.Explodable;
+            newBtr.Comments = sourceBtr.Comments;
+        }
+
+        private string MakeUniqueBlockName(Database db, string originalName)
+        {
+            using (var tr = db.TransactionManager.StartTransaction())
+            {
+                var blockTable = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+                string uniqueName = MakeUniqueBlockName(blockTable, originalName);
+                tr.Commit();
+                return uniqueName;
+            }
+        }
+
         private string MakeUniqueBlockName(BlockTable blockTable, string originalName)
         {
-            string safeBaseName = string.IsNullOrWhiteSpace(originalName) ? "PluginBlock" : originalName.Trim('*');
+            string safeBaseName = NormalizeBlockName(originalName);
             string candidate;
             do
             {
-                candidate = safeBaseName + "_" + Guid.NewGuid().ToString("N").Substring(0, 8).ToUpperInvariant();
+                candidate = "P6_" + safeBaseName + "_" + Guid.NewGuid().ToString("N").Substring(0, 8).ToUpperInvariant();
             }
             while (blockTable.Has(candidate));
 
             return candidate;
+        }
+
+        private string NormalizeBlockName(string blockName)
+        {
+            string safeBaseName = string.IsNullOrWhiteSpace(blockName) ? "PluginBlock" : blockName.Trim('*').Trim();
+            var invalidCharacters = Path.GetInvalidFileNameChars()
+                .Concat(new[] { ';', '=', ',', '`' })
+                .Distinct();
+
+            foreach (char invalidCharacter in invalidCharacters)
+            {
+                safeBaseName = safeBaseName.Replace(invalidCharacter, '_');
+            }
+
+            if (safeBaseName.Length > 180)
+            {
+                safeBaseName = safeBaseName.Substring(0, 180);
+            }
+
+            return string.IsNullOrWhiteSpace(safeBaseName) ? "PluginBlock" : safeBaseName;
         }
 
         private ObjectId InsertBlockReference(Database db, ObjectId blockDefId, string blockName, Point3d insertionPoint, out string elementId)
@@ -571,7 +672,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             return false;
         }
 
-        private void EditLegendForBlock(Document doc, ObjectId blockRefId)
+        private void EditLegendForBlock(Autodesk.AutoCAD.ApplicationServices.Document doc, ObjectId blockRefId)
         {
             var ed = doc.Editor;
             Point3d blockBasePoint;

@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Autocad_Primavera_P6_Plugin.Services.LiteDBService;
 using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
 using PropertyChanged;
 
@@ -15,6 +16,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
     {
         private readonly P6ApiService _p6ApiService;
         private readonly bool _isAutoGenerate;
+        private Project _Project;
 
         public ObservableCollection<ActivityCodePickerNodeViewModel> RootNodes { get; private set; }
         public ActivityCodePickerNodeViewModel SelectedNode { get; set; }
@@ -31,7 +33,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         public ICommand OkButtonCommand { get; private set; }
         public ICommand CancelButtonCommand { get; private set; }
 
-        public ActivityCodePickerViewModel(MyPlugin pluginInstance, string sectionLabel, bool isAutoGenerate)
+        public ActivityCodePickerViewModel(MyPlugin pluginInstance, string sectionLabel, bool isAutoGenerate, Project project = null)
         {
             if (pluginInstance == null)
             {
@@ -40,6 +42,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
             _p6ApiService = pluginInstance.MyP6ApiService;
             _isAutoGenerate = isAutoGenerate;
+            _Project = project;
             RootNodes = new ObservableCollection<ActivityCodePickerNodeViewModel>();
             SearchString = string.Empty;
             Title = isAutoGenerate ? "Select " + sectionLabel + " Parent Code" : "Select " + sectionLabel + " Code";
@@ -67,12 +70,13 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                     return;
                 }
 
+                string filter = _Project != null ? $"ProjectObjectId :eq: '{ _Project.ObjectId }'" : null;
                 const string typeFields = "ObjectId,Name,Scope,SequenceNumber,Length";
                 const string codeFields = "ObjectId,CodeTypeObjectId,CodeTypeName,CodeTypeScope,CodeValue,CodeConcatName,Description,ParentObjectId,SequenceNumber";
 
                 var client = _p6ApiService.Client;
-                var types = await client.GetActivityCodeTypesAsync(null, typeFields, "SequenceNumber", null).ConfigureAwait(true);
-                var codes = await client.GetActivityCodesAsync(null, codeFields, "SequenceNumber", null).ConfigureAwait(true);
+                var types = await client.GetActivityCodeTypesAsync(filter, typeFields, "SequenceNumber", null).ConfigureAwait(true);
+                var codes = await client.GetActivityCodesAsync(filter, codeFields, "SequenceNumber", null).ConfigureAwait(true);
 
                 BuildTree(types ?? new List<ActivityCodeType>(), codes ?? new List<ActivityCode>());
                 StatusMessage = RootNodes.Count == 0 ? "No activity codes found." : string.Empty;

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using Autocad_Primavera_P6_Plugin.Services.LiteDBService;
 using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
 using PropertyChanged;
 
@@ -76,10 +77,13 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         public bool HasResolvedCode => !string.IsNullOrWhiteSpace(ResolvedCodeValue);
         public bool HasAutoGenerateParent => _autoGenerateParentNode != null;
 
-        public ActivityCodeSectionViewModel(MyPlugin pluginInstance, string sectionLabel)
+        private Project Project;
+
+        public ActivityCodeSectionViewModel(MyPlugin pluginInstance, string sectionLabel, Project project = null)
         {
             _pluginInstance = pluginInstance ?? throw new ArgumentNullException(nameof(pluginInstance));
             _p6ApiService = _pluginInstance.MyP6ApiService;
+            Project = project;
             _model = new ActivityCodeSectionModel
             {
                 SelectedCodeValue = "-- Code Value --",
@@ -97,7 +101,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         private void SelectCode(object parameter)
         {
             var owner = parameter as Window;
-            var picker = new ActivityCodePickerView(_pluginInstance, SectionLabel, IsAutoGenerate);
+            var picker = new ActivityCodePickerView(_pluginInstance, SectionLabel, IsAutoGenerate, Project);
             if (owner != null)
             {
                 picker.Owner = owner;
