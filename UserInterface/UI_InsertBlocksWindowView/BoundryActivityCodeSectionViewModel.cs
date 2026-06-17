@@ -15,13 +15,25 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
     public sealed class BoundryActivityCodeSectionViewModel
     {
         private readonly MyPlugin _pluginInstance;
+
         private readonly P6ApiService _p6ApiService;
+        private Project _project;
+
+        private string _activtyCodeTypeName = "Boundary Code";
+
+        private ActivityCodeType _activtyCodeType = null;
+
+
+
         private readonly ActivityCodeSectionModel _model;
+
         private ActivityCodePickerNodeViewModel _autoGenerateParentNode;
         private static readonly Random Random = new Random();
 
         public string SectionLabel { get; private set; } = "BND";
         public ICommand SelectCommand { get; private set; }
+
+
 
         public string SelectedCodeValue
         {
@@ -77,13 +89,13 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         public bool HasResolvedCode => !string.IsNullOrWhiteSpace(ResolvedCodeValue);
         public bool HasAutoGenerateParent => _autoGenerateParentNode != null;
 
-        private Project _project;
 
         public BoundryActivityCodeSectionViewModel(MyPlugin pluginInstance, Project project = null)
         {
             _pluginInstance = pluginInstance ?? throw new ArgumentNullException(nameof(pluginInstance));
             _p6ApiService = _pluginInstance.MyP6ApiService;
             _project = project;
+            InitializeAsync().ConfigureAwait(true);
             _model = new ActivityCodeSectionModel
             {
                 SelectedCodeValue = "-- Code Value --",
@@ -95,6 +107,11 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                 Info = "-- Info --"
             };
             SelectCommand = new RelayCommand(SelectCode);
+        }
+
+        private async Task InitializeAsync()
+        {
+            _activtyCodeType = await _p6ApiService.GetP6ActivityCodeTypeOfProject(_project, _activtyCodeTypeName);
         }
 
         private void SelectCode(object parameter)
