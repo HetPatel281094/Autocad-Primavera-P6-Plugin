@@ -29,9 +29,8 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         private const string MoveInfoXPropertyName = "MoveInfo X";
         private const string MoveInfoYPropertyName = "MoveInfo Y";
 
-        public ActivityCodeSectionViewModel BoundaryCode { get; private set; }
+        public BoundryActivityCodeSectionViewModel BoundaryCode { get; private set; }
         public ActivityCodeSectionViewModel ItemIdCode { get; private set; }
-        public ProjectConfig ProjectConfig { get; private set; }
         public Project CurrentProject { get; private set; }
         public ObservableCollection<PredefinedBlockInfo> AvailableBlocks => _model.AvailableBlocks;
 
@@ -58,12 +57,14 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             _pluginInstance = pluginInstance ?? throw new ArgumentNullException(nameof(pluginInstance));
             _model = new InsertBlocksWindowModel();
             _document = App.DocumentManager.MdiActiveDocument;
+
             SelectedDrawingBlockId = ObjectId.Null;
 
-            LoadProjectConfig();
+            CurrentProject = _pluginInstance.MyP6ApiService.GetP6ProjectFromDWGFile(_document);
 
-            BoundaryCode = new ActivityCodeSectionViewModel(_pluginInstance, "Boundary", CurrentProject);
+            BoundaryCode = new BoundryActivityCodeSectionViewModel(_pluginInstance, CurrentProject);
             ItemIdCode = new ActivityCodeSectionViewModel(_pluginInstance, "Item ID", CurrentProject);
+
             BlockTypeMode = BlockTypeMode.Predefined;
             SelectedDrawingBlockName = "No drawing block selected.";
             StatusMessage = string.Empty;
@@ -73,7 +74,8 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             BrowseBlocksFolderCommand = new RelayCommand(BrowseBlocksFolder);
             SelectDrawingBlockCommand = new RelayCommand(parameter => SelectBlockFromDrawing(parameter));
 
-            InitViewModel();
+            _blocksFolder = GetDefaultBlocksFolder();
+            LoadPredefinedBlocks(_blocksFolder);
         }
 
         private void OnBlockTypeModeChanged()
@@ -95,26 +97,6 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         {
             InsertButtonText = IsInserting ? "Inserting..." : "Insert Block";
             CommandManager.InvalidateRequerySuggested();
-        }
-
-        private void InitViewModel()
-        {
-            _blocksFolder = GetDefaultBlocksFolder();
-            LoadPredefinedBlocks(_blocksFolder);
-        }
-
-        private void LoadProjectConfig()
-        {
-            ProjectConfig = _pluginInstance.MyLiteDBService.Find_byAcadDWG(_document);
-
-            var client = _pluginInstance.MyP6ApiService.Client;
-            var filter = $"Id :eq: '{ ProjectConfig.ProjectId }'";
-            var fields = "ObjectId, Id, Name";
-
-            var projects = client.GetProjectAsync(filter, fields, null, null).Result;
-            var project = projects.First();
-
-            CurrentProject = project;
         }
 
         private void LoadPredefinedBlocks(string folder)
@@ -245,16 +227,6 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
             try
             {
-                bool boundaryReady = await BoundaryCode.EnsureResolvedAsync().ConfigureAwait(true);
-                bool itemReady = await ItemIdCode.EnsureResolvedAsync().ConfigureAwait(true);
-                validationFailures = ValidateAfterP6Resolution();
-
-                if (!boundaryReady || !itemReady || validationFailures.Count > 0)
-                {
-                    MessageBox.Show(string.Join(Environment.NewLine, validationFailures), "Insert Blocks", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
                 await RunInsertLoopAsync(owner, doc).ConfigureAwait(true);
             }
             catch (System.Exception ex)
@@ -333,7 +305,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             return !SelectedDrawingBlockId.IsNull && SelectedDrawingBlockId.IsValid;
         }
 
-        private Task RunInsertLoopAsync(Window owner, Autodesk.AutoCAD.ApplicationServices.Document doc)
+        private async Task RunInsertLoopAsync(Window owner, Autodesk.AutoCAD.ApplicationServices.Document doc)
         {
             var ed = doc.Editor;
 
@@ -351,6 +323,21 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                     PromptPointResult pointResult = ed.GetPoint("\nPick insertion point: ");
                     if (pointResult.Status != PromptStatus.OK || _isCancelled)
                     {
+                        break;
+                    }
+
+                    bool boundaryReady = await BoundaryCode.EnsureResolvedAsync().ConfigureAwait(true);
+                    if (boundaryReady && BoundaryCode.IsAutoGenerate)
+                    {
+                        BoundaryCode.CommitAutoGeneratedAsSelected();
+                    }
+
+                    bool itemReady = await ItemIdCode.EnsureResolvedAsync(forceRegenerate: true).ConfigureAwait(true);
+                    var resolutionFailures = ValidateAfterP6Resolution();
+
+                    if (!boundaryReady || !itemReady || resolutionFailures.Count > 0)
+                    {
+                        MessageBox.Show(string.Join(Environment.NewLine, resolutionFailures), "Insert Blocks", MessageBoxButton.OK, MessageBoxImage.Warning);
                         break;
                     }
 
@@ -378,7 +365,6 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             }
             catch (Exception ex)
             {
-                // Alert the user and log to the AutoCAD command line
                 MessageBox.Show($"An error occurred during block insertion:\n{ex.Message}", "Insert Blocks Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 ed.WriteMessage($"\n[Plugin] Error during insertion: {ex.Message}\n");
             }
@@ -390,8 +376,6 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                     owner.Activate();
                 }
             }
-
-            return Task.FromResult(true);
         }
 
         private BlockSourceResult ResolveBlockSourceForInsert(Database db)

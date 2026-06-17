@@ -118,6 +118,7 @@
     <Compile Include="Services\LiteDBService\LiteDBService.cs" />
     <Compile Include="Services\LiteDBService\model.P6ConnectionConfig.cs" />
     <Compile Include="Services\LiteDBService\model.ProjeConfig.cs" />
+    <Compile Include="Services\P6ApiService\fn_GetDrawingProject.cs" />
     <Compile Include="Services\P6ApiService\P6ApiService.cs" />
     <Compile Include="Services\P6ApiService\PrimaveraP6Client.cs" />
     <Compile Include="Services\P6ApiService\PrimaveraP6Client.Extension.cs" />
@@ -127,6 +128,7 @@
       <DependentUpon>ActivityCodePickerView.xaml</DependentUpon>
     </Compile>
     <Compile Include="UserInterface\UI_InsertBlocksWindowView\ActivityCodePickerViewModel.cs" />
+    <Compile Include="UserInterface\UI_InsertBlocksWindowView\BoundryActivityCodeSectionViewModel.cs" />
     <Compile Include="UserInterface\UI_InsertBlocksWindowView\ActivityCodeSectionViewModel.cs" />
     <Compile Include="UserInterface\UI_InsertBlocksWindowView\Converters.cs" />
     <Compile Include="UserInterface\UI_InsertBlocksWindowView\InsertBlocksWindowView.xaml.cs">

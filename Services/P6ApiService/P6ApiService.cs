@@ -6,7 +6,7 @@ using Autocad_Primavera_P6_Plugin.Services.LiteDBService;
 
 namespace Autocad_Primavera_P6_Plugin.Services.P6ApiService
 {
-    public class P6ApiService
+    public partial class P6ApiService
     {
         private readonly MyPlugin _pluginInstance;
 
