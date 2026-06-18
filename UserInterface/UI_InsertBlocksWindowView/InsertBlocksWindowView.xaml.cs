@@ -4,11 +4,10 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 {
     public partial class InsertBlocksWindowView : Window
     {
-        public InsertBlocksWindowView(MyPlugin pluginInstance)
+        public InsertBlocksWindowView(InsertBlocksWindowViewModel viewModel)
         {
             InitializeComponent();
 
-            var viewModel = new InsertBlocksWindowViewModel(pluginInstance);
             viewModel.RequestClose += result =>
             {
                 Close();

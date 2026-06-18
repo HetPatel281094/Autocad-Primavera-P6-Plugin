@@ -169,9 +169,9 @@ namespace Autocad_Primavera_P6_Plugin.Services
             return insertBlocksButton;
         }
 
-        private static void ButtonHandler_InsertBlocks()
+        private static async void ButtonHandler_InsertBlocks()
         {
-            _pluginInstance.P6InsertBlocks();
+            await _pluginInstance.P6InsertBlocks();
         }
 
         // Button 3 : Plugin Status

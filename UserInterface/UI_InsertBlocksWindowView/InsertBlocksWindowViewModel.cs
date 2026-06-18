@@ -21,9 +21,9 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
     [AddINotifyPropertyChangedInterface]
     public sealed class InsertBlocksWindowViewModel
     {
-        private readonly MyPlugin _pluginInstance;
-        private readonly InsertBlocksWindowModel _model;
-        private readonly Autodesk.AutoCAD.ApplicationServices.Document _document;
+        private MyPlugin _pluginInstance;
+        private InsertBlocksWindowModel _model;
+        private Autodesk.AutoCAD.ApplicationServices.Document _document;
         private bool _isCancelled;
         private string _blocksFolder;
         private const string MoveInfoXPropertyName = "MoveInfo X";
@@ -55,6 +55,10 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         public InsertBlocksWindowViewModel(MyPlugin pluginInstance)
         {
             _pluginInstance = pluginInstance ?? throw new ArgumentNullException(nameof(pluginInstance));
+        }
+
+        public async Task Async_Init()
+        {
             _model = new InsertBlocksWindowModel();
             _document = App.DocumentManager.MdiActiveDocument;
 

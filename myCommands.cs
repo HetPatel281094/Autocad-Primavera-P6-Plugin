@@ -15,10 +15,10 @@ namespace Autocad_Primavera_P6_Plugin
     {
         // 1. P6InsertBlocks
         [CommandMethod("P6InsertBlocks")]
-        public void P6InsertBlocks()
+        public async void P6InsertBlocks()
         {
             MyPlugin _pluginInstance = MyPlugin.Instance;
-            _pluginInstance.P6InsertBlocks();
+            await _pluginInstance.P6InsertBlocks();
         }
 
         // 2. 

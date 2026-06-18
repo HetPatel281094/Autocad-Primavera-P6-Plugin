@@ -101,7 +101,9 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         private void SelectCode(object parameter)
         {
             var owner = parameter as Window;
-            var picker = new ActivityCodePickerView(_pluginInstance, SectionLabel, IsAutoGenerate, Project);
+            var pickerModel = new ActivityCodePickerModel(_pluginInstance, IsAutoGenerate, new ActivityCodeType());
+            pickerModel.AsyncInit();
+            var picker = new ActivityCodePickerView(pickerModel);
             if (owner != null)
             {
                 picker.Owner = owner;

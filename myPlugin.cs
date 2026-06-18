@@ -1,6 +1,7 @@
 ﻿// (C) Copyright 2026 by  
 //
 using System;
+using System.Threading.Tasks;
 using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autocad_Primavera_P6_Plugin.Services;
@@ -40,9 +41,11 @@ namespace Autocad_Primavera_P6_Plugin
             MyRibbonService = null; //RibbonService instance cleanup
         }
 
-        public void P6InsertBlocks()
+        public async Task P6InsertBlocks()
         {
-            var _view = new InsertBlocksWindowView(this);
+            var _viewModel = new InsertBlocksWindowViewModel(this);
+            await _viewModel.Async_Init();
+            var _view = new InsertBlocksWindowView(_viewModel);
             Application.ShowModalWindow(_view);
         }
 

@@ -119,10 +119,12 @@
     <Compile Include="Services\LiteDBService\model.P6ConnectionConfig.cs" />
     <Compile Include="Services\LiteDBService\model.ProjeConfig.cs" />
     <Compile Include="Services\P6ApiService\fn_GetDrawingProject.cs" />
+    <Compile Include="Services\P6ApiService\fn_GetP6ActivityCodeTypeOfProject.cs" />
     <Compile Include="Services\P6ApiService\P6ApiService.cs" />
     <Compile Include="Services\P6ApiService\PrimaveraP6Client.cs" />
     <Compile Include="Services\P6ApiService\PrimaveraP6Client.Extension.cs" />
     <Compile Include="Services\RibbonService\RibbonService.cs" />
+    <Compile Include="UserInterface\UI_InsertBlocksWindowView\ActivityCodePickerModel.cs" />
     <Compile Include="UserInterface\UI_InsertBlocksWindowView\ActivityCodePickerNodeViewModel.cs" />
     <Compile Include="UserInterface\UI_InsertBlocksWindowView\ActivityCodePickerView.xaml.cs">
       <DependentUpon>ActivityCodePickerView.xaml</DependentUpon>

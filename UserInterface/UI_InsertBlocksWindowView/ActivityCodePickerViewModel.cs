@@ -14,9 +14,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
     [AddINotifyPropertyChangedInterface]
     public sealed class ActivityCodePickerViewModel
     {
-        private readonly P6ApiService _p6ApiService;
-        private readonly bool _isAutoGenerate;
-        private Project _Project;
+        private readonly ActivityCodePickerModel _model;
 
         public ObservableCollection<ActivityCodePickerNodeViewModel> RootNodes { get; private set; }
         public ActivityCodePickerNodeViewModel SelectedNode { get; set; }
@@ -25,7 +23,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         public string SearchString { get; set; }
         public string StatusMessage { get; private set; }
         public bool IsLoading { get; private set; }
-        public bool IsSelectionValid => SelectedNode != null && (_isAutoGenerate || SelectedNode.IsCode);
+        public bool IsSelectionValid => SelectedNode != null && (_model.IsAutoGenerate || SelectedNode.IsCode);
 
         public event Action<bool?> RequestClose;
 
@@ -33,20 +31,15 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         public ICommand OkButtonCommand { get; private set; }
         public ICommand CancelButtonCommand { get; private set; }
 
-        public ActivityCodePickerViewModel(MyPlugin pluginInstance, string sectionLabel, bool isAutoGenerate, Project project = null)
+        public ActivityCodePickerViewModel(ActivityCodePickerModel model)
         {
-            if (pluginInstance == null)
-            {
-                throw new ArgumentNullException(nameof(pluginInstance));
-            }
+            _model = model ?? throw new ArgumentNullException(nameof(model));
 
-            _p6ApiService = pluginInstance.MyP6ApiService;
-            _isAutoGenerate = isAutoGenerate;
-            _Project = project;
             RootNodes = new ObservableCollection<ActivityCodePickerNodeViewModel>();
             SearchString = string.Empty;
-            Title = isAutoGenerate ? "Select " + sectionLabel + " Parent Code" : "Select " + sectionLabel + " Code";
-            InstructionText = isAutoGenerate
+
+            Title = _model.IsAutoGenerate ? "Select Parent Code" : "Select Code";
+            InstructionText = _model.IsAutoGenerate
                 ? "Select a code type or existing parent value to generate under."
                 : "Select an existing code value to assign.";
 
@@ -54,42 +47,9 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             OkButtonCommand = new RelayCommand(OkButton, _ => IsSelectionValid);
             CancelButtonCommand = new RelayCommand(_ => RequestClose?.Invoke(false));
 
-            _ = LoadAsync();
-        }
-
-        public async Task LoadAsync()
-        {
-            try
-            {
-                IsLoading = true;
-                StatusMessage = "Loading activity codes...";
-
-                if (_p6ApiService == null || _p6ApiService.Client == null)
-                {
-                    StatusMessage = "P6 is not connected.";
-                    return;
-                }
-
-                string filter = _Project != null ? $"ProjectObjectId :eq: '{ _Project.ObjectId }'" : null;
-                const string typeFields = "ObjectId,Name,Scope,SequenceNumber,Length";
-                const string codeFields = "ObjectId,CodeTypeObjectId,CodeTypeName,CodeTypeScope,CodeValue,CodeConcatName,Description,ParentObjectId,SequenceNumber";
-
-                var client = _p6ApiService.Client;
-                var types = await client.GetActivityCodeTypesAsync(filter, typeFields, "SequenceNumber", null).ConfigureAwait(true);
-                var codes = await client.GetActivityCodesAsync(filter, codeFields, "SequenceNumber", null).ConfigureAwait(true);
-
-                BuildTree(types ?? new List<ActivityCodeType>(), codes ?? new List<ActivityCode>());
-                StatusMessage = RootNodes.Count == 0 ? "No activity codes found." : string.Empty;
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = "Unable to load activity codes.";
-                Debug.Print(ex.ToString());
-            }
-            finally
-            {
-                IsLoading = false;
-            }
+            var types = new List<ActivityCodeType>() { _model.SelectionActCodeType };
+            var codes = _model.SelectionActCodes;
+            BuildTree(types ?? new List<ActivityCodeType>(), codes ?? new List<ActivityCode>());
         }
 
         private void BuildTree(IEnumerable<ActivityCodeType> codeTypes, IEnumerable<ActivityCode> codes)

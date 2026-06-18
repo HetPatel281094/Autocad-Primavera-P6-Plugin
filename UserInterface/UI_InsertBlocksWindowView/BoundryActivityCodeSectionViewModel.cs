@@ -114,10 +114,13 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             _activtyCodeType = await _p6ApiService.GetP6ActivityCodeTypeOfProject(_project, _activtyCodeTypeName);
         }
 
-        private void SelectCode(object parameter)
+        private async void SelectCode(object parameter)
         {
             var owner = parameter as Window;
-            var picker = new ActivityCodePickerView(_pluginInstance, SectionLabel, IsAutoGenerate, _project);
+
+            var pickerModel = new ActivityCodePickerModel(_pluginInstance, IsAutoGenerate, _activtyCodeType);
+            await pickerModel.AsyncInit();
+            var picker = new ActivityCodePickerView(new ActivityCodePickerModel(_pluginInstance, IsAutoGenerate, _activtyCodeType));
             if (owner != null)
             {
                 picker.Owner = owner;
@@ -286,4 +289,46 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             return string.IsNullOrWhiteSpace(digits) ? response : digits;
         }
     }
+
+    public class AsyncRelayCommand : ICommand
+    {
+        private readonly Func<Task> _execute;
+        private readonly Func<bool> _canExecute;
+        private bool _isExecuting;
+
+        public AsyncRelayCommand(Func<Task> execute, Func<bool> canExecute = null)
+        {
+            _execute = execute ?? throw new ArgumentNullException(nameof(execute));
+            _canExecute = canExecute;
+        }
+
+        public event EventHandler CanExecuteChanged
+        {
+            add => CommandManager.RequerySuggested += value;
+            remove => CommandManager.RequerySuggested -= value;
+        }
+
+        public bool CanExecute(object parameter)
+        {
+            // Disables the button automatically if the task is currently running
+            return !_isExecuting && (_canExecute == null || _canExecute());
+        }
+
+        public async void Execute(object parameter)
+        {
+            _isExecuting = true;
+            CommandManager.InvalidateRequerySuggested(); // Refresh UI button state
+
+            try
+            {
+                await _execute();
+            }
+            finally
+            {
+                _isExecuting = false;
+                CommandManager.InvalidateRequerySuggested(); // Re-enable button
+            }
+        }
+    }
+
 }
