@@ -1,6 +1,13 @@
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
+using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
+using Autodesk.AutoCAD.ApplicationServices;
+using App = Autodesk.AutoCAD.ApplicationServices.Application;
+using Document = Autodesk.AutoCAD.ApplicationServices.Document;
+
 using Autodesk.AutoCAD.DatabaseServices;
+using System;
+using System.IO;
 
 namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 {
@@ -23,6 +30,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
     public sealed class ActivityCodeSectionModel
     {
+        public string ActivtyCodeTypeName = "Boundary Code";
         public string SelectedCodeValue { get; set; }
         public string SelectedCodePath { get; set; }
         public string SelectedCodeValueId { get; set; }
@@ -35,11 +43,36 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
     public sealed class InsertBlocksWindowModel
     {
+        public MyPlugin PluginInstance = null;
+        public BlockReference PreselectedBlock = null;
+        public P6ApiService P6ApiService => PluginInstance.MyP6ApiService;
+
+        public Document AcadDoc = null;
+        public Project CurrentProject = null;
+        public string DefaultBlocksFolder => GetDefaultBlocksFolder();
+
+        public string MoveInfoXPropertyName = "MoveInfo X";
+        public string MoveInfoYPropertyName = "MoveInfo Y";
+
         public ObservableCollection<PredefinedBlockInfo> AvailableBlocks { get; private set; }
 
         public InsertBlocksWindowModel()
         {
             AvailableBlocks = new ObservableCollection<PredefinedBlockInfo>();
+        }
+
+        public void Init()
+        {
+            // Load Document
+            AcadDoc = App.DocumentManager.MdiActiveDocument;
+            // Load Project
+            CurrentProject = P6ApiService.GetP6ProjectFromDWGFile(AcadDoc);
+        }
+
+        private string GetDefaultBlocksFolder()
+        {
+            string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            return Path.Combine(appData, "Autocad_Primavera_P6_Plugin", "Blocks");
         }
     }
 

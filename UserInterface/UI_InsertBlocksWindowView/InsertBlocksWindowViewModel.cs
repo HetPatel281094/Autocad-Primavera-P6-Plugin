@@ -7,32 +7,21 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
-using Autocad_Primavera_P6_Plugin.Services.LiteDBService;
 using PropertyChanged;
-using App = Autodesk.AutoCAD.ApplicationServices.Application;
-using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
 
 namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 {
     [AddINotifyPropertyChangedInterface]
     public sealed class InsertBlocksWindowViewModel
     {
-        private MyPlugin _pluginInstance;
         private InsertBlocksWindowModel _model;
-        private Autodesk.AutoCAD.ApplicationServices.Document _document;
         private bool _isCancelled;
-        private string _blocksFolder;
-        private const string MoveInfoXPropertyName = "MoveInfo X";
-        private const string MoveInfoYPropertyName = "MoveInfo Y";
 
         public BoundryActivityCodeSectionViewModel BoundaryCode { get; private set; }
         public ActivityCodeSectionViewModel ItemIdCode { get; private set; }
-        public Project CurrentProject { get; private set; }
-        public ObservableCollection<PredefinedBlockInfo> AvailableBlocks => _model.AvailableBlocks;
 
         public BlockTypeMode BlockTypeMode { get; set; }
         public PredefinedBlockInfo SelectedPredefinedBlock { get; set; }
@@ -52,22 +41,24 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
         public event Action<bool?> RequestClose;
 
-        public InsertBlocksWindowViewModel(MyPlugin pluginInstance)
+        public InsertBlocksWindowViewModel(MyPlugin pluginInstance, BlockReference selectedBlock)
         {
-            _pluginInstance = pluginInstance ?? throw new ArgumentNullException(nameof(pluginInstance));
+            _model = new InsertBlocksWindowModel()
+            {
+                PluginInstance = pluginInstance,
+                PreselectedBlock = selectedBlock
+            };
+            _model.Init();
         }
 
         public async Task Async_Init()
         {
-            _model = new InsertBlocksWindowModel();
-            _document = App.DocumentManager.MdiActiveDocument;
-
             SelectedDrawingBlockId = ObjectId.Null;
 
-            CurrentProject = _pluginInstance.MyP6ApiService.GetP6ProjectFromDWGFile(_document);
+            BoundaryCode = new BoundryActivityCodeSectionViewModel(_model.PluginInstance, _model.CurrentProject, _model.PreselectedBlock);
+            await BoundaryCode.Async_Init();
 
-            BoundaryCode = new BoundryActivityCodeSectionViewModel(_pluginInstance, CurrentProject);
-            ItemIdCode = new ActivityCodeSectionViewModel(_pluginInstance, "Item ID", CurrentProject);
+            ItemIdCode = new ActivityCodeSectionViewModel(_model.PluginInstance, "Item ID", _model.CurrentProject);
 
             BlockTypeMode = BlockTypeMode.Predefined;
             SelectedDrawingBlockName = "No drawing block selected.";
@@ -78,8 +69,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             BrowseBlocksFolderCommand = new RelayCommand(BrowseBlocksFolder);
             SelectDrawingBlockCommand = new RelayCommand(parameter => SelectBlockFromDrawing(parameter));
 
-            _blocksFolder = GetDefaultBlocksFolder();
-            LoadPredefinedBlocks(_blocksFolder);
+            LoadPredefinedBlocks(_model.DefaultBlocksFolder);
         }
 
         private void OnBlockTypeModeChanged()
@@ -105,22 +95,22 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
         private void LoadPredefinedBlocks(string folder)
         {
-            AvailableBlocks.Clear();
+            _model.AvailableBlocks.Clear();
             Directory.CreateDirectory(folder);
 
             foreach (var file in Directory.GetFiles(folder, "*.dwg", SearchOption.TopDirectoryOnly).OrderBy(Path.GetFileNameWithoutExtension))
             {
-                AvailableBlocks.Add(new PredefinedBlockInfo
+                _model.AvailableBlocks.Add(new PredefinedBlockInfo
                 {
                     Name = Path.GetFileNameWithoutExtension(file),
                     FilePath = file
                 });
             }
 
-            SelectedPredefinedBlock = AvailableBlocks.FirstOrDefault();
-            StatusMessage = AvailableBlocks.Count == 0
+            SelectedPredefinedBlock = _model.AvailableBlocks.FirstOrDefault();
+            StatusMessage = _model.AvailableBlocks.Count == 0
                 ? "No predefined .dwg block files found in " + folder
-                : "Loaded " + AvailableBlocks.Count + " predefined block file(s).";
+                : "Loaded " + _model.AvailableBlocks.Count + " predefined block file(s).";
         }
 
         private string GetDefaultBlocksFolder()
@@ -131,7 +121,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
         private void BrowseBlocksFolder(object parameter)
         {
-            string folder = _blocksFolder;
+            string folder = _model.DefaultBlocksFolder;
             if (SelectedPredefinedBlock != null && !string.IsNullOrWhiteSpace(SelectedPredefinedBlock.FilePath))
             {
                 folder = Path.GetDirectoryName(SelectedPredefinedBlock.FilePath);
@@ -150,7 +140,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         private void SelectBlockFromDrawing(object parameter)
         {
             var owner = parameter as Window;
-            var doc = App.DocumentManager.MdiActiveDocument;
+            var doc = _model.AcadDoc;
             if (doc == null)
             {
                 MessageBox.Show("No active AutoCAD document is available.", "Insert Blocks", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -212,7 +202,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         private async Task InsertBlockAsync(object parameter)
         {
             var owner = parameter as Window;
-            var doc = App.DocumentManager.MdiActiveDocument;
+            var doc = _model.AcadDoc;
             if (doc == null)
             {
                 MessageBox.Show("No active AutoCAD document is available.", "Insert Blocks", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -749,11 +739,11 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                     continue;
                 }
 
-                if (string.Equals(property.PropertyName, MoveInfoXPropertyName, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(property.PropertyName, _model.MoveInfoXPropertyName, StringComparison.OrdinalIgnoreCase))
                 {
                     xProperty = property;
                 }
-                else if (string.Equals(property.PropertyName, MoveInfoYPropertyName, StringComparison.OrdinalIgnoreCase))
+                else if (string.Equals(property.PropertyName, _model.MoveInfoYPropertyName, StringComparison.OrdinalIgnoreCase))
                 {
                     yProperty = property;
                 }

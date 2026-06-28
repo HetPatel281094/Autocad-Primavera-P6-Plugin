@@ -12,6 +12,13 @@ using Autocad_Primavera_P6_Plugin.UserInterface.UI_LinkedFoldersManagerView;
 using System.Reflection;
 using System.IO;
 
+using acadApp = Autodesk.AutoCAD.ApplicationServices.Application;
+using Autodesk.AutoCAD.EditorInput;
+using Autocad_Primavera_P6_Plugin.Services.AutocadService;
+using Autodesk.AutoCAD.DatabaseServices;
+using System.Collections.Generic;
+using System.Linq;
+
 [assembly: ExtensionApplication(typeof(Autocad_Primavera_P6_Plugin.MyPlugin))]
 
 namespace Autocad_Primavera_P6_Plugin
@@ -22,6 +29,8 @@ namespace Autocad_Primavera_P6_Plugin
         public LiteDBService MyLiteDBService { get; private set; } = null;
         public P6ApiService MyP6ApiService { get; private set; } = null;
         public RibbonService MyRibbonService { get; private set; } = null;
+        public AutocadService MyAutocadService { get; private set; } = null;
+
 
         void IExtensionApplication.Initialize()
         {
@@ -30,6 +39,7 @@ namespace Autocad_Primavera_P6_Plugin
             MyLiteDBService = new LiteDBService(pluginInstance: this);  //LiteDBService instance initialization
             MyP6ApiService = new P6ApiService(pluginInstance: this);  //P6ApiService instance initialization
             MyRibbonService = new RibbonService(pluginInstance: this); //RibbonService instance initialization
+            MyAutocadService = new AutocadService(); //AutocadService instance initialization
         }
 
         void IExtensionApplication.Terminate()
@@ -39,12 +49,24 @@ namespace Autocad_Primavera_P6_Plugin
             MyLiteDBService = null;  //LiteDBService instance cleanup
             MyP6ApiService = null;  //P6ApiService instance cleanup
             MyRibbonService = null; //RibbonService instance cleanup
+            MyAutocadService = null; //MyAutocadService instance cleanup
         }
 
         public async Task P6InsertBlocks()
         {
-            var _viewModel = new InsertBlocksWindowViewModel(this);
+            var _activeDoc = acadApp.DocumentManager.MdiActiveDocument;
+            var _selectedBlocks = MyAutocadService.GetPluginBlockImpliedSelected(_activeDoc);
+            var _selectedBlock = _selectedBlocks.Last() ?? null;
+
+            try
+            {
+                PlugInBlockReference _blockRef = new PlugInBlockReference(_activeDoc, _selectedBlock);
+            }
+            catch (System.Exception e) { };
+
+            var _viewModel = new InsertBlocksWindowViewModel(this, _selectedBlock);
             await _viewModel.Async_Init();
+
             var _view = new InsertBlocksWindowView(_viewModel);
             Application.ShowModalWindow(_view);
         }
