@@ -119,14 +119,11 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                 {
                     AttributeReference attRef = (AttributeReference)item.GetObject(OpenMode.ForRead);
                     attDict.Add(attRef.Tag, attRef);
-                }
-            ;
+                };
 
                 var _Attribute_Check_String = attDict.ContainsKey("Attribute_Check_String") ? attDict["Attribute_Check_String"] : null;
                 var _ElementId = attDict.ContainsKey("ELEMENT_ID") ? attDict["ELEMENT_ID"] : null;
                 var _BlockType = attDict.ContainsKey("BLOCK_TYPE") ? attDict["BLOCK_TYPE"] : null;
-
-
 
                 if (_Attribute_Check_String != null && _ElementId != null && _BlockType != null)
                 {
@@ -147,13 +144,17 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                         var nameAtt = attDict.ContainsKey(nameAttTag) ? attDict[nameAttTag] : null;
                         var valAtt = attDict.ContainsKey(valAttTag) ? attDict[valAttTag] : null;
 
-                        var dictVal = item.Value;
+                        if (nameAtt != null && valAtt != null)
+                        {
+                            var dictVal = item.Value;
 
-                        dictVal.SlotPropName = nameAtt?.TextString ?? string.Empty;
-                        dictVal.NameAttRefTag = nameAttTag;
-                        dictVal.NameAttRef = nameAtt;
-                        dictVal.ValueAttRefTag = valAttTag;
-                        dictVal.ValueAttRef = valAtt;
+                            dictVal.SlotPropName = nameAtt?.TextString ?? string.Empty;
+                            dictVal.NameAttRefTag = nameAttTag;
+                            dictVal.NameAttRef = nameAtt;
+                            dictVal.ValueAttRefTag = valAttTag;
+                            dictVal.ValueAttRef = valAtt;
+                        };
+
                     };
 
                     foreach (var item in SlotsDict)

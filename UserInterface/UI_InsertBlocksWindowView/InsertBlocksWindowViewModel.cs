@@ -11,6 +11,7 @@ using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using PropertyChanged;
+using acadAppService = Autodesk.AutoCAD.ApplicationServices;
 
 namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 {
@@ -25,7 +26,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
         public BlockTypeMode BlockTypeMode { get; set; }
         public PredefinedBlockInfo SelectedPredefinedBlock { get; set; }
-        public ObjectId SelectedDrawingBlockId { get; set; }
+        public ObjectId SelectedDrawingBlockId { get; set; } = ObjectId.Null;
         public string SelectedDrawingBlockName { get; set; }
         public bool ContinuousInsert { get; set; }
         public bool CopyBlockDefinition { get; set; }
@@ -41,13 +42,9 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
         public event Action<bool?> RequestClose;
 
-        public InsertBlocksWindowViewModel(MyPlugin pluginInstance, BlockReference selectedBlock)
+        public InsertBlocksWindowViewModel(MyPlugin pluginInstance)
         {
-            _model = new InsertBlocksWindowModel()
-            {
-                PluginInstance = pluginInstance,
-                PreselectedBlock = selectedBlock
-            };
+            _model = new InsertBlocksWindowModel{ PluginInstance = pluginInstance };
             _model.Init();
         }
 
@@ -55,7 +52,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         {
             SelectedDrawingBlockId = ObjectId.Null;
 
-            BoundaryCode = new BoundryActivityCodeSectionViewModel(_model.PluginInstance, _model.CurrentProject, _model.PreselectedBlock);
+            BoundaryCode = new BoundryActivityCodeSectionViewModel(_model.PluginInstance, _model.CurrentProject);
             await BoundaryCode.Async_Init();
 
             ItemIdCode = new ActivityCodeSectionViewModel(_model.PluginInstance, "Item ID", _model.CurrentProject);
@@ -140,7 +137,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         private void SelectBlockFromDrawing(object parameter)
         {
             var owner = parameter as Window;
-            var doc = _model.AcadDoc;
+            var doc = _model.ActAcadDoc;
             if (doc == null)
             {
                 MessageBox.Show("No active AutoCAD document is available.", "Insert Blocks", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -202,7 +199,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         private async Task InsertBlockAsync(object parameter)
         {
             var owner = parameter as Window;
-            var doc = _model.AcadDoc;
+            var doc = _model.ActAcadDoc;
             if (doc == null)
             {
                 MessageBox.Show("No active AutoCAD document is available.", "Insert Blocks", MessageBoxButton.OK, MessageBoxImage.Warning);

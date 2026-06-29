@@ -21,22 +21,50 @@
             <ColumnDefinition Width="130" />
         </Grid.ColumnDefinitions>
 
-        <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="8,8,8,4">
-            <TextBlock FontSize="15" FontWeight="SemiBold" Text="{Binding Title}" />
-            <TextBlock Margin="0,4,0,0" Foreground="#555" Text="{Binding InstructionText}" TextWrapping="Wrap" />
-            <TextBlock Margin="0,4,0,0" Foreground="#8A5A00" Text="{Binding StatusMessage}" TextWrapping="Wrap" />
+        <StackPanel
+            Grid.Row="0"
+            Grid.ColumnSpan="2"
+            Margin="8,8,8,4">
+            <TextBlock
+                FontSize="15"
+                FontWeight="SemiBold"
+                Text="{Binding Title}" />
+            <TextBlock
+                Margin="0,4,0,0"
+                Foreground="#555"
+                Text="{Binding InstructionText}"
+                TextWrapping="Wrap" />
+            <TextBlock
+                Margin="0,4,0,0"
+                Foreground="#8A5A00"
+                Text="{Binding StatusMessage}"
+                TextWrapping="Wrap" />
         </StackPanel>
 
-        <Grid Grid.Row="1" Grid.ColumnSpan="2" Margin="8,4">
+        <Grid
+            Grid.Row="1"
+            Grid.ColumnSpan="2"
+            Margin="8,4">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="110" />
             </Grid.ColumnDefinitions>
-            <TextBox Grid.Column="0" Height="26" VerticalContentAlignment="Center" Text="{Binding SearchString, UpdateSourceTrigger=PropertyChanged}" />
-            <Button Grid.Column="1" Margin="6,0,0,0" Command="{Binding SearchButtonCommand}" Content="Search" />
+            <TextBox
+                Grid.Column="0"
+                Height="26"
+                VerticalContentAlignment="Center"
+                Text="{Binding SearchString, UpdateSourceTrigger=PropertyChanged}" />
+            <Button
+                Grid.Column="1"
+                Margin="6,0,0,0"
+                Command="{Binding SearchButtonCommand}"
+                Content="Search" />
         </Grid>
 
-        <Grid Grid.Row="2" Grid.Column="0" Margin="8,4,4,8">
+        <Grid
+            Grid.Row="2"
+            Grid.Column="0"
+            Margin="8,4,4,8">
             <Grid.RowDefinitions>
                 <RowDefinition Height="24" />
                 <RowDefinition Height="*" />
@@ -48,9 +76,24 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="160" />
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Margin="6,0" VerticalAlignment="Center" FontWeight="SemiBold" Text="Object Id" />
-                <TextBlock Grid.Column="1" Margin="6,0" VerticalAlignment="Center" FontWeight="SemiBold" Text="Code / Type" />
-                <TextBlock Grid.Column="2" Margin="6,0" VerticalAlignment="Center" FontWeight="SemiBold" Text="Info" />
+                <TextBlock
+                    Grid.Column="0"
+                    Margin="6,0"
+                    VerticalAlignment="Center"
+                    FontWeight="SemiBold"
+                    Text="Object Id" />
+                <TextBlock
+                    Grid.Column="1"
+                    Margin="6,0"
+                    VerticalAlignment="Center"
+                    FontWeight="SemiBold"
+                    Text="Code / Type" />
+                <TextBlock
+                    Grid.Column="2"
+                    Margin="6,0"
+                    VerticalAlignment="Center"
+                    FontWeight="SemiBold"
+                    Text="Info" />
             </Grid>
 
             <TreeView
@@ -75,16 +118,35 @@
                 </TreeView.ItemContainerStyle>
                 <TreeView.Resources>
                     <HierarchicalDataTemplate DataType="{x:Type local:ActivityCodePickerNodeViewModel}" ItemsSource="{Binding Children}">
-                        <Border x:Name="RowBorder" MinHeight="24" BorderBrush="#EFEFEF" BorderThickness="0,0,0,1">
+                        <Border
+                            x:Name="RowBorder"
+                            MinHeight="24"
+                            BorderBrush="#EFEFEF"
+                            BorderThickness="0,0,0,1">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="130" />
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="160" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Margin="6,0" VerticalAlignment="Center" Text="{Binding Id}" />
-                                <TextBlock Grid.Column="1" Margin="6,0" VerticalAlignment="Center" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
-                                <TextBlock Grid.Column="2" Margin="6,0" VerticalAlignment="Center" Foreground="#555" Text="{Binding Description}" TextTrimming="CharacterEllipsis" />
+                                <TextBlock
+                                    Grid.Column="0"
+                                    Margin="6,0"
+                                    VerticalAlignment="Center"
+                                    Text="{Binding Id}" />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    Margin="6,0"
+                                    VerticalAlignment="Center"
+                                    Text="{Binding Name}"
+                                    TextTrimming="CharacterEllipsis" />
+                                <TextBlock
+                                    Grid.Column="2"
+                                    Margin="6,0"
+                                    VerticalAlignment="Center"
+                                    Foreground="#555"
+                                    Text="{Binding Description}"
+                                    TextTrimming="CharacterEllipsis" />
                             </Grid>
                         </Border>
                         <HierarchicalDataTemplate.Triggers>
@@ -101,11 +163,26 @@
             </TreeView>
         </Grid>
 
-        <StackPanel Grid.Row="2" Grid.Column="1" Margin="4,28,8,8">
-            <Button Height="28" Margin="0,0,0,6" Command="{Binding OkButtonCommand}" Content="Ok" IsEnabled="{Binding IsSelectionValid}" />
-            <Button Height="28" Command="{Binding CancelButtonCommand}" Content="Cancel" />
+        <StackPanel
+            Grid.Row="2"
+            Grid.Column="1"
+            Margin="4,28,8,8">
+            <Button
+                Height="28"
+                Margin="0,0,0,6"
+                Command="{Binding OkButtonCommand}"
+                Content="Ok"
+                IsEnabled="{Binding IsSelectionValid}" />
+            <Button
+                Height="28"
+                Command="{Binding CancelButtonCommand}"
+                Content="Cancel" />
         </StackPanel>
 
-        <ProgressBar Grid.Row="3" Grid.ColumnSpan="2" Height="4" IsIndeterminate="{Binding IsLoading}" />
+        <ProgressBar
+            Grid.Row="3"
+            Grid.ColumnSpan="2"
+            Height="4"
+            IsIndeterminate="{Binding IsLoading}" />
     </Grid>
 </Window>

@@ -2,12 +2,14 @@ using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
 using Autodesk.AutoCAD.ApplicationServices;
-using App = Autodesk.AutoCAD.ApplicationServices.Application;
+using AcadApp = Autodesk.AutoCAD.ApplicationServices.Application;
 using Document = Autodesk.AutoCAD.ApplicationServices.Document;
 
 using Autodesk.AutoCAD.DatabaseServices;
 using System;
 using System.IO;
+using Autocad_Primavera_P6_Plugin.Services.AutocadService;
+using System.Linq;
 
 namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 {
@@ -15,6 +17,12 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
     {
         Predefined,
         SelectFromDrawing
+    }
+
+    internal sealed class BlockSourceResult
+    {
+        public ObjectId BlockDefinitionId { get; set; }
+        public string BlockName { get; set; }
     }
 
     public sealed class PredefinedBlockInfo
@@ -44,41 +52,56 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
     public sealed class InsertBlocksWindowModel
     {
         public MyPlugin PluginInstance = null;
-        public BlockReference PreselectedBlock = null;
-        public P6ApiService P6ApiService => PluginInstance.MyP6ApiService;
+        public P6ApiService MyP6ApiService => PluginInstance.MyP6ApiService;
+        public AutocadService MyAutocadService => PluginInstance.MyAutocadService;
 
-        public Document AcadDoc = null;
+        public Document ActAcadDoc = null;
         public Project CurrentProject = null;
+        public PlugInBlockReference PreselectedBlock = null;
+
+        // ----- FUTURE REMOVE : STRAT -----
         public string DefaultBlocksFolder => GetDefaultBlocksFolder();
-
-        public string MoveInfoXPropertyName = "MoveInfo X";
-        public string MoveInfoYPropertyName = "MoveInfo Y";
-
-        public ObservableCollection<PredefinedBlockInfo> AvailableBlocks { get; private set; }
-
-        public InsertBlocksWindowModel()
-        {
-            AvailableBlocks = new ObservableCollection<PredefinedBlockInfo>();
-        }
-
-        public void Init()
-        {
-            // Load Document
-            AcadDoc = App.DocumentManager.MdiActiveDocument;
-            // Load Project
-            CurrentProject = P6ApiService.GetP6ProjectFromDWGFile(AcadDoc);
-        }
 
         private string GetDefaultBlocksFolder()
         {
             string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             return Path.Combine(appData, "Autocad_Primavera_P6_Plugin", "Blocks");
         }
+
+        public string MoveInfoXPropertyName = "MoveInfo X";
+        public string MoveInfoYPropertyName = "MoveInfo Y";
+
+        public ObservableCollection<PredefinedBlockInfo> AvailableBlocks { get; private set; } = new ObservableCollection<PredefinedBlockInfo>();
+        // ----- FUTURE REMOVE : END   -----
+
+        public void Init()
+        {
+            SetActiveAutocadDocument();
+            SetCurrentP6Project();
+            SetImpliedSelectedBlock();
+        }
+
+        private void SetActiveAutocadDocument()
+        {
+            ActAcadDoc = AcadApp.DocumentManager.MdiActiveDocument;
+        }
+
+        private void SetCurrentP6Project()
+        {
+            CurrentProject = MyP6ApiService.GetP6ProjectFromDWGFile(ActAcadDoc);
+        }
+
+        private void SetImpliedSelectedBlock()
+        {
+            var _selectedBlocks = MyAutocadService.GetPluginBlockImpliedSelected(ActAcadDoc);
+            var _selectedBlock = _selectedBlocks.Count > 0 ? _selectedBlocks.Last() : null;
+
+            if (_selectedBlock != null)
+            {
+                PreselectedBlock = new PlugInBlockReference(ActAcadDoc, _selectedBlock);
+            };
+        }
+
     }
 
-    internal sealed class BlockSourceResult
-    {
-        public ObjectId BlockDefinitionId { get; set; }
-        public string BlockName { get; set; }
-    }
 }

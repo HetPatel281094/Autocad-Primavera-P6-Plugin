@@ -54,33 +54,23 @@ namespace Autocad_Primavera_P6_Plugin
 
         public async Task P6InsertBlocks()
         {
-            var _activeDoc = acadApp.DocumentManager.MdiActiveDocument;
-            var _selectedBlocks = MyAutocadService.GetPluginBlockImpliedSelected(_activeDoc);
-            var _selectedBlock = _selectedBlocks.Last() ?? null;
-
-            try
-            {
-                PlugInBlockReference _blockRef = new PlugInBlockReference(_activeDoc, _selectedBlock);
-            }
-            catch (System.Exception e) { };
-
-            var _viewModel = new InsertBlocksWindowViewModel(this, _selectedBlock);
+            var _viewModel = new InsertBlocksWindowViewModel(this);
             await _viewModel.Async_Init();
 
             var _view = new InsertBlocksWindowView(_viewModel);
-            Application.ShowModalWindow(_view);
+            acadApp.ShowModalWindow(_view);
         }
 
         public void OpenLinkedFoldersManager()
         {
             var view = new LinkedFoldersManagerView(this);
-            Application.ShowModalWindow(view);
+            acadApp.ShowModalWindow(view);
         }
 
         public void OpenP6ConnectionManager()
         {
             var view = new UserInterface.UI_P6ConnectionManagerView.P6ConnectionManagerView(this);
-            Application.ShowModalWindow(view);
+            acadApp.ShowModalWindow(view);
         }
     }
 
