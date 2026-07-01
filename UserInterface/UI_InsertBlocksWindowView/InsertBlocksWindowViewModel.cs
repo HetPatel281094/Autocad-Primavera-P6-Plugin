@@ -23,6 +23,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
         public BoundryActivityCodeSectionViewModel BoundaryCode { get; private set; }
         public ActivityCodeSectionViewModel ItemIdCode { get; private set; }
+        public ACadBlockSectionViewModel ACadBlockVM { get; private set; }
 
         public BlockTypeMode BlockTypeMode { get; set; }
         public PredefinedBlockInfo SelectedPredefinedBlock { get; set; }
@@ -56,6 +57,8 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             await BoundaryCode.Async_Init();
 
             ItemIdCode = new ActivityCodeSectionViewModel(_model.PluginInstance, "Item ID", _model.CurrentProject);
+
+            ACadBlockVM = new ACadBlockSectionViewModel(_model.PluginInstance, _model.CurrentProject);
 
             BlockTypeMode = BlockTypeMode.Predefined;
             SelectedDrawingBlockName = "No drawing block selected.";

@@ -54,10 +54,10 @@ namespace Autocad_Primavera_P6_Plugin
 
         public async Task P6InsertBlocks()
         {
-            var _viewModel = new InsertBlocksWindowViewModel(this);
-            await _viewModel.Async_Init();
+            var _vm = new InsertBlocksWindowViewModel(this);
+            await _vm.Async_Init();
 
-            var _view = new InsertBlocksWindowView(_viewModel);
+            var _view = new InsertBlocksWindowView(_vm);
             acadApp.ShowModalWindow(_view);
         }
 

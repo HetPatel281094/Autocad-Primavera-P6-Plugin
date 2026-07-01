@@ -132,6 +132,7 @@
       <DependentUpon>ActivityCodePickerView.xaml</DependentUpon>
     </Compile>
     <Compile Include="UserInterface\UI_InsertBlocksWindowView\ActivityCodePickerViewModel.cs" />
+    <Compile Include="UserInterface\UI_InsertBlocksWindowView\ACadBlockSectionViewModel.cs" />
     <Compile Include="UserInterface\UI_InsertBlocksWindowView\BoundryActivityCodeSectionViewModel.cs" />
     <Compile Include="UserInterface\UI_InsertBlocksWindowView\ActivityCodeSectionViewModel.cs" />
     <Compile Include="UserInterface\UI_InsertBlocksWindowView\Converters.cs" />
