@@ -305,14 +305,14 @@
                         <RadioButton
                             Margin="2"
                             Content="Predefined"
-                            IsChecked="{Binding BlockTypeMode, Mode=TwoWay, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=Predefined}" />
+                            IsChecked="{Binding ACadBlockVM.BlockTypeMode, Mode=TwoWay, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=Predefined}" />
                         <RadioButton
                             Margin="2"
                             Content="From Drawing"
-                            IsChecked="{Binding BlockTypeMode, Mode=TwoWay, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=SelectFromDrawing}" />
+                            IsChecked="{Binding ACadBlockVM.BlockTypeMode, Mode=TwoWay, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=SelectFromDrawing}" />
                     </UniformGrid>
 
-                    <Grid Visibility="{Binding BlockTypeMode, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Predefined}">
+                    <Grid Visibility="{Binding ACadBlockVM.BlockTypeMode, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Predefined}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="92" />
@@ -321,36 +321,36 @@
                             Grid.Column="0"
                             Margin="0,0,6,0"
                             DisplayMemberPath="Name"
-                            ItemsSource="{Binding AvailableBlocks}"
-                            SelectedItem="{Binding SelectedPredefinedBlock, Mode=TwoWay}" />
+                            ItemsSource="{Binding ACadBlockVM.AvailableBlocks}"
+                            SelectedItem="{Binding ACadBlockVM.SelectedPredefinedBlock, Mode=TwoWay}" />
                         <Button
                             Grid.Column="1"
-                            Command="{Binding BrowseBlocksFolderCommand}"
+                            Command="{Binding ACadBlockVM.BrowseBlocksFolderCommand}"
                             Content="Open Folder" />
                     </Grid>
 
-                    <Grid Visibility="{Binding BlockTypeMode, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=SelectFromDrawing}">
+                    <Grid Visibility="{Binding ACadBlockVM.BlockTypeMode, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=SelectFromDrawing}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="140" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <Button
                             Grid.Column="0"
-                            Command="{Binding SelectDrawingBlockCommand}"
+                            Command="{Binding ACadBlockVM.SelectDrawingBlockCommand}"
                             CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
                             Content="Select Block" />
                         <TextBlock
                             Grid.Column="1"
                             Margin="8,0,0,0"
                             VerticalAlignment="Center"
-                            Text="{Binding SelectedDrawingBlockName}"
+                            Text="{Binding ACadBlockVM.SelectedDrawingBlockName}"
                             TextTrimming="CharacterEllipsis" />
                     </Grid>
 
                     <CheckBox
                         Margin="0,8,0,0"
                         Content="Copy block definition as independent block"
-                        IsChecked="{Binding CopyBlockDefinition, Mode=TwoWay}" />
+                        IsChecked="{Binding ACadBlockVM.CopyBlockDefinition, Mode=TwoWay}" />
                 </StackPanel>
             </Border>
 

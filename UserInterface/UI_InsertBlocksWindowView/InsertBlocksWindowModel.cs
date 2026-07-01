@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
 using Autodesk.AutoCAD.ApplicationServices;
@@ -7,7 +6,6 @@ using Document = Autodesk.AutoCAD.ApplicationServices.Document;
 
 using Autodesk.AutoCAD.DatabaseServices;
 using System;
-using System.IO;
 using Autocad_Primavera_P6_Plugin.Services.AutocadService;
 using System.Linq;
 
@@ -17,12 +15,6 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
     {
         Predefined,
         SelectFromDrawing
-    }
-
-    internal sealed class BlockSourceResult
-    {
-        public ObjectId BlockDefinitionId { get; set; }
-        public string BlockName { get; set; }
     }
 
     public sealed class PredefinedBlockInfo
@@ -59,20 +51,8 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         public Project CurrentProject = null;
         public PlugInBlockReference PreselectedBlock = null;
 
-        // ----- FUTURE REMOVE : STRAT -----
-        public string DefaultBlocksFolder => GetDefaultBlocksFolder();
-
-        private string GetDefaultBlocksFolder()
-        {
-            string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            return Path.Combine(appData, "Autocad_Primavera_P6_Plugin", "Blocks");
-        }
-
         public string MoveInfoXPropertyName = "MoveInfo X";
         public string MoveInfoYPropertyName = "MoveInfo Y";
-
-        public ObservableCollection<PredefinedBlockInfo> AvailableBlocks { get; private set; } = new ObservableCollection<PredefinedBlockInfo>();
-        // ----- FUTURE REMOVE : END   -----
 
         public void Init()
         {
@@ -94,7 +74,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         private void SetImpliedSelectedBlock()
         {
             var _selectedBlocks = MyAutocadService.GetPluginBlockImpliedSelected(ActAcadDoc);
-            var _selectedBlock = _selectedBlocks.Count > 0 ? _selectedBlocks.Last() : null;
+            var _selectedBlock = (_selectedBlocks != null && _selectedBlocks.Count > 0) ? _selectedBlocks.Last(): null;
 
             if (_selectedBlock != null)
             {
