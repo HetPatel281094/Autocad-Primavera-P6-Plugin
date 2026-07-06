@@ -18,6 +18,7 @@ using Autocad_Primavera_P6_Plugin.Services.AutocadService;
 using Autodesk.AutoCAD.DatabaseServices;
 using System.Collections.Generic;
 using System.Linq;
+using System.Diagnostics;
 
 [assembly: ExtensionApplication(typeof(Autocad_Primavera_P6_Plugin.MyPlugin))]
 
@@ -71,6 +72,42 @@ namespace Autocad_Primavera_P6_Plugin
         {
             var view = new UserInterface.UI_P6ConnectionManagerView.P6ConnectionManagerView(this);
             acadApp.ShowModalWindow(view);
+        }
+
+        public void OpenTestButtonFunction()
+        {
+            try
+            {
+                Debug.Print("Test Function is invoked.");
+
+                var doc = acadApp.DocumentManager.MdiActiveDocument;
+                var blockRefList = MyAutocadService.GetPluginBlockImpliedSelected(doc);
+                var blockRef = blockRefList?.Count > 0 ? blockRefList.Last() : null;
+                if (blockRef == null) { return; };
+
+                var x = blockRef.DynamicBlockReferencePropertyCollection;
+
+                using (var tr = doc.Database.TransactionManager.StartTransaction())
+                {
+                   // var y = tr.GetObject(x, OpenMode.ForRead);
+
+                    Debug.Print("DynamicBlockTableRecord Name: {y.Name}");
+                }
+                ;
+
+                var pluginBlockRef = new PlugInBlockReference(doc, blockRef);
+
+                Debug.Print("Test Function is Completed without error.");
+            }
+            catch (System.Exception e)
+            {
+                Debug.Print(e.ToString());
+                return;
+            }
+            finally
+            {
+                Debug.Print("Test Function is Completed.");
+            }
         }
     }
 

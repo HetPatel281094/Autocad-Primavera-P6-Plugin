@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using Autocad_Primavera_P6_Plugin.Services.AutocadService;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
@@ -68,13 +69,9 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         {
             var owner = parameter as Window;
             var doc = _model.ActAcadDoc;
-            if (doc == null)
-            {
-                MessageBox.Show("No active AutoCAD document is available.", "Insert Blocks", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
 
-            var validationFailures = ValidateBeforeP6Resolution();
+            var validationFailures = ValidateBeforeP6Resolution(doc);
+
             if (validationFailures.Count > 0)
             {
                 MessageBox.Show(string.Join(Environment.NewLine, validationFailures), "Insert Blocks", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -100,7 +97,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             }
         }
 
-        private List<string> ValidateBeforeP6Resolution()
+        private List<string> ValidateBeforeP6Resolution(acadAppService.Document doc)
         {
             var failures = new List<string>();
 
@@ -138,6 +135,11 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             if (ACadBlockVM.BlockTypeMode == BlockTypeMode.SelectFromDrawing && !ACadBlockVM.HasValidDrawingBlockSelection())
             {
                 failures.Add("Select a valid plugin block from the drawing.");
+            }
+
+            if (doc == null)
+            {
+                failures.Add("No active AutoCAD document is available.");
             }
 
             return failures;
@@ -193,6 +195,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                     }
 
                     bool itemReady = await ItemIdCode.EnsureResolvedAsync(forceRegenerate: true).ConfigureAwait(true);
+
                     var resolutionFailures = ValidateAfterP6Resolution();
 
                     if (!boundaryReady || !itemReady || resolutionFailures.Count > 0)

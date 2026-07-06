@@ -27,6 +27,7 @@ namespace Autocad_Primavera_P6_Plugin.Services
         private static RibbonTab _PluginTab = null;
         private static RibbonPanel _ActionsPanel = null;
         private static RibbonPanel _SettingsPanel = null;
+        private static RibbonPanel _TestPanel = null;
 
         private static RibbonButton _PropertiesButton = null;
         private static RibbonButton _InsertBlocksButton = null;
@@ -34,6 +35,8 @@ namespace Autocad_Primavera_P6_Plugin.Services
         private static RibbonButton _PluginStatusButton = null;
         private static RibbonButton _P6ConnectionManagerButton = null;
         private static RibbonButton _LinkedFoldersButton = null;
+
+        private static RibbonButton _testButton = null;
 
         //Temp
         static PaletteSet _PropertiesPalette = null;
@@ -110,6 +113,13 @@ namespace Autocad_Primavera_P6_Plugin.Services
 
             _LinkedFoldersButton = GetRibbonButton_LinkedFolders();
             _SettingsPanel.Source.Items.Add(_LinkedFoldersButton);
+
+            // PANEL 3 : Test
+            _TestPanel = new RibbonPanel { Source = new RibbonPanelSource { Title = "Test Panel" } };
+            _PluginTab.Panels.Add(_TestPanel);
+
+            _testButton = GetRibbonButton_TestButton();
+            _TestPanel.Source.Items.Add(_testButton);
 
             _isTabCreated = true;
         }
@@ -242,6 +252,28 @@ namespace Autocad_Primavera_P6_Plugin.Services
         private static void ButtonHandler_LinkedFolders()
         {
             _pluginInstance.OpenLinkedFoldersManager();
+        }
+
+        // Button 6 : Test Button
+        private static RibbonButton GetRibbonButton_TestButton()
+        {
+            RibbonButton testButton = new RibbonButton
+            {
+                Text = "Test Button",
+                ShowText = true,
+                ShowImage = true,
+                Orientation = Orientation.Vertical,
+                Size = RibbonItemSize.Large,
+                Image = LoadBitmap("Autocad_Primavera_P6_Plugin.Services.RibbonService.RCDATA_16_ONLINE_OPEN_FOLDER.png"),
+                LargeImage = LoadBitmap("Autocad_Primavera_P6_Plugin.Services.RibbonService.RCDATA_32_ONLINE_OPEN_FOLDER.png"),
+                CommandHandler = new RibbonCommandHandler(ButtonHandler_TestButton)
+            };
+            return testButton;
+        }
+
+        private static void ButtonHandler_TestButton()
+        {
+            _pluginInstance.OpenTestButtonFunction();
         }
 
 
