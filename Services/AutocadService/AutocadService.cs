@@ -20,40 +20,48 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
         public AutocadService() { }
         public List<BlockReference> GetPluginBlockImpliedSelected(AcadAppServ.Document doc)
         {
-            var _activeDoc = doc;
-            var _ed = _activeDoc.Editor;
-            var _db = _activeDoc.Database;
-            var _selected = _ed.SelectImplied();
-            var _selSet = _selected.Value;
-
-            if (_selected.Status != PromptStatus.OK || _selected.Value == null)
+            try
             {
-                _ed.WriteMessage("\nNo objects were pre-selected.");
-                return null;
-            }
+                var _activeDoc = doc;
+                var _ed = _activeDoc.Editor;
+                var _db = _activeDoc.Database;
+                var _selected = _ed.SelectImplied();
+                var _selSet = _selected.Value;
 
-            List<BlockReference> _blockRefs = new List<BlockReference> { };
-
-            using (Transaction tr = _db.TransactionManager.StartTransaction())
-            {
-                foreach (SelectedObject selObj in _selSet)
+                if (_selected.Status != PromptStatus.OK || _selected.Value == null)
                 {
-                    if (selObj == null) continue;
+                    _ed.WriteMessage("\nNo objects were pre-selected.");
+                    return null;
+                }
 
-                    if (selObj.ObjectId.ObjectClass.DxfName == "INSERT")
+                List<BlockReference> _blockRefs = new List<BlockReference> { };
+
+                using (Transaction tr = _db.TransactionManager.StartTransaction())
+                {
+                    foreach (SelectedObject selObj in _selSet)
                     {
-                        BlockReference blockRef = tr.GetObject(selObj.ObjectId, OpenMode.ForRead) as BlockReference;
+                        if (selObj == null) continue;
 
-                        if (blockRef != null && IsValidPluginBlock(blockRef, tr))
+                        if (selObj.ObjectId.ObjectClass.DxfName == "INSERT")
                         {
-                            _blockRefs.Add(blockRef);
+                            BlockReference blockRef = tr.GetObject(selObj.ObjectId, OpenMode.ForRead) as BlockReference;
+
+                            if (blockRef != null && IsValidPluginBlock(blockRef, tr))
+                            {
+                                _blockRefs.Add(blockRef);
+                            }
                         }
                     }
                 }
+
+                return _blockRefs;
+
             }
-
-            return _blockRefs;
-
+            catch (Exception e)
+            {
+                Debug.Print(e.ToString());
+                return new List<BlockReference>();
+            }
         }
 
         public bool IsValidPluginBlock(BlockReference blockRef, Transaction tr)

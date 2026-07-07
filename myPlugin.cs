@@ -84,18 +84,33 @@ namespace Autocad_Primavera_P6_Plugin
                 var blockRefList = MyAutocadService.GetPluginBlockImpliedSelected(doc);
                 var blockRef = blockRefList?.Count > 0 ? blockRefList.Last() : null;
                 if (blockRef == null) { return; };
-
                 var x = blockRef.DynamicBlockReferencePropertyCollection;
 
+                BlockReference freshRef;
                 using (var tr = doc.Database.TransactionManager.StartTransaction())
                 {
-                   // var y = tr.GetObject(x, OpenMode.ForRead);
+                    freshRef = (BlockReference)tr.GetObject(blockRef.ObjectId, OpenMode.ForRead);
 
-                    Debug.Print("DynamicBlockTableRecord Name: {y.Name}");
+                    var pluginBlockRef = new PlugInBlockReference(doc, freshRef);
+                    pluginBlockRef.Init(tr);
+
+                    var actCode = pluginBlockRef.BdryActCode;
+                    var actCode2 = pluginBlockRef.BlockAttProps.GetBdryActCode(MyP6ApiService, pluginBlockRef.SlotsDict);
+
+                    bool isDyn = freshRef.IsDynamicBlock;
+                    var props = freshRef.DynamicBlockReferencePropertyCollection;
+
+                    var dynPropDict = new Dictionary<string, DynamicBlockReferenceProperty>();
+
+                    dynPropDict = props
+                                    .Cast<DynamicBlockReferenceProperty>()
+                                    .ToDictionary(val => val.PropertyName, val => val);
+
+                    Debug.Print($"IsDynamicBlock: {isDyn}, PropCount: {props.Count}");
+
+                    tr.Commit(); // or Abort() since you only read
                 }
                 ;
-
-                var pluginBlockRef = new PlugInBlockReference(doc, blockRef);
 
                 Debug.Print("Test Function is Completed without error.");
             }

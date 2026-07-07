@@ -14,18 +14,20 @@ namespace Autocad_Primavera_P6_Plugin
     public partial class MyCommands
     {
         // 1. P6InsertBlocks
-        [CommandMethod("P6InsertBlocks")]
+        [CommandMethod("P6InsertBlocks", CommandFlags.UsePickSet)]
         public async void P6InsertBlocks()
         {
             MyPlugin _pluginInstance = MyPlugin.Instance;
             await _pluginInstance.P6InsertBlocks();
         }
 
+
         // 2. 
-        [CommandMethod("P6Command2")]
+        [CommandMethod("P6Command2", CommandFlags.UsePickSet)]
         public void MyPickFirst()
         {
             MyPlugin _pluginInstance = MyPlugin.Instance;
+            _pluginInstance.OpenTestButtonFunction();
         }
 
         // 3. 

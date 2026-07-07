@@ -4,6 +4,7 @@ using AcadAppServ = Autodesk.AutoCAD.ApplicationServices;
 using System.Diagnostics;
 using System.Linq;
 using System;
+using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
 
 namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
 {
@@ -48,6 +49,28 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                 BlockType.TextString = Update_Status.Value?.ToString()?.Trim();
             }
         }
+
+        public void setBlockTypeFromStatus(Transaction tr)
+        {
+            if (tr != null && BlockType?.ObjectId != null && BlockType.TextString != (string)Update_Status.Value)
+            {
+                var _blockTypeObj = (AttributeReference)tr.GetObject(BlockType.ObjectId, OpenMode.ForWrite);
+                _blockTypeObj.TextString = (string)Update_Status.Value;
+                BlockType = _blockTypeObj;
+            }
+        }
+
+        public ActivityCode GetBdryActCode(P6ApiService.P6ApiService myP6ApiService, Dictionary<string, Slot> slotsDict)
+        {
+            var bdryIdSlotKey = PropSlotDict["BOUNDARY_CODE_ID"];
+            var bdryIdSlot = slotsDict[bdryIdSlotKey];
+            var bdryId = bdryIdSlot.ValueAttRef.TextString;
+
+            var activityCode = myP6ApiService.Client.GetActivityCodesAsync("","",null,null).Result;
+
+            return activityCode.First();
+        }
+
     }
 
     public static class DefaultPropSlotName
@@ -114,7 +137,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
         /// <summary>
         /// Dictionary to store the slots associated with the block reference
         /// </summary>
-        private Dictionary<string, Slot> SlotsDict = new Dictionary<string, Slot>
+        public Dictionary<string, Slot> SlotsDict = new Dictionary<string, Slot>
         {
             ["Slot01"] = new Slot(),
             ["Slot02"] = new Slot(),
@@ -133,45 +156,40 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
             ["Slot15"] = new Slot()
         };
 
-        private AttProps BlockAttProps = null;
+        public AttProps BlockAttProps = null;
 
-        //private ActivityCode BdryActCode => GetBdryActCode();
+        private ActivityCode _BdryActCode;
+        public ActivityCode BdryActCode { 
+            get { return _BdryActCode; } 
+            set { _BdryActCode = value; } 
+        }
         //private ActivityCode ItemIdActCode => AcadBlock.AttributeCollection;
 
         public PlugInBlockReference(AcadAppServ.Document acadDoc, BlockReference blockRef = null)
         {
             AcadDoc = acadDoc;
-
-            if (blockRef != null)
-            {
-
-                var _ed = AcadDoc.Editor;
-                var _db = AcadDoc.Database;
-
-                using (var tr = _db.TransactionManager.StartTransaction())
-                {
-                    //var dynamicBlockRef = blockRef.IsDynamicBlock ? blockRef : tr.GetObject(blockRef.DynamicBlockTableRecord);
-                    AcadBlock = blockRef;
-
-                    AcadBlockTR = (BlockTableRecord)tr.GetObject(AcadBlock.BlockTableRecord, OpenMode.ForRead);
-
-                    initState = InitState.BlockRefInitialized;
-
-                    LoadBlockAttProps(tr);
-                    tr.Commit();
-                }
-            };
+            initState = InitState.BlockRefInitialized;
+            if (blockRef != null) { AcadBlock = blockRef; };
         }
 
         public PlugInBlockReference(AcadAppServ.Document acadDoc, BlockTableRecord blockRec = null)
         {
             AcadDoc = acadDoc;
+            initState = InitState.BTRInitialized;
+            if (blockRec != null) { AcadBlockTR = blockRec; };
+        }
 
-            if (blockRec != null)
+        public void Init(Transaction tr)
+        {
+            if (initState == InitState.BlockRefInitialized)
             {
-                AcadBlockTR = blockRec;
-                initState = InitState.BTRInitialized;
-            };
+                AcadBlockTR = (BlockTableRecord)tr.GetObject(AcadBlock.BlockTableRecord, OpenMode.ForRead);
+                LoadBlockAttProps(tr);
+            }
+            else if (initState == InitState.BTRInitialized)
+            {
+
+            }
 
         }
 
@@ -199,7 +217,9 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                 var _ElementId = attDict.ContainsKey("ELEMENT_ID") ? attDict["ELEMENT_ID"] : null;
                 var _BlockType = attDict.ContainsKey("BLOCK_TYPE") ? attDict["BLOCK_TYPE"] : null;
 
-                var _Update_Status = dynPropDict.ContainsKey("UpdateStatus") ? dynPropDict["UpdateStatus"] : null;
+                var _Update_Status = dynPropDict.ContainsKey("Update Status") ? dynPropDict["Update Status"] : null;
+                var _Moveinfo_X =  dynPropDict.ContainsKey("MoveInfo X") ? dynPropDict["MoveInfo X"] : null;
+                var _Moveinfo_Y = dynPropDict.ContainsKey("MoveInfo Y") ? dynPropDict["MoveInfo Y"] : null;
 
                 if (_Attribute_Check_String != null && _ElementId != null && _BlockType != null)
                 {
@@ -207,6 +227,11 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                     BlockAttProps.Attribute_Check_String = _Attribute_Check_String;
                     BlockAttProps.ElementId = _ElementId;
                     BlockAttProps.BlockType = _BlockType;
+                    BlockAttProps.Moveinfo_X = _Moveinfo_X;
+                    BlockAttProps.Moveinfo_Y = _Moveinfo_Y;
+
+                    BlockAttProps.Update_Status = _Update_Status;
+                    BlockAttProps.setBlockTypeFromStatus(tr);
 
                     foreach (var item in SlotsDict)
                     {
@@ -250,62 +275,6 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                 Debug.Print($"Error in LoadBlockAttProps: {ex.Message}");
             }
 
-        }
-
-        private void SyncBlockTypeWithUpdateStatus()
-        {
-            try
-            {
-                if (AcadBlock == null || BlockAttProps == null || BlockAttProps.BlockType == null)
-                {
-                    return;
-                }
-
-                if (!TryGetDynamicBlockProperty("UpdateStatusPropertyName", out var updateStatus))
-                {
-                    return;
-                }
-
-                BlockAttProps.Update_Status = updateStatus;
-
-                var visibilityStateName = updateStatus.Value?.ToString()?.Trim();
-                if (string.IsNullOrWhiteSpace(visibilityStateName))
-                {
-                    return;
-                }
-
-                if (!BlockAttProps.BlockType.IsWriteEnabled)
-                {
-                    BlockAttProps.BlockType.UpgradeOpen();
-                }
-
-                BlockAttProps.BlockType.TextString = visibilityStateName;
-            }
-            catch (System.Exception ex)
-            {
-                Debug.Print($"Error in SyncBlockTypeWithUpdateStatus: {ex.Message}");
-            }
-        }
-
-        private bool TryGetDynamicBlockProperty(string propertyName, out DynamicBlockReferenceProperty property)
-        {
-            property = null;
-
-            if (AcadBlock == null || !AcadBlock.IsDynamicBlock)
-            {
-                return false;
-            }
-
-            foreach (DynamicBlockReferenceProperty dynamicProperty in AcadBlock.DynamicBlockReferencePropertyCollection)
-            {
-                if (string.Equals(dynamicProperty.PropertyName, propertyName, System.StringComparison.OrdinalIgnoreCase))
-                {
-                    property = dynamicProperty;
-                    return true;
-                }
-            }
-
-            return false;
         }
 
     }
