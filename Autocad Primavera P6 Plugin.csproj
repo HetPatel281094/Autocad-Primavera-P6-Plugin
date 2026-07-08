@@ -1,273 +1,115 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="Current" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="packages\PropertyChanged.Fody.4.1.0\build\PropertyChanged.Fody.props" Condition="Exists('packages\PropertyChanged.Fody.4.1.0\build\PropertyChanged.Fody.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>
-    </ProductVersion>
-    <SchemaVersion>
-    </SchemaVersion>
-    <ProjectGuid>{EF78A7A7-0612-46CC-8F47-A0DBC2CB84DA}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <RootNamespace>Autocad_Primavera_P6_Plugin</RootNamespace>
     <AssemblyName>Autocad Primavera P6 Plugin</AssemblyName>
-    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
-    <FileUpgradeFlags>
-    </FileUpgradeFlags>
-    <UpgradeBackupLocation />
-    <PublishUrl>publish\</PublishUrl>
-    <Install>true</Install>
-    <InstallFrom>Disk</InstallFrom>
-    <UpdateEnabled>false</UpdateEnabled>
-    <UpdateMode>Foreground</UpdateMode>
-    <UpdateInterval>7</UpdateInterval>
-    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
-    <UpdatePeriodically>false</UpdatePeriodically>
-    <UpdateRequired>false</UpdateRequired>
-    <MapFileExtensions>true</MapFileExtensions>
-    <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
-    <UseApplicationTrust>false</UseApplicationTrust>
-    <BootstrapperEnabled>true</BootstrapperEnabled>
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
+    <ProjectGuid>{EF78A7A7-0612-46CC-8F47-A0DBC2CB84DA}</ProjectGuid>
+
+    <!-- We keep our own Properties/AssemblyInfo.cs, so let the SDK skip generating one -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+
+    <!-- The project mixes WPF windows/user controls with a couple of WinForms dialogs -->
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+
+    <Platforms>x64</Platforms>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+
+    <Configurations>Debug;Release;nn</Configurations>
+      <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+
+  <PropertyGroup Condition="'$(Configuration)'=='nn'">
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
+
+  <!-- ── AutoCAD 2026 managed API references ────────────────────────────── -->
+  <!-- EDIT these HintPaths to match your local AutoCAD 2026 install folder -->
   <ItemGroup>
     <Reference Include="AcCoreMgd">
-      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Program Files\Autodesk\AutoCAD 2026\AcCoreMgd.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="AcDbMgd">
-      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Program Files\Autodesk\AutoCAD 2026\AcDbMgd.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="AcMgd">
-      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Program Files\Autodesk\AutoCAD 2026\AcMgd.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="AdWindows">
-      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Program Files\Autodesk\AutoCAD 2026\AdWindows.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="LiteDB, Version=5.0.21.0, Culture=neutral, PublicKeyToken=4ee40123013c9f27, processorArchitecture=MSIL">
-      <HintPath>packages\LiteDB.5.0.21\lib\net45\LiteDB.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>packages\Newtonsoft.Json.13.0.4\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="PropertyChanged, Version=4.1.0.0, Culture=neutral, PublicKeyToken=ee3ee20bcf148ddd, processorArchitecture=MSIL">
-      <HintPath>packages\PropertyChanged.Fody.4.1.0\lib\net40\PropertyChanged.dll</HintPath>
-    </Reference>
-    <!--ACA References Begin-->
-    <!--ACA Refences End-->
-    <!--AME Referebces Begin-->
-    <!--AME Reference End-->
-    <Reference Include="System" />
-    <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
-    </Reference>
-    <Reference Include="System.ComponentModel.DataAnnotations" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xaml" />
-    <Reference Include="System.Xml" />
-    <Reference Include="WindowsBase" />
-    <Reference Include="PresentationCore" />
-    <Reference Include="PresentationFramework" />
-    <Reference Include="WindowsFormsIntegration" />
   </ItemGroup>
+
+  <!-- ── NuGet packages (replaces packages.config) ──────────────────────── -->
   <ItemGroup>
-    <EmbeddedResource Include="Services\RibbonService\RCDATA_16_MODIFY.png" />
+    <PackageReference Include="Fody" Version="6.6.4" PrivateAssets="all" />
+    <PackageReference Include="PropertyChanged.Fody" Version="4.1.0" />
+    <PackageReference Include="LiteDB" Version="5.0.21" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <!-- System.Buffers is part of the BCL in .NET 8 — intentionally NOT referenced -->
   </ItemGroup>
+
+  <!-- ── myCommands.resx / Designer.cs pairing (preserve nesting in Solution Explorer) ── -->
   <ItemGroup>
-    <Compile Include="myCommands.Designer.cs">
-      <AutoGen>True</AutoGen>
+    <Compile Update="myCommands.Designer.cs">
       <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
       <DependentUpon>myCommands.resx</DependentUpon>
     </Compile>
-    <Compile Include="myPlugin.cs" />
-    <Compile Include="myCommands.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Services\AutocadService\AutocadService.cs" />
-    <Compile Include="Services\AutocadService\PlugInBlockReference.cs" />
-    <Compile Include="Services\LiteDBService\LiteDBService.cs" />
-    <Compile Include="Services\LiteDBService\model.P6ConnectionConfig.cs" />
-    <Compile Include="Services\LiteDBService\model.ProjeConfig.cs" />
-    <Compile Include="Services\P6ApiService\fn_GetDrawingProject.cs" />
-    <Compile Include="Services\P6ApiService\fn_GetP6ActivityCodeTypeOfProject.cs" />
-    <Compile Include="Services\P6ApiService\P6ApiService.cs" />
-    <Compile Include="Services\P6ApiService\PrimaveraP6Client.cs" />
-    <Compile Include="Services\P6ApiService\PrimaveraP6Client.Extension.cs" />
-    <Compile Include="Services\RibbonService\RibbonService.cs" />
-    <Compile Include="UserInterface\UI_InsertBlocksWindowView\ActivityCodePickerModel.cs" />
-    <Compile Include="UserInterface\UI_InsertBlocksWindowView\ActivityCodePickerNodeViewModel.cs" />
-    <Compile Include="UserInterface\UI_InsertBlocksWindowView\ActivityCodePickerView.xaml.cs">
-      <DependentUpon>ActivityCodePickerView.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="UserInterface\UI_InsertBlocksWindowView\ActivityCodePickerViewModel.cs" />
-    <Compile Include="UserInterface\UI_InsertBlocksWindowView\ACadBlockSectionViewModel.cs" />
-    <Compile Include="UserInterface\UI_InsertBlocksWindowView\BoundryActivityCodeSectionViewModel.cs" />
-    <Compile Include="UserInterface\UI_InsertBlocksWindowView\ActivityCodeSectionViewModel.cs" />
-    <Compile Include="UserInterface\UI_InsertBlocksWindowView\Converters.cs" />
-    <Compile Include="UserInterface\UI_InsertBlocksWindowView\InsertBlocksWindowView.xaml.cs">
-      <DependentUpon>InsertBlocksWindowView.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="UserInterface\UI_InsertBlocksWindowView\InsertBlocksWindowViewModel.cs" />
-    <Compile Include="UserInterface\UI_InsertBlocksWindowView\InsertBlocksWindowModel.cs" />
-    <Compile Include="UserInterface\UI_InsertBlocksWindowView\RelayCommand.cs" />
-    <Compile Include="UserInterface\UI_LinkedFoldersManagerView\LinkedFoldersManagerView.xaml.cs">
-      <DependentUpon>LinkedFoldersManagerView.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="UserInterface\UI_LinkedFoldersManagerView\LinkedFoldersManagerViewModel.cs" />
-    <Compile Include="UserInterface\UI_LinkedFoldersManagerView\LinkedFoldersManagerModel.cs" />
-    <Compile Include="UserInterface\UI_P6ConnectionManagerView\P6ConnectionManagerView.xaml.cs">
-      <DependentUpon>P6ConnectionManagerView.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="UserInterface\UI_P6ConnectionManagerView\P6ConnectionManagerViewModel.cs" />
-    <Compile Include="UserInterface\UI_P6ConnectionManagerView\P6ConnectionManagerModel.cs" />
-    <Compile Include="UserInterface\UI_PropertiesPalateView\PropertiesPalateView.xaml.cs">
-      <DependentUpon>PropertiesPalateView.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="UserInterface\UI_PropertiesPalateView\PropertiesPalateViewModel.cs" />
-    <Compile Include="UserInterface\UI_PropertiesPalateView\PropertiesPalateModel.cs" />
-    <Compile Include="UserInterface\UI_PluginStatusWindowView\PluginStatusWindowView.xaml.cs">
-      <DependentUpon>PluginStatusWindowView.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="UserInterface\UI_PluginStatusWindowView\PluginStatusWindowViewModel.cs" />
-    <Compile Include="UserInterface\UI_PluginStatusWindowView\PluginStatusWindowModel.cs" />
-    <Compile Include="UserInterface\UI_UserControls\UI_P6ProjectSelector\P6NodeViewModel.cs" />
-    <Compile Include="UserInterface\UI_UserControls\UI_P6ProjectSelector\P6ProjectSelectorView.xaml.cs">
-      <DependentUpon>P6ProjectSelectorView.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="UserInterface\UI_UserControls\UI_P6ProjectSelector\P6ProjectSelectorViewModel.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="myCommands.resx">
-      <DependentUpon>myCommands.cs</DependentUpon>
+    <EmbeddedResource Update="myCommands.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>myCommands.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
+
+  <!-- ── Ribbon icon resources ───────────────────────────────────────────── -->
+  <!-- SDK-style projects do NOT auto-embed .png files like the old project system did,
+       so these must stay explicit or RibbonService.LoadBitmap() will get null streams. -->
   <ItemGroup>
-    <BootstrapperPackage Include=".NETFramework,Version=v4.0">
-      <Visible>False</Visible>
-      <ProductName>Microsoft .NET Framework 4 %28x86 and x64%29</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
-      <Install>false</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5 SP1</ProductName>
-      <Install>false</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
-      <Visible>False</Visible>
-      <ProductName>Windows Installer 3.1</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
+    <EmbeddedResource Include="Services\RibbonService\RCDATA_16_MODIFY.png" />
     <EmbeddedResource Include="Services\RibbonService\RCDATA_32_MODIFY.png" />
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedResource Include="Services\RibbonService\RCDATA_16_BLOCK.png" />
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedResource Include="Services\RibbonService\RCDATA_32_BLOCK.png" />
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedResource Include="Services\RibbonService\RCDATA_16_CHECKSTD.png" />
     <EmbeddedResource Include="Services\RibbonService\RCDATA_32_CHECKSTD.png" />
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedResource Include="Services\RibbonService\RCDATA_16_DBCONNECT.png" />
     <EmbeddedResource Include="Services\RibbonService\RCDATA_32_DBCONNECT.png" />
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedResource Include="Services\RibbonService\RCDATA_16_ONLINE_OPEN_FOLDER.png" />
     <EmbeddedResource Include="Services\RibbonService\RCDATA_32_ONLINE_OPEN_FOLDER.png" />
   </ItemGroup>
-  <ItemGroup>
-    <Page Include="UserInterface\UI_InsertBlocksWindowView\ActivityCodePickerView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="UserInterface\UI_InsertBlocksWindowView\InsertBlocksWindowView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="UserInterface\UI_LinkedFoldersManagerView\LinkedFoldersManagerView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="UserInterface\UI_P6ConnectionManagerView\P6ConnectionManagerView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="UserInterface\UI_PropertiesPalateView\PropertiesPalateView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="UserInterface\UI_PluginStatusWindowView\PluginStatusWindowView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="UserInterface\UI_UserControls\UI_P6ProjectSelector\P6ProjectSelectorView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="FodyWeavers.xml" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Import Project="packages\Fody.6.6.4\build\Fody.targets" Condition="Exists('packages\Fody.6.6.4\build\Fody.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('packages\Fody.6.6.4\build\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Fody.6.6.4\build\Fody.targets'))" />
-    <Error Condition="!Exists('packages\PropertyChanged.Fody.4.1.0\build\PropertyChanged.Fody.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\PropertyChanged.Fody.4.1.0\build\PropertyChanged.Fody.props'))" />
-  </Target>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
+
+  <!--
+    Everything else — all .cs files (InsertBlocksWindowView.xaml.cs, LiteDBService.cs,
+    P6ApiService.cs, myPlugin.cs, myCommands.cs, Class1.cs, Properties/AssemblyInfo.cs, etc.)
+    and all .xaml files (PluginStatusWindowView.xaml, LinkedFoldersManagerView.xaml,
+    P6ConnectionManagerView.xaml, PropertiesPalateView.xaml, InsertBlocksWindowView.xaml,
+    ActivityCodePickerView.xaml, P6ProjectSelectorView.xaml) are picked up automatically
+    by the SDK's default globs (Compile for *.cs, Page for *.xaml since UseWPF=true).
+    No explicit <Compile>/<Page> list is needed anymore — delete the old one.
   -->
+
 </Project>

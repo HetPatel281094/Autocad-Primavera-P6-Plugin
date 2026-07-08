@@ -24,10 +24,10 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-// You can specify all the values or you can default the Build and Revision Numbers 
-// by using the '*' as shown below:
-// [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.0.*")]
+// SDK-style projects build deterministically by default, which is incompatible
+// with wildcard ('1.0.*') versions — so these are fixed, explicit numbers now.
+// Bump the Build/Revision manually (or wire up a CI versioning step) as needed.
+[assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
 
 // In order to sign your assembly you must specify a key to use. Refer to the 
