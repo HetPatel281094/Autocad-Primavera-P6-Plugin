@@ -247,33 +247,34 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
             using (var tr = db.TransactionManager.StartTransaction())
             {
-                var modelSpace = (BlockTableRecord)tr.GetObject(SymbolUtilityServices.GetBlockModelSpaceId(db), OpenMode.ForWrite);
-                var blockRef = new BlockReference(insertionPoint, blockDefId);
-                modelSpace.AppendEntity(blockRef);
-                tr.AddNewlyCreatedDBObject(blockRef, true);
-
                 var blockDef = (BlockTableRecord)tr.GetObject(blockDefId, OpenMode.ForRead);
-                foreach (ObjectId id in blockDef)
-                {
-                    var attDef = tr.GetObject(id, OpenMode.ForRead) as AttributeDefinition;
-                    if (attDef == null || attDef.Constant)
-                    {
-                        continue;
-                    }
-
-                    var attRef = new AttributeReference();
-                    attRef.SetAttributeFromBlock(attDef, blockRef.BlockTransform);
-                    blockRef.AttributeCollection.AppendAttribute(attRef);
-                    tr.AddNewlyCreatedDBObject(attRef, true);
-                }
-
+                var pluginBlock = new PlugInBlockReference(_model.ActAcadDoc);
+                pluginBlock.AttachBlockTableRecord(blockDef, tr);
                 var values = BuildAttributeValues(elementId, blockName);
-                foreach (var pair in values)
+                IList<string> missingTags;
+                ObjectId insertedId = pluginBlock.CreateBlockReference(
+                    SymbolUtilityServices.GetBlockModelSpaceId(db),
+                    insertionPoint,
+                    values,
+                    tr,
+                    out missingTags);
+
+                string[] requiredTags = { "ELEMENT_ID", "BLOCK_TYPE", "Attribute_Check_string" };
+                var missingRequiredTags = missingTags
+                    .Where(tag => requiredTags.Any(required => string.Equals(required, tag, StringComparison.OrdinalIgnoreCase)))
+                    .ToList();
+                if (missingRequiredTags.Count > 0)
                 {
-                    SetAttributeValue(blockRef, pair.Key, pair.Value, tr);
+                    throw new InvalidOperationException(
+                        "The selected block definition is not a plugin block. Missing required attribute definition(s): " +
+                        string.Join(", ", missingRequiredTags));
                 }
 
-                ObjectId insertedId = blockRef.ObjectId;
+                if (missingTags.Count > 0)
+                {
+                    Debug.Print("[Plugin] Block was inserted without optional attributes: " + string.Join(", ", missingTags));
+                }
+
                 tr.Commit();
                 return insertedId;
             }
@@ -307,30 +308,6 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                 { "ATT_10_VALUE", string.Empty },
                 { "Attribute_Check_string", "FoundOK" }
             };
-        }
-
-        private void SetAttributeValue(BlockReference blockRef, string tag, string value, Transaction tr)
-        {
-            foreach (ObjectId attributeId in blockRef.AttributeCollection)
-            {
-                var attribute = tr.GetObject(attributeId, OpenMode.ForWrite) as AttributeReference;
-                if (attribute != null && string.Equals(attribute.Tag, tag, StringComparison.OrdinalIgnoreCase))
-                {
-                    attribute.TextString = value ?? string.Empty;
-                    return;
-                }
-            }
-
-            var created = new AttributeReference
-            {
-                Tag = tag,
-                TextString = value ?? string.Empty,
-                Position = blockRef.Position,
-                Height = 1.0,
-                Invisible = true
-            };
-            blockRef.AttributeCollection.AppendAttribute(created);
-            tr.AddNewlyCreatedDBObject(created, true);
         }
 
         private void EditLegendForBlock(Autodesk.AutoCAD.ApplicationServices.Document doc, ObjectId blockRefId)
