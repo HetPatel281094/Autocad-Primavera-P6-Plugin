@@ -1,95 +1,20 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
+using System;
+using System.Collections.Generic;
 using AcadAppServ = Autodesk.AutoCAD.ApplicationServices;
-using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
 
 namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
 {
     public class Slot
     {
-        public string DefaultPropSlotName;
         public string SlotPropName;
+        public string SlotPropValue;
         public string NameAttRefTag;
         public AttributeReference NameAttRef;
         public string ValueAttRefTag;
         public AttributeReference ValueAttRef;
-    }
-
-    public enum UpdateStatus
-    {
-        Unplanned,
-        Planned,
-        Started,
-        Onhold,
-        Completed
-    }
-
-    /// <summary>Live attribute and dynamic-property handles for an instance-bound block.</summary>
-    public class AttProps
-    {
-        public AttributeReference Attribute_Check_String;
-        public AttributeReference ElementId;
-        public AttributeReference BlockType;
-        public DynamicBlockReferenceProperty Update_Status;
-        public DynamicBlockReferenceProperty Moveinfo_X;
-        public DynamicBlockReferenceProperty Moveinfo_Y;
-        public Dictionary<string, string> PropSlotDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-        public void UpdateBlockType(UpdateStatus status)
-        {
-            if (BlockType != null)
-            {
-                BlockType.TextString = status.ToString();
-            }
-        }
-
-        public void SetBlockTypeFromStatus(Transaction tr)
-        {
-            if (tr == null || BlockType == null || Update_Status == null)
-            {
-                return;
-            }
-
-            string status = Convert.ToString(Update_Status.Value);
-            if (string.Equals(BlockType.TextString, status, StringComparison.Ordinal))
-            {
-                return;
-            }
-
-            var blockType = (AttributeReference)tr.GetObject(BlockType.ObjectId, OpenMode.ForWrite);
-            blockType.TextString = status ?? string.Empty;
-            BlockType = blockType;
-        }
-
-        public async Task<ActivityCode> GetBdryActCodeAsync(Autocad_Primavera_P6_Plugin.Services.P6ApiService.P6ApiService p6ApiService, Dictionary<string, Slot> slotsDict)
-        {
-            if (p6ApiService == null || p6ApiService.Client == null || slotsDict == null ||
-                !PropSlotDict.TryGetValue(DefaultPropSlotName.BOUNDARY_CODE_ID, out string slotKey) ||
-                !slotsDict.TryGetValue(slotKey, out Slot slot) || slot.ValueAttRef == null)
-            {
-                return null;
-            }
-
-            string boundaryCodeId = slot.ValueAttRef.TextString;
-            if (string.IsNullOrWhiteSpace(boundaryCodeId))
-            {
-                return null;
-            }
-
-            var activityCodes = await p6ApiService.Client.GetActivityCodesAsync(
-                null,
-                "ObjectId,CodeValue,CodeConcatName,CodeTypeObjectId,ParentObjectId",
-                null,
-                null);
-
-            return activityCodes.FirstOrDefault(code =>
-                code.ObjectId.HasValue &&
-                string.Equals(code.ObjectId.Value.ToString(), boundaryCodeId, StringComparison.OrdinalIgnoreCase));
-        }
     }
 
     public static class DefaultPropSlotName
@@ -103,25 +28,32 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
         public const string Slot07 = "LENGTH_L";
         public const string Slot08 = "BREADTH_B";
         public const string Slot09 = "HEIGHT_H";
-        public const string Slot10 = "";
-        public const string Slot11 = "";
-        public const string Slot12 = "";
-        public const string Slot13 = "";
-        public const string Slot14 = "";
-        public const string Slot15 = "";
-    }
-
-    public enum RefState
-    {
-        Linked,
-        NoRef
+        //public const string Slot10 = "";
+        //public const string Slot11 = "";
+        //public const string Slot12 = "";
+        //public const string Slot13 = "";
+        //public const string Slot14 = "";
+        //public const string Slot15 = "";
     }
 
     public enum InitState
     {
         NotInitialized,
+        DefaultInitialized,
         BTRInitialized,
         BlockRefInitialized
+    }
+
+    /// <summary>Live attribute and dynamic-property handles for an instance-bound block.</summary>
+    public class AttProps
+    {
+        public AttributeReference Attribute_Check_String;
+        public AttributeReference ElementId;
+        public AttributeReference BlockType;
+        public DynamicBlockReferenceProperty Update_Status;
+        public DynamicBlockReferenceProperty Moveinfo_X;
+        public DynamicBlockReferenceProperty Moveinfo_Y;
+        public Dictionary<string, string> PropSlotDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -132,37 +64,44 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
     /// </summary>
     public class PlugInBlockReference
     {
-        public const int SlotCount = 15;
-
         public InitState initState { get; private set; } = InitState.NotInitialized;
-        public RefState refState { get; private set; } = RefState.NoRef;
-        public AcadAppServ.Document AcadDoc { get; }
-        public ObjectId BlockReferenceId { get; private set; } = ObjectId.Null;
-        public ObjectId BlockTableRecordId { get; private set; } = ObjectId.Null;
-
-        public Dictionary<string, Slot> SlotsDict { get; } = CreateSlots();
+        private AcadAppServ.Document AcadDoc { get; }
+        private ObjectId BlockReferenceId { get; set; } = ObjectId.Null;
+        private ObjectId BlockTableRecordId { get; set; } = ObjectId.Null;
+        private Dictionary<string, Slot> SlotsDict { get; } = new Dictionary<string, Slot> { ["Slot01"] = new Slot(), ["Slot02"] = new Slot(), ["Slot03"] = new Slot(), ["Slot04"] = new Slot(), ["Slot05"] = new Slot(), ["Slot06"] = new Slot(), ["Slot07"] = new Slot(), ["Slot08"] = new Slot(), ["Slot09"] = new Slot(), ["Slot10"] = new Slot(), ["Slot11"] = new Slot(), ["Slot12"] = new Slot(), ["Slot13"] = new Slot(), ["Slot14"] = new Slot(), ["Slot15"] = new Slot() };
         public AttProps BlockAttProps { get; private set; }
         public ActivityCode BdryActCode { get; set; }
+        public ActivityCode ElementIdCode { get; set; }
+
         public IList<string> LoadWarnings { get; } = new List<string>();
 
         /// <summary>Creates a blank object. Attach a BTR or block reference later.</summary>
         public PlugInBlockReference(AcadAppServ.Document acadDoc)
         {
             AcadDoc = acadDoc ?? throw new ArgumentNullException(nameof(acadDoc));
+            SetDefaultSlotPropNames();
         }
 
         /// <summary>Creates a reference-bound object. Call Init with the caller transaction.</summary>
         public PlugInBlockReference(AcadAppServ.Document acadDoc, BlockReference blockRef)
-            : this(acadDoc)
         {
+            AcadDoc = acadDoc ?? throw new ArgumentNullException(nameof(acadDoc));
             AttachBlockReference(blockRef);
         }
 
         /// <summary>Creates a definition-bound object. Call Init with the caller transaction.</summary>
         public PlugInBlockReference(AcadAppServ.Document acadDoc, BlockTableRecord blockTableRecord)
-            : this(acadDoc)
         {
+            AcadDoc = acadDoc ?? throw new ArgumentNullException(nameof(acadDoc));
             AttachBlockTableRecord(blockTableRecord);
+        }
+
+        private void SetDefaultSlotPropNames()
+        {
+            foreach (var entry in SlotsDict)
+            {
+
+            };
         }
 
         public void AttachBlockReference(BlockReference blockRef)
@@ -175,7 +114,6 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
             BlockReferenceId = blockRef.ObjectId;
             BlockTableRecordId = blockRef.BlockTableRecord;
             initState = InitState.BlockRefInitialized;
-            refState = RefState.Linked;
             BlockAttProps = null;
             ClearSlots();
         }
@@ -196,7 +134,6 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
             BlockReferenceId = ObjectId.Null;
             BlockTableRecordId = blockTableRecord.ObjectId;
             initState = InitState.BTRInitialized;
-            refState = RefState.NoRef;
             BlockAttProps = null;
             ClearSlots();
         }
@@ -438,23 +375,12 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
         {
             foreach (Slot slot in SlotsDict.Values)
             {
-                slot.DefaultPropSlotName = string.Empty;
                 slot.SlotPropName = string.Empty;
                 slot.NameAttRefTag = null;
                 slot.NameAttRef = null;
                 slot.ValueAttRefTag = null;
                 slot.ValueAttRef = null;
             }
-        }
-
-        private static Dictionary<string, Slot> CreateSlots()
-        {
-            var slots = new Dictionary<string, Slot>();
-            for (int slot = 1; slot <= SlotCount; slot++)
-            {
-                slots.Add("Slot" + slot.ToString("D2"), new Slot());
-            }
-            return slots;
         }
 
         private static int ParseSlotNumber(string key)
@@ -478,6 +404,19 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
             {
                 throw new InvalidOperationException("No valid " + objectName + " is attached.");
             }
+        }
+
+        public void SetBlockTypeFromStatus(Transaction tr)
+        {
+            if (tr == null || BlockAttProps.BlockType == null || BlockAttProps.Update_Status == null) { return; };
+
+            string status = Convert.ToString(BlockAttProps.Update_Status.Value);
+
+            if (string.Equals(BlockAttProps.BlockType.TextString, status, StringComparison.Ordinal)) { return; }
+
+            var blockType = (AttributeReference)tr.GetObject(BlockAttProps.BlockType.ObjectId, OpenMode.ForWrite);
+            blockType.TextString = status ?? string.Empty;
+            BlockAttProps.BlockType = blockType;
         }
     }
 }

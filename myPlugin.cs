@@ -95,10 +95,7 @@ namespace Autocad_Primavera_P6_Plugin
                     pluginBlockRef.Init(tr);
 
                     var actCode = pluginBlockRef.BdryActCode;
-                    var actCode2 = pluginBlockRef.BlockAttProps
-                        .GetBdryActCodeAsync(MyP6ApiService, pluginBlockRef.SlotsDict)
-                        .GetAwaiter()
-                        .GetResult();
+                    var actCode2 = pluginBlockRef.BlockAttProps;
 
                     bool isDyn = freshRef.IsDynamicBlock;
                     var props = freshRef.DynamicBlockReferencePropertyCollection;
