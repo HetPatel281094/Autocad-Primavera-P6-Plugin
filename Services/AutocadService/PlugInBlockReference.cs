@@ -95,30 +95,20 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
     public static class DefaultPropSlotName
     {
         public const string Slot01 = "BOUNDARY_CODE_ID";
-        public const string Slot02 = "";
-        public const string Slot03 = "";
-        public const string Slot04 = "";
-        public const string Slot05 = "";
-        public const string Slot06 = "";
-        public const string Slot07 = "";
-        public const string Slot08 = "";
-        public const string Slot09 = "";
+        public const string Slot02 = "BOUNDARY_CODE_PATH";
+        public const string Slot03 = "BOUNDARY_CODE_VALUE";
+        public const string Slot04 = "ITEM_ID_CODE_ID";
+        public const string Slot05 = "ITEM_ID_CODE_PATH";
+        public const string Slot06 = "ITEM_ID_CODE_VALUE";
+        public const string Slot07 = "LENGTH_L";
+        public const string Slot08 = "BREADTH_B";
+        public const string Slot09 = "HEIGHT_H";
         public const string Slot10 = "";
         public const string Slot11 = "";
         public const string Slot12 = "";
         public const string Slot13 = "";
         public const string Slot14 = "";
         public const string Slot15 = "";
-
-        public const string BOUNDARY_CODE_ID = "BOUNDARY_CODE_ID";
-        public const string BOUNDARY_CODE_PATH = "BOUNDARY_CODE_PATH";
-        public const string BOUNDARY_CODE_VALUE = "BOUNDARY_CODE_VALUE";
-        public const string ITEM_ID_CODE_ID = "ITEM_ID_CODE_ID";
-        public const string ITEM_ID_CODE_PATH = "ITEM_ID_CODE_PATH";
-        public const string ITEM_ID_CODE_VALUE = "ITEM_ID_CODE_VALUE";
-        public const string LENGTH_L = "LENGTH_L";
-        public const string BREADTH_B = "BREADTH_B";
-        public const string HEIGHT_H = "HEIGHT_H";
     }
 
     public enum RefState
