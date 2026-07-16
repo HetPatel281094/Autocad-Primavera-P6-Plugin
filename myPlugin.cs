@@ -81,6 +81,9 @@ namespace Autocad_Primavera_P6_Plugin
                 Debug.Print("Test Function is invoked.");
 
                 var doc = acadApp.DocumentManager.MdiActiveDocument;
+
+                var pluginBlockRefTemp = new PlugInBlockReference(doc);
+
                 var blockRefList = MyAutocadService.GetPluginBlockImpliedSelected(doc);
                 var blockRef = blockRefList?.Count > 0 ? blockRefList.Last() : null;
                 if (blockRef == null) { return; };
