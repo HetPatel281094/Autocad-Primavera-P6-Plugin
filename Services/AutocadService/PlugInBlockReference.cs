@@ -20,7 +20,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
 
     public static class DefaultPropSlotName
     {
-        public static Dictionary<string, string> PropSlotDict = new Dictionary<string, string>()
+        public static readonly Dictionary<string, string> PropSlotDict = new()
         {
             ["Slot01"] = "BOUNDARY_CODE",
             ["Slot02"] = "BOUNDARY_CODE",
@@ -30,13 +30,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
             ["Slot06"] = "ITEM_ID_CODE",
             ["Slot07"] = "LENGTH_L",
             ["Slot08"] = "BREADTH_B",
-            ["Slot09"] = "HEIGHT_H",
-            //["Slot10"] = "",
-            //["Slot11"] = "",
-            //["Slot12"] = "",
-            //["Slot13"] = "",
-            //["Slot14"] = "",
-            //["Slot15"] = ""
+            ["Slot09"] = "HEIGHT_H"
         };
     }
 
@@ -57,7 +51,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
         public DynamicBlockReferenceProperty Update_Status;
         public DynamicBlockReferenceProperty Moveinfo_X;
         public DynamicBlockReferenceProperty Moveinfo_Y;
-        public Dictionary<string, string> PropSlotDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, string> PropSlotDict = new(StringComparer.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -69,14 +63,21 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
     public class PlugInBlockReference
     {
         public InitState initState { get; private set; } = InitState.NotInitialized;
-        private AcadAppServ.Document AcadDoc { get; }
-        private ObjectId BlockReferenceId { get; set; } = ObjectId.Null;
-        private ObjectId BlockTableRecordId { get; set; } = ObjectId.Null;
-        private Dictionary<string, Slot> SlotsDict { get; } = new Dictionary<string, Slot>() { ["Slot01"] = null, ["Slot02"] = null, ["Slot03"] = null, ["Slot04"] = null, ["Slot05"] = null, ["Slot06"] = null, ["Slot07"] = null, ["Slot08"] = null, ["Slot09"] = null, ["Slot10"] = null, ["Slot11"] = null, ["Slot12"] = null, ["Slot13"] = null, ["Slot14"] = null, ["Slot15"] = null };
-        public AttProps BlockAttProps { get; private set; }
-        public ActivityCode BdryActCode { get; set; }
-        public ActivityCode ElementIdCode { get; set; }
-        public IList<string> LoadWarnings { get; } = new List<string>();
+        private AcadAppServ.Document AcadDoc = null;
+        private ObjectId BlockReferenceId = ObjectId.Null;
+        private ObjectId BlockTableRecordId = ObjectId.Null;
+        private Dictionary<string, Slot> SlotsDict = new() { ["Slot01"] = null, ["Slot02"] = null, ["Slot03"] = null, ["Slot04"] = null, ["Slot05"] = null, ["Slot06"] = null, ["Slot07"] = null, ["Slot08"] = null, ["Slot09"] = null, ["Slot10"] = null, ["Slot11"] = null, ["Slot12"] = null, ["Slot13"] = null, ["Slot14"] = null, ["Slot15"] = null };
+        private AttProps BlockAttProps = null;
+
+        private ActivityCode BdryActCode = null;
+        public ActivityCode Get_BdryActCode() { return BdryActCode; }
+        public bool Set_BdryActCode(ActivityCode actCode, out ActivityCode result) { BdryActCode = actCode; result = actCode; return true; }
+
+        private ActivityCode ElementIdCode = null;
+        public ActivityCode Get_ElementIdCode() { return ElementIdCode; }
+        public bool Set_ElementIdCode(ActivityCode actCode, out ActivityCode result) { ElementIdCode = actCode; result = actCode; return true; }
+
+        public IList<string> LoadWarnings = new List<string>();
 
         /// <summary>Creates a blank object. Attach a BTR or block reference later.</summary>
         public PlugInBlockReference(AcadAppServ.Document acadDoc)

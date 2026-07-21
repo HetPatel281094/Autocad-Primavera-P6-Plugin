@@ -97,8 +97,8 @@ namespace Autocad_Primavera_P6_Plugin
                     var pluginBlockRef = new PlugInBlockReference(doc, freshRef);
                     pluginBlockRef.Init(tr);
 
-                    var actCode = pluginBlockRef.BdryActCode;
-                    var actCode2 = pluginBlockRef.BlockAttProps;
+                    var actCode = pluginBlockRef.Get_BdryActCode();
+                    var actCode2 = pluginBlockRef.Get_ElementIdCode();
 
                     bool isDyn = freshRef.IsDynamicBlock;
                     var props = freshRef.DynamicBlockReferencePropertyCollection;
