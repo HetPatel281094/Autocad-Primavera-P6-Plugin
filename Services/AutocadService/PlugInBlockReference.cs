@@ -1,9 +1,14 @@
 using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
+using LiteDB;
+using Microsoft.VisualBasic;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Transactions;
+using System.Windows.Input;
 using AcadAppServ = Autodesk.AutoCAD.ApplicationServices;
 
 namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
@@ -20,7 +25,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
 
     public static class DefaultPropSlotName
     {
-        public static readonly Dictionary<string, string> PropSlotDict = new()
+        public static readonly Dictionary<string, string> DefaultPropSlotDict = new()
         {
             ["Slot01"] = "BOUNDARY_CODE",
             ["Slot02"] = "BOUNDARY_CODE",
@@ -34,7 +39,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
         };
     }
 
-    public enum InitState
+    public enum InitStateEnum
     {
         NotInitialized,
         DefaultInitialized,
@@ -62,10 +67,10 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
     /// </summary>
     public class PlugInBlockReference
     {
-        public InitState initState { get; private set; } = InitState.NotInitialized;
+        public InitStateEnum InitState { get; private set; } = InitStateEnum.NotInitialized;
         private AcadAppServ.Document AcadDoc = null;
-        private ObjectId BlockReferenceId = ObjectId.Null;
-        private ObjectId BlockTableRecordId = ObjectId.Null;
+        private BlockTableRecord AcadBlockTblRec = null;
+        private BlockReference AcadBlockRef = null;
         private Dictionary<string, Slot> SlotsDict = new() { ["Slot01"] = null, ["Slot02"] = null, ["Slot03"] = null, ["Slot04"] = null, ["Slot05"] = null, ["Slot06"] = null, ["Slot07"] = null, ["Slot08"] = null, ["Slot09"] = null, ["Slot10"] = null, ["Slot11"] = null, ["Slot12"] = null, ["Slot13"] = null, ["Slot14"] = null, ["Slot15"] = null };
         private AttProps BlockAttProps = null;
 
@@ -83,13 +88,59 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
         public PlugInBlockReference(AcadAppServ.Document acadDoc)
         {
             AcadDoc = acadDoc ?? throw new ArgumentNullException(nameof(acadDoc));
-            Init_Slots(InitState.DefaultInitialized);
-            SetDefaultSlots();
+            Init_PlugInBlockReference(InitStateEnum.DefaultInitialized);
         }
 
-        private void SetDefaultSlots()
+        /// <summary>Creates a definition-bound object. Call Init with the caller transaction.</summary>
+        public PlugInBlockReference(AcadAppServ.Document acadDoc, BlockTableRecord blockTableRecord, Transaction tr)
         {
-            var defaultDict = DefaultPropSlotName.PropSlotDict;
+            AcadDoc = acadDoc ?? throw new ArgumentNullException(nameof(acadDoc));
+            AcadBlockTblRec = blockTableRecord ?? throw new ArgumentNullException(nameof(blockTableRecord));
+            Init_PlugInBlockReference(InitStateEnum.BTRInitialized, tr);
+        }
+
+        /// <summary>Creates a reference-bound object. Call Init with the caller transaction.</summary>
+        public PlugInBlockReference(AcadAppServ.Document acadDoc, BlockReference blockRef, Transaction tr)
+        {
+            AcadDoc = acadDoc ?? throw new ArgumentNullException(nameof(acadDoc));
+            AcadBlockRef = blockRef ?? throw new ArgumentNullException(nameof(blockRef));
+            Init_PlugInBlockReference(InitStateEnum.BlockRefInitialized, tr);
+        }
+
+        private void Init_PlugInBlockReference(InitStateEnum refInitState, Transaction tr = null)
+        {
+            bool needsTransaction = refInitState == InitStateEnum.BTRInitialized || refInitState == InitStateEnum.BlockRefInitialized;
+
+            if (needsTransaction && tr == null){ throw new ArgumentNullException(nameof(tr)); };
+
+            BlockAttProps = new AttProps();
+
+            switch (refInitState)
+            {
+                case InitStateEnum.DefaultInitialized:
+                    LoadDefaultSlots();
+                    InitState = refInitState;
+                    break;
+
+                case InitStateEnum.BTRInitialized:
+                    Init_By_BTR(tr);
+                    InitState = refInitState;
+                    break;
+
+                case InitStateEnum.BlockRefInitialized:
+                    Init_By_BlockRef(tr);
+                    InitState = refInitState;
+                    break;
+
+                default:
+                    Debug.Print("Init_PlugInBlockReference called with unhandled InitState: " + refInitState);
+                    return;
+            };
+        }
+
+        private void LoadDefaultSlots()
+        {
+            var defaultDict = DefaultPropSlotName.DefaultPropSlotDict;
 
             foreach (var key in SlotsDict.Keys.ToList())
             {
@@ -108,41 +159,77 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                         ValueAttRefTag = valueTag
                     };
                 }
-            }
+            };
 
-            initState = InitState.DefaultInitialized;
+            Reset_PropSlotDict();
+
         }
 
-        /// <summary>Creates a reference-bound object. Call Init with the caller transaction.</summary>
-        public PlugInBlockReference(AcadAppServ.Document acadDoc, BlockReference blockRef)
+        private void Init_By_BTR(Transaction tr)
         {
-            AcadDoc = acadDoc ?? throw new ArgumentNullException(nameof(acadDoc));
-            Init_Slots(InitState.BlockRefInitialized);
-            AttachBlockReference(blockRef);
+            var blockTableRecord = (BlockTableRecord)tr.GetObject(AcadBlockTblRec.ObjectId, OpenMode.ForRead);
+
+            var definitions = new Dictionary<string, AttributeDefinition>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (ObjectId entityId in blockTableRecord)
+            {
+                var attDef = tr.GetObject(entityId, OpenMode.ForRead) as AttributeDefinition;
+                var attDefTag = attDef?.Tag?.Trim() ?? string.Empty;
+
+                if (attDef != null && !String.IsNullOrWhiteSpace(attDefTag) && !definitions.ContainsKey(attDefTag))
+                {
+                    definitions.Add(attDef.Tag, attDef);
+                };
+
+            };
+
+            foreach (var key in SlotsDict.Keys.ToList())
+            {
+                int slotNumber = ParseSlotNumber(key);
+                string nameTag = SlotNameTag(slotNumber);
+                string valueTag = SlotValueTag(slotNumber);
+
+                if (!definitions.TryGetValue(nameTag, out AttributeDefinition NameAttDef) ||
+                    !definitions.ContainsKey(valueTag))
+                {
+                    continue;
+                };
+
+                SlotsDict[key] = new Slot()
+                {
+                    SlotPropName = NameAttDef.TextString,
+                    NameAttRefTag = nameTag,
+                    ValueAttRefTag = valueTag
+                };
+            };
+
+            Reset_PropSlotDict();
+
+            // Add code to hydrate the BlockAttProps with the AttributeDefinitions Attribute_Check_String, ElementId and BlockType
+
+            AcadBlockTblRec = blockTableRecord;
         }
 
+        private void Init_By_BlockRef(Transaction tr)
+        {
+            var blockReference = (BlockReference)tr.GetObject(AcadBlockRef.ObjectId, OpenMode.ForRead);
+
+            var attDefDict = Get_AttDefDict(blockReference);
+            var dyBlockRefPropDict = Get_DyBlockRefPropDict(blockReference);
+
+            throw new NotImplementedException();
+        }
+
+        // Rough Below
         public void AttachBlockReference(BlockReference blockRef)
         {
             if (blockRef == null){ throw new ArgumentNullException(nameof(blockRef)); };
 
-            BlockReferenceId = blockRef.ObjectId;
-            BlockTableRecordId = blockRef.BlockTableRecord;
-            initState = InitState.BlockRefInitialized;
+            AcadBlockRef = blockRef.ObjectId;
+            AcadBlockTblRec = blockRef.BlockTableRecord;
+            InitState = InitStateEnum.BlockRefInitialized;
             BlockAttProps = null;
             ClearSlots();
-        }
-
-        /// <summary>Creates a definition-bound object. Call Init with the caller transaction.</summary>
-        public PlugInBlockReference(AcadAppServ.Document acadDoc, BlockTableRecord blockTableRecord)
-        {
-            AcadDoc = acadDoc ?? throw new ArgumentNullException(nameof(acadDoc));
-            Init_Slots(InitState.BTRInitialized);
-            AttachBlockTableRecord(blockTableRecord);
-        }
-
-        private void Init_Slots(InitState bTRInitialized)
-        {
-            throw new NotImplementedException();
         }
 
         public void AttachBlockTableRecord(BlockTableRecord blockTableRecord)
@@ -152,9 +239,9 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                 throw new ArgumentNullException(nameof(blockTableRecord));
             }
 
-            BlockReferenceId = ObjectId.Null;
-            BlockTableRecordId = blockTableRecord.ObjectId;
-            initState = InitState.BTRInitialized;
+            AcadBlockRef = ObjectId.Null;
+            AcadBlockTblRec = blockTableRecord.ObjectId;
+            InitState = InitStateEnum.BTRInitialized;
             BlockAttProps = null;
             ClearSlots();
         }
@@ -183,19 +270,19 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
             BlockAttProps = null;
             ClearSlots();
 
-            if (initState == InitState.BTRInitialized)
+            if (InitState == InitStateEnum.BTRInitialized)
             {
-                EnsureBound(BlockTableRecordId, "block table record");
-                var blockTableRecord = (BlockTableRecord)tr.GetObject(BlockTableRecordId, OpenMode.ForRead);
+                EnsureBound(AcadBlockTblRec, "block table record");
+                var blockTableRecord = (BlockTableRecord)tr.GetObject(AcadBlockTblRec, OpenMode.ForRead);
                 LoadTemplateSlots(blockTableRecord, tr);
                 return;
             }
 
-            if (initState == InitState.BlockRefInitialized)
+            if (InitState == InitStateEnum.BlockRefInitialized)
             {
-                EnsureBound(BlockReferenceId, "block reference");
-                var blockReference = (BlockReference)tr.GetObject(BlockReferenceId, OpenMode.ForRead);
-                BlockTableRecordId = blockReference.BlockTableRecord;
+                EnsureBound(AcadBlockRef, "block reference");
+                var blockReference = (BlockReference)tr.GetObject(AcadBlockRef, OpenMode.ForRead);
+                AcadBlockTblRec = blockReference.BlockTableRecord;
                 LoadInstanceProperties(blockReference, tr);
                 return;
             }
@@ -219,15 +306,15 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
             {
                 throw new ArgumentNullException(nameof(tr));
             }
-            if (initState != InitState.BTRInitialized)
+            if (InitState != InitStateEnum.BTRInitialized)
             {
                 throw new InvalidOperationException("A block table record must be attached before creating a block reference.");
             }
 
-            EnsureBound(BlockTableRecordId, "block table record");
+            EnsureBound(AcadBlockTblRec, "block table record");
             var ownerSpace = (BlockTableRecord)tr.GetObject(ownerSpaceId, OpenMode.ForWrite);
-            var blockDefinition = (BlockTableRecord)tr.GetObject(BlockTableRecordId, OpenMode.ForRead);
-            var blockReference = new BlockReference(insertionPoint, BlockTableRecordId);
+            var blockDefinition = (BlockTableRecord)tr.GetObject(AcadBlockTblRec, OpenMode.ForRead);
+            var blockReference = new BlockReference(insertionPoint, AcadBlockTblRec);
             ownerSpace.AppendEntity(blockReference);
             tr.AddNewlyCreatedDBObject(blockReference, true);
 
@@ -249,7 +336,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
             Init(tr);
             missingAttributeTags = ApplyAttributeValues(attributeValues, tr);
             Init(tr); // Reload the public handles after any attributes were opened for write.
-            return BlockReferenceId;
+            return AcadBlockRef;
         }
 
         /// <summary>Writes only existing AttributeReferences; it never fabricates an orphan attribute.</summary>
@@ -263,12 +350,12 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
             {
                 throw new ArgumentNullException(nameof(tr));
             }
-            if (initState != InitState.BlockRefInitialized)
+            if (InitState != InitStateEnum.BlockRefInitialized)
             {
                 throw new InvalidOperationException("A block reference must be attached before writing attributes.");
             }
 
-            var blockReference = (BlockReference)tr.GetObject(BlockReferenceId, OpenMode.ForRead);
+            var blockReference = (BlockReference)tr.GetObject(AcadBlockRef, OpenMode.ForRead);
             var attributes = ReadAttributeReferences(blockReference, tr, OpenMode.ForWrite);
             var missing = new List<string>();
             foreach (var value in attributeValues)
@@ -410,21 +497,6 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
             }
         }
 
-        private static int ParseSlotNumber(string key)
-        {
-            return int.Parse(key.Substring(key.Length - 2));
-        }
-
-        private static string SlotNameTag(int slotNumber)
-        {
-            return "ATT_" + slotNumber + "_NAME";
-        }
-
-        private static string SlotValueTag(int slotNumber)
-        {
-            return "ATT_" + slotNumber + "_VALUE";
-        }
-
         private static void EnsureBound(ObjectId objectId, string objectName)
         {
             if (objectId.IsNull || !objectId.IsValid)
@@ -446,5 +518,59 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
             blockType.TextString = status ?? string.Empty;
             BlockAttProps.BlockType = blockType;
         }
+
+        // Helper methods for repeat use
+        private static int ParseSlotNumber(string key)
+        {
+            return int.Parse(key.Substring(key.Length - 2));
+        }
+
+        private static string SlotNameTag(int slotNumber)
+        {
+            return "ATT_" + slotNumber + "_NAME";
+        }
+
+        private static string SlotValueTag(int slotNumber)
+        {
+            return "ATT_" + slotNumber + "_VALUE";
+        }
+
+        private void Reset_PropSlotDict()
+        {
+            BlockAttProps.PropSlotDict.Clear();
+
+            foreach (var entry in SlotsDict)
+            {
+                string propertyName = entry.Value.SlotPropName.Trim();
+                if (propertyName.Length > 0 && !BlockAttProps.PropSlotDict.ContainsKey(propertyName))
+                {
+                    BlockAttProps.PropSlotDict.Add(propertyName, entry.Key);
+                }
+            };
+
+        }
+
+        private Dictionary<string, AttributeReference> Get_AttDefDict(BlockReference acadBlockRef)
+        {
+            return acadBlockRef.AttributeCollection
+                .Cast<AttributeReference>()
+                .ToDictionary(
+                    ar => ar.Tag,
+                    ar => ar,
+                    StringComparer.OrdinalIgnoreCase
+                );
+        }
+
+        private Dictionary<string, DynamicBlockReferenceProperty> Get_DyBlockRefPropDict(BlockReference acadBlockRef)
+        {
+            return acadBlockRef.DynamicBlockReferencePropertyCollection
+                .Cast<DynamicBlockReferenceProperty>()
+                .ToDictionary(
+                    p => p.PropertyName,
+                    p => p,
+                    StringComparer.OrdinalIgnoreCase
+                );
+        }
+
     }
 }
