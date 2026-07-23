@@ -83,6 +83,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
         public PlugInBlockReference(AcadAppServ.Document acadDoc)
         {
             AcadDoc = acadDoc ?? throw new ArgumentNullException(nameof(acadDoc));
+            Init_Slots(InitState.DefaultInitialized);
             SetDefaultSlots();
         }
 
@@ -116,6 +117,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
         public PlugInBlockReference(AcadAppServ.Document acadDoc, BlockReference blockRef)
         {
             AcadDoc = acadDoc ?? throw new ArgumentNullException(nameof(acadDoc));
+            Init_Slots(InitState.BlockRefInitialized);
             AttachBlockReference(blockRef);
         }
 
@@ -134,7 +136,13 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
         public PlugInBlockReference(AcadAppServ.Document acadDoc, BlockTableRecord blockTableRecord)
         {
             AcadDoc = acadDoc ?? throw new ArgumentNullException(nameof(acadDoc));
+            Init_Slots(InitState.BTRInitialized);
             AttachBlockTableRecord(blockTableRecord);
+        }
+
+        private void Init_Slots(InitState bTRInitialized)
+        {
+            throw new NotImplementedException();
         }
 
         public void AttachBlockTableRecord(BlockTableRecord blockTableRecord)
