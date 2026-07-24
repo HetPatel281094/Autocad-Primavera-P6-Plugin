@@ -94,8 +94,7 @@ namespace Autocad_Primavera_P6_Plugin
                 {
                     freshRef = (BlockReference)tr.GetObject(blockRef.ObjectId, OpenMode.ForRead);
 
-                    var pluginBlockRef = new PlugInBlockReference(doc, freshRef);
-                    pluginBlockRef.Init(tr);
+                    var pluginBlockRef = new PlugInBlockReference(doc, freshRef, tr);
 
                     var actCode = pluginBlockRef.Get_BdryActCode();
                     var actCode2 = pluginBlockRef.Get_ElementIdCode();

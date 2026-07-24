@@ -78,7 +78,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
             if (_selectedBlock != null)
             {
-                PreselectedBlock = new PlugInBlockReference(ActAcadDoc, _selectedBlock);
+                //PreselectedBlock = new PlugInBlockReference(ActAcadDoc, _selectedBlock);
             };
         }
 

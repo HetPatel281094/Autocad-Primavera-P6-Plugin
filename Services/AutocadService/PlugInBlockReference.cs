@@ -1,14 +1,11 @@
 using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
-using LiteDB;
-using Microsoft.VisualBasic;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Transactions;
-using System.Windows.Input;
+using System.Xml.Linq;
 using AcadAppServ = Autodesk.AutoCAD.ApplicationServices;
 
 namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
@@ -205,8 +202,6 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
 
             Reset_PropSlotDict();
 
-            // Add code to hydrate the BlockAttProps with the AttributeDefinitions Attribute_Check_String, ElementId and BlockType
-
             AcadBlockTblRec = blockTableRecord;
         }
 
@@ -214,310 +209,282 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
         {
             var blockReference = (BlockReference)tr.GetObject(AcadBlockRef.ObjectId, OpenMode.ForRead);
 
-            var attDefDict = Get_AttDefDict(blockReference);
+            var attDefDict = Get_AttDefDict(blockReference, tr);
             var dyBlockRefPropDict = Get_DyBlockRefPropDict(blockReference);
 
-            throw new NotImplementedException();
+            BlockAttProps.Attribute_Check_String = TryGetValue_AttDefDict(attDefDict, "Attribute_Check_String");
+            BlockAttProps.ElementId = TryGetValue_AttDefDict(attDefDict, "ELEMENT_ID");
+            BlockAttProps.BlockType = TryGetValue_AttDefDict(attDefDict, "BLOCK_TYPE");
+            BlockAttProps.Update_Status = TryGetValue_DyBlockRefPropDict(dyBlockRefPropDict, "Update Status");
+            BlockAttProps.Moveinfo_X = TryGetValue_DyBlockRefPropDict(dyBlockRefPropDict, "MoveInfo X");
+            BlockAttProps.Moveinfo_Y = TryGetValue_DyBlockRefPropDict(dyBlockRefPropDict, "MoveInfo Y");
+
+            foreach (var key in SlotsDict.Keys.ToList())
+            {
+                int slotNumber = ParseSlotNumber(key);
+                string nameTag = SlotNameTag(slotNumber);
+                string valueTag = SlotValueTag(slotNumber);
+                var nameAttribute = TryGetValue_AttDefDict(attDefDict, nameTag);
+                var valueAttribute = TryGetValue_AttDefDict(attDefDict, valueTag);
+
+                if (nameAttribute == null || valueAttribute == null || String.IsNullOrWhiteSpace(nameAttribute.TextString)) { continue; };
+
+                SlotsDict[key] = new Slot()
+                {
+                    SlotPropName = nameAttribute.TextString,
+                    SlotPropValue = valueAttribute.TextString,
+                    NameAttRefTag = nameTag,
+                    NameAttRef = nameAttribute,
+                    ValueAttRefTag = valueTag,
+                    ValueAttRef = valueAttribute
+                };
+
+            };
+
+            Reset_PropSlotDict();
+
+            AcadBlockRef = blockReference;
+            AcadBlockTblRec = (BlockTableRecord)tr.GetObject(blockReference.BlockTableRecord, OpenMode.ForRead);
         }
 
         // Rough Below
-        public void AttachBlockReference(BlockReference blockRef)
-        {
-            if (blockRef == null){ throw new ArgumentNullException(nameof(blockRef)); };
+        //public void AttachBlockReference(BlockReference blockRef)
+        //{
+        //    if (blockRef == null){ throw new ArgumentNullException(nameof(blockRef)); };
 
-            AcadBlockRef = blockRef.ObjectId;
-            AcadBlockTblRec = blockRef.BlockTableRecord;
-            InitState = InitStateEnum.BlockRefInitialized;
-            BlockAttProps = null;
-            ClearSlots();
-        }
+        //    AcadBlockRef = blockRef.ObjectId;
+        //    AcadBlockTblRec = blockRef.BlockTableRecord;
+        //    InitState = InitStateEnum.BlockRefInitialized;
+        //    BlockAttProps = null;
+        //    ClearSlots();
+        //}
 
-        public void AttachBlockTableRecord(BlockTableRecord blockTableRecord)
-        {
-            if (blockTableRecord == null)
-            {
-                throw new ArgumentNullException(nameof(blockTableRecord));
-            }
+        //public void AttachBlockTableRecord(BlockTableRecord blockTableRecord)
+        //{
+        //    if (blockTableRecord == null)
+        //    {
+        //        throw new ArgumentNullException(nameof(blockTableRecord));
+        //    }
 
-            AcadBlockRef = ObjectId.Null;
-            AcadBlockTblRec = blockTableRecord.ObjectId;
-            InitState = InitStateEnum.BTRInitialized;
-            BlockAttProps = null;
-            ClearSlots();
-        }
+        //    AcadBlockRef = ObjectId.Null;
+        //    AcadBlockTblRec = blockTableRecord.ObjectId;
+        //    InitState = InitStateEnum.BTRInitialized;
+        //    BlockAttProps = null;
+        //    ClearSlots();
+        //}
 
-        public void AttachBlockReference(BlockReference blockRef, Transaction tr)
-        {
-            AttachBlockReference(blockRef);
-            Init(tr);
-        }
+        //public void AttachBlockReference(BlockReference blockRef, Transaction tr)
+        //{
+        //    AttachBlockReference(blockRef);
+        //    Init(tr);
+        //}
 
-        public void AttachBlockTableRecord(BlockTableRecord blockTableRecord, Transaction tr)
-        {
-            AttachBlockTableRecord(blockTableRecord);
-            Init(tr);
-        }
+        //public void AttachBlockTableRecord(BlockTableRecord blockTableRecord, Transaction tr)
+        //{
+        //    AttachBlockTableRecord(blockTableRecord);
+        //    Init(tr);
+        //}
 
-        /// <summary>Loads the template schema or the live instance attributes for the current state.</summary>
-        public void Init(Transaction tr)
-        {
-            if (tr == null)
-            {
-                throw new ArgumentNullException(nameof(tr));
-            }
+        ///// <summary>Loads the template schema or the live instance attributes for the current state.</summary>
+        //public void Init(Transaction tr)
+        //{
+        //    if (tr == null)
+        //    {
+        //        throw new ArgumentNullException(nameof(tr));
+        //    }
 
-            LoadWarnings.Clear();
-            BlockAttProps = null;
-            ClearSlots();
+        //    LoadWarnings.Clear();
+        //    BlockAttProps = null;
+        //    ClearSlots();
 
-            if (InitState == InitStateEnum.BTRInitialized)
-            {
-                EnsureBound(AcadBlockTblRec, "block table record");
-                var blockTableRecord = (BlockTableRecord)tr.GetObject(AcadBlockTblRec, OpenMode.ForRead);
-                LoadTemplateSlots(blockTableRecord, tr);
-                return;
-            }
+        //    if (InitState == InitStateEnum.BTRInitialized)
+        //    {
+        //        EnsureBound(AcadBlockTblRec, "block table record");
+        //        var blockTableRecord = (BlockTableRecord)tr.GetObject(AcadBlockTblRec, OpenMode.ForRead);
+        //        LoadTemplateSlots(blockTableRecord, tr);
+        //        return;
+        //    }
 
-            if (InitState == InitStateEnum.BlockRefInitialized)
-            {
-                EnsureBound(AcadBlockRef, "block reference");
-                var blockReference = (BlockReference)tr.GetObject(AcadBlockRef, OpenMode.ForRead);
-                AcadBlockTblRec = blockReference.BlockTableRecord;
-                LoadInstanceProperties(blockReference, tr);
-                return;
-            }
+        //    if (InitState == InitStateEnum.BlockRefInitialized)
+        //    {
+        //        EnsureBound(AcadBlockRef, "block reference");
+        //        var blockReference = (BlockReference)tr.GetObject(AcadBlockRef, OpenMode.ForRead);
+        //        AcadBlockTblRec = blockReference.BlockTableRecord;
+        //        LoadInstanceProperties(blockReference, tr);
+        //        return;
+        //    }
 
-            // Blank state deliberately has no AutoCAD data to load.
-        }
+        //    // Blank state deliberately has no AutoCAD data to load.
+        //}
 
-        /// <summary>
-        /// Inserts this template into ownerSpace, creates its AttributeReferences, applies
-        /// supplied values, and upgrades this same object to instance-bound state.
-        /// Returns tags that were requested but absent from the block definition.
-        /// </summary>
-        public ObjectId CreateBlockReference(
-            ObjectId ownerSpaceId,
-            Point3d insertionPoint,
-            IDictionary<string, string> attributeValues,
-            Transaction tr,
-            out IList<string> missingAttributeTags)
-        {
-            if (tr == null)
-            {
-                throw new ArgumentNullException(nameof(tr));
-            }
-            if (InitState != InitStateEnum.BTRInitialized)
-            {
-                throw new InvalidOperationException("A block table record must be attached before creating a block reference.");
-            }
+        ///// <summary>
+        ///// Inserts this template into ownerSpace, creates its AttributeReferences, applies
+        ///// supplied values, and upgrades this same object to instance-bound state.
+        ///// Returns tags that were requested but absent from the block definition.
+        ///// </summary>
+        //public ObjectId CreateBlockReference(
+        //    ObjectId ownerSpaceId,
+        //    Point3d insertionPoint,
+        //    IDictionary<string, string> attributeValues,
+        //    Transaction tr,
+        //    out IList<string> missingAttributeTags)
+        //{
+        //    if (tr == null)
+        //    {
+        //        throw new ArgumentNullException(nameof(tr));
+        //    }
+        //    if (InitState != InitStateEnum.BTRInitialized)
+        //    {
+        //        throw new InvalidOperationException("A block table record must be attached before creating a block reference.");
+        //    }
 
-            EnsureBound(AcadBlockTblRec, "block table record");
-            var ownerSpace = (BlockTableRecord)tr.GetObject(ownerSpaceId, OpenMode.ForWrite);
-            var blockDefinition = (BlockTableRecord)tr.GetObject(AcadBlockTblRec, OpenMode.ForRead);
-            var blockReference = new BlockReference(insertionPoint, AcadBlockTblRec);
-            ownerSpace.AppendEntity(blockReference);
-            tr.AddNewlyCreatedDBObject(blockReference, true);
+        //    EnsureBound(AcadBlockTblRec, "block table record");
+        //    var ownerSpace = (BlockTableRecord)tr.GetObject(ownerSpaceId, OpenMode.ForWrite);
+        //    var blockDefinition = (BlockTableRecord)tr.GetObject(AcadBlockTblRec, OpenMode.ForRead);
+        //    var blockReference = new BlockReference(insertionPoint, AcadBlockTblRec);
+        //    ownerSpace.AppendEntity(blockReference);
+        //    tr.AddNewlyCreatedDBObject(blockReference, true);
 
-            foreach (ObjectId entityId in blockDefinition)
-            {
-                var definition = tr.GetObject(entityId, OpenMode.ForRead) as AttributeDefinition;
-                if (definition == null || definition.Constant)
-                {
-                    continue;
-                }
+        //    foreach (ObjectId entityId in blockDefinition)
+        //    {
+        //        var definition = tr.GetObject(entityId, OpenMode.ForRead) as AttributeDefinition;
+        //        if (definition == null || definition.Constant)
+        //        {
+        //            continue;
+        //        }
 
-                var attributeReference = new AttributeReference();
-                attributeReference.SetAttributeFromBlock(definition, blockReference.BlockTransform);
-                blockReference.AttributeCollection.AppendAttribute(attributeReference);
-                tr.AddNewlyCreatedDBObject(attributeReference, true);
-            }
+        //        var attributeReference = new AttributeReference();
+        //        attributeReference.SetAttributeFromBlock(definition, blockReference.BlockTransform);
+        //        blockReference.AttributeCollection.AppendAttribute(attributeReference);
+        //        tr.AddNewlyCreatedDBObject(attributeReference, true);
+        //    }
 
-            AttachBlockReference(blockReference);
-            Init(tr);
-            missingAttributeTags = ApplyAttributeValues(attributeValues, tr);
-            Init(tr); // Reload the public handles after any attributes were opened for write.
-            return AcadBlockRef;
-        }
+        //    AttachBlockReference(blockReference);
+        //    Init(tr);
+        //    missingAttributeTags = ApplyAttributeValues(attributeValues, tr);
+        //    Init(tr); // Reload the public handles after any attributes were opened for write.
+        //    return AcadBlockRef;
+        //}
 
-        /// <summary>Writes only existing AttributeReferences; it never fabricates an orphan attribute.</summary>
-        public IList<string> ApplyAttributeValues(IDictionary<string, string> attributeValues, Transaction tr)
-        {
-            if (attributeValues == null || attributeValues.Count == 0)
-            {
-                return new List<string>();
-            }
-            if (tr == null)
-            {
-                throw new ArgumentNullException(nameof(tr));
-            }
-            if (InitState != InitStateEnum.BlockRefInitialized)
-            {
-                throw new InvalidOperationException("A block reference must be attached before writing attributes.");
-            }
+        ///// <summary>Writes only existing AttributeReferences; it never fabricates an orphan attribute.</summary>
+        //public IList<string> ApplyAttributeValues(IDictionary<string, string> attributeValues, Transaction tr)
+        //{
+        //    if (attributeValues == null || attributeValues.Count == 0)
+        //    {
+        //        return new List<string>();
+        //    }
+        //    if (tr == null)
+        //    {
+        //        throw new ArgumentNullException(nameof(tr));
+        //    }
+        //    if (InitState != InitStateEnum.BlockRefInitialized)
+        //    {
+        //        throw new InvalidOperationException("A block reference must be attached before writing attributes.");
+        //    }
 
-            var blockReference = (BlockReference)tr.GetObject(AcadBlockRef, OpenMode.ForRead);
-            var attributes = ReadAttributeReferences(blockReference, tr, OpenMode.ForWrite);
-            var missing = new List<string>();
-            foreach (var value in attributeValues)
-            {
-                if (!attributes.TryGetValue(value.Key, out AttributeReference attributeReference))
-                {
-                    missing.Add(value.Key);
-                    continue;
-                }
+        //    var blockReference = (BlockReference)tr.GetObject(AcadBlockRef, OpenMode.ForRead);
+        //    var attributes = ReadAttributeReferences(blockReference, tr, OpenMode.ForWrite);
+        //    var missing = new List<string>();
+        //    foreach (var value in attributeValues)
+        //    {
+        //        if (!attributes.TryGetValue(value.Key, out AttributeReference attributeReference))
+        //        {
+        //            missing.Add(value.Key);
+        //            continue;
+        //        }
 
-                attributeReference.TextString = value.Value ?? string.Empty;
-            }
+        //        attributeReference.TextString = value.Value ?? string.Empty;
+        //    }
 
-            return missing;
-        }
+        //    return missing;
+        //}
 
-        private void LoadTemplateSlots(BlockTableRecord blockTableRecord, Transaction tr)
-        {
-            var definitions = new Dictionary<string, AttributeDefinition>(StringComparer.OrdinalIgnoreCase);
-            foreach (ObjectId entityId in blockTableRecord)
-            {
-                var definition = tr.GetObject(entityId, OpenMode.ForRead) as AttributeDefinition;
-                if (definition != null && !definitions.ContainsKey(definition.Tag))
-                {
-                    definitions.Add(definition.Tag, definition);
-                }
-            }
+        //private void LoadTemplateSlots(BlockTableRecord blockTableRecord, Transaction tr)
+        //{
+        //    var definitions = new Dictionary<string, AttributeDefinition>(StringComparer.OrdinalIgnoreCase);
+        //    foreach (ObjectId entityId in blockTableRecord)
+        //    {
+        //        var definition = tr.GetObject(entityId, OpenMode.ForRead) as AttributeDefinition;
+        //        if (definition != null && !definitions.ContainsKey(definition.Tag))
+        //        {
+        //            definitions.Add(definition.Tag, definition);
+        //        }
+        //    }
 
-            foreach (var entry in SlotsDict)
-            {
-                int slotNumber = ParseSlotNumber(entry.Key);
-                string nameTag = SlotNameTag(slotNumber);
-                string valueTag = SlotValueTag(slotNumber);
-                if (!definitions.TryGetValue(nameTag, out AttributeDefinition nameDefinition) ||
-                    !definitions.ContainsKey(valueTag))
-                {
-                    continue;
-                }
+        //    foreach (var entry in SlotsDict)
+        //    {
+        //        int slotNumber = ParseSlotNumber(entry.Key);
+        //        string nameTag = SlotNameTag(slotNumber);
+        //        string valueTag = SlotValueTag(slotNumber);
+        //        if (!definitions.TryGetValue(nameTag, out AttributeDefinition nameDefinition) ||
+        //            !definitions.ContainsKey(valueTag))
+        //        {
+        //            continue;
+        //        }
 
-                entry.Value.NameAttRefTag = nameTag;
-                entry.Value.ValueAttRefTag = valueTag;
-                entry.Value.SlotPropName = nameDefinition.TextString ?? string.Empty;
-            }
-        }
+        //        entry.Value.NameAttRefTag = nameTag;
+        //        entry.Value.ValueAttRefTag = valueTag;
+        //        entry.Value.SlotPropName = nameDefinition.TextString ?? string.Empty;
+        //    }
+        //}
 
-        private void LoadInstanceProperties(BlockReference blockReference, Transaction tr)
-        {
-            var attributes = ReadAttributeReferences(blockReference, tr, OpenMode.ForRead);
-            var dynamicProperties = new Dictionary<string, DynamicBlockReferenceProperty>(StringComparer.OrdinalIgnoreCase);
-            foreach (DynamicBlockReferenceProperty property in blockReference.DynamicBlockReferencePropertyCollection)
-            {
-                if (!dynamicProperties.ContainsKey(property.PropertyName))
-                {
-                    dynamicProperties.Add(property.PropertyName, property);
-                }
-            }
+        //private void LoadInstanceProperties(BlockReference blockReference, Transaction tr)
+        //{
+        //    var attributes = ReadAttributeReferences(blockReference, tr, OpenMode.ForRead);
+        //    var dynamicProperties = new Dictionary<string, DynamicBlockReferenceProperty>(StringComparer.OrdinalIgnoreCase);
+        //    foreach (DynamicBlockReferenceProperty property in blockReference.DynamicBlockReferencePropertyCollection)
+        //    {
+        //        if (!dynamicProperties.ContainsKey(property.PropertyName))
+        //        {
+        //            dynamicProperties.Add(property.PropertyName, property);
+        //        }
+        //    }
 
-            var properties = new AttProps
-            {
-                Attribute_Check_String = GetAttribute(attributes, "Attribute_Check_String"),
-                ElementId = GetAttribute(attributes, "ELEMENT_ID"),
-                BlockType = GetAttribute(attributes, "BLOCK_TYPE"),
-                Update_Status = GetDynamicProperty(dynamicProperties, "Update Status"),
-                Moveinfo_X = GetDynamicProperty(dynamicProperties, "MoveInfo X"),
-                Moveinfo_Y = GetDynamicProperty(dynamicProperties, "MoveInfo Y")
-            };
+        //    var properties = new AttProps
+        //    {
+        //        Attribute_Check_String = TryGetValue_AttDefDict(attributes, "Attribute_Check_String"),
+        //        ElementId = TryGetValue_AttDefDict(attributes, "ELEMENT_ID"),
+        //        BlockType = TryGetValue_AttDefDict(attributes, "BLOCK_TYPE"),
+        //        Update_Status = TryGetValue_DyBlockRefPropDict(dynamicProperties, "Update Status"),
+        //        Moveinfo_X = TryGetValue_DyBlockRefPropDict(dynamicProperties, "MoveInfo X"),
+        //        Moveinfo_Y = TryGetValue_DyBlockRefPropDict(dynamicProperties, "MoveInfo Y")
+        //    };
 
-            foreach (var entry in SlotsDict)
-            {
-                int slotNumber = ParseSlotNumber(entry.Key);
-                string nameTag = SlotNameTag(slotNumber);
-                string valueTag = SlotValueTag(slotNumber);
-                var nameAttribute = GetAttribute(attributes, nameTag);
-                var valueAttribute = GetAttribute(attributes, valueTag);
-                if (nameAttribute == null || valueAttribute == null)
-                {
-                    continue;
-                }
+        //    foreach (var entry in SlotsDict)
+        //    {
+        //        int slotNumber = ParseSlotNumber(entry.Key);
+        //        string nameTag = SlotNameTag(slotNumber);
+        //        string valueTag = SlotValueTag(slotNumber);
+        //        var nameAttribute = TryGetValue_AttDefDict(attributes, nameTag);
+        //        var valueAttribute = TryGetValue_AttDefDict(attributes, valueTag);
+        //        if (nameAttribute == null || valueAttribute == null)
+        //        {
+        //            continue;
+        //        }
 
-                entry.Value.NameAttRefTag = nameTag;
-                entry.Value.NameAttRef = nameAttribute;
-                entry.Value.ValueAttRefTag = valueTag;
-                entry.Value.ValueAttRef = valueAttribute;
-                entry.Value.SlotPropName = nameAttribute.TextString ?? string.Empty;
+        //        entry.Value.NameAttRefTag = nameTag;
+        //        entry.Value.NameAttRef = nameAttribute;
+        //        entry.Value.ValueAttRefTag = valueTag;
+        //        entry.Value.ValueAttRef = valueAttribute;
+        //        entry.Value.SlotPropName = nameAttribute.TextString ?? string.Empty;
 
-                string propertyName = entry.Value.SlotPropName.Trim();
-                if (propertyName.Length > 0 && !properties.PropSlotDict.ContainsKey(propertyName))
-                {
-                    properties.PropSlotDict.Add(propertyName, entry.Key);
-                }
-                else if (propertyName.Length > 0)
-                {
-                    LoadWarnings.Add("Duplicate slot property name '" + propertyName + "' in " + entry.Key + ". The first slot is used.");
-                }
-            }
+        //        string propertyName = entry.Value.SlotPropName.Trim();
+        //        if (propertyName.Length > 0 && !properties.PropSlotDict.ContainsKey(propertyName))
+        //        {
+        //            properties.PropSlotDict.Add(propertyName, entry.Key);
+        //        }
+        //        else if (propertyName.Length > 0)
+        //        {
+        //            LoadWarnings.Add("Duplicate slot property name '" + propertyName + "' in " + entry.Key + ". The first slot is used.");
+        //        }
+        //    }
 
-            BlockAttProps = properties;
-            if (properties.Attribute_Check_String == null || properties.ElementId == null || properties.BlockType == null)
-            {
-                LoadWarnings.Add("The block is missing one or more required plugin attributes: Attribute_Check_String, ELEMENT_ID, BLOCK_TYPE.");
-            }
-        }
-
-        private static Dictionary<string, AttributeReference> ReadAttributeReferences(BlockReference blockReference, Transaction tr, OpenMode mode)
-        {
-            var attributes = new Dictionary<string, AttributeReference>(StringComparer.OrdinalIgnoreCase);
-            foreach (ObjectId attributeId in blockReference.AttributeCollection)
-            {
-                var attribute = tr.GetObject(attributeId, mode) as AttributeReference;
-                if (attribute != null && !attributes.ContainsKey(attribute.Tag))
-                {
-                    attributes.Add(attribute.Tag, attribute);
-                }
-            }
-            return attributes;
-        }
-
-        private static AttributeReference GetAttribute(Dictionary<string, AttributeReference> attributes, string tag)
-        {
-            attributes.TryGetValue(tag, out AttributeReference attribute);
-            return attribute;
-        }
-
-        private static DynamicBlockReferenceProperty GetDynamicProperty(Dictionary<string, DynamicBlockReferenceProperty> properties, string name)
-        {
-            properties.TryGetValue(name, out DynamicBlockReferenceProperty property);
-            return property;
-        }
-
-        private void ClearSlots()
-        {
-            foreach (Slot slot in SlotsDict.Values)
-            {
-                slot.SlotPropName = string.Empty;
-                slot.NameAttRefTag = null;
-                slot.NameAttRef = null;
-                slot.ValueAttRefTag = null;
-                slot.ValueAttRef = null;
-            }
-        }
-
-        private static void EnsureBound(ObjectId objectId, string objectName)
-        {
-            if (objectId.IsNull || !objectId.IsValid)
-            {
-                throw new InvalidOperationException("No valid " + objectName + " is attached.");
-            }
-        }
-
-        public void SetBlockTypeFromStatus(Transaction tr)
-        {
-            if (tr == null || BlockAttProps.BlockType == null || BlockAttProps.Update_Status == null) { return; }
-            ;
-
-            string status = Convert.ToString(BlockAttProps.Update_Status.Value);
-
-            if (string.Equals(BlockAttProps.BlockType.TextString, status, StringComparison.Ordinal)) { return; }
-
-            var blockType = (AttributeReference)tr.GetObject(BlockAttProps.BlockType.ObjectId, OpenMode.ForWrite);
-            blockType.TextString = status ?? string.Empty;
-            BlockAttProps.BlockType = blockType;
-        }
+        //    BlockAttProps = properties;
+        //    if (properties.Attribute_Check_String == null || properties.ElementId == null || properties.BlockType == null)
+        //    {
+        //        LoadWarnings.Add("The block is missing one or more required plugin attributes: Attribute_Check_String, ELEMENT_ID, BLOCK_TYPE.");
+        //    }
+        //}
 
         // Helper methods for repeat use
         private static int ParseSlotNumber(string key)
@@ -541,7 +508,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
 
             foreach (var entry in SlotsDict)
             {
-                string propertyName = entry.Value.SlotPropName.Trim();
+                string propertyName = entry.Value?.SlotPropName?.Trim() ?? String.Empty;
                 if (propertyName.Length > 0 && !BlockAttProps.PropSlotDict.ContainsKey(propertyName))
                 {
                     BlockAttProps.PropSlotDict.Add(propertyName, entry.Key);
@@ -550,10 +517,11 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
 
         }
 
-        private Dictionary<string, AttributeReference> Get_AttDefDict(BlockReference acadBlockRef)
+        private Dictionary<string, AttributeReference> Get_AttDefDict(BlockReference acadBlockRef, Transaction tr)
         {
             return acadBlockRef.AttributeCollection
-                .Cast<AttributeReference>()
+                .Cast<ObjectId>()
+                .Select(id => (AttributeReference)tr.GetObject(id, OpenMode.ForRead))
                 .ToDictionary(
                     ar => ar.Tag,
                     ar => ar,
@@ -570,6 +538,32 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                     p => p,
                     StringComparer.OrdinalIgnoreCase
                 );
+        }
+
+        private static AttributeReference TryGetValue_AttDefDict(Dictionary<string, AttributeReference> attributes, string tag)
+        {
+            attributes.TryGetValue(tag, out AttributeReference attribute);
+            return attribute;
+        }
+
+        private static DynamicBlockReferenceProperty TryGetValue_DyBlockRefPropDict(Dictionary<string, DynamicBlockReferenceProperty> properties, string name)
+        {
+            properties.TryGetValue(name, out DynamicBlockReferenceProperty property);
+            return property;
+        }
+
+        private void SetBlockTypeFromStatus(Transaction tr)
+        {
+            if (tr == null || BlockAttProps.BlockType == null || BlockAttProps.Update_Status == null) { return; }
+            ;
+
+            string status = Convert.ToString(BlockAttProps.Update_Status.Value);
+
+            if (string.Equals(BlockAttProps.BlockType.TextString, status, StringComparison.Ordinal)) { return; }
+
+            var blockType = (AttributeReference)tr.GetObject(BlockAttProps.BlockType.ObjectId, OpenMode.ForWrite);
+            blockType.TextString = status ?? string.Empty;
+            BlockAttProps.BlockType = blockType;
         }
 
     }

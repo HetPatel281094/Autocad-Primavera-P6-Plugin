@@ -245,39 +245,41 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         {
             elementId = Guid.NewGuid().ToString("N").Substring(0, 8).ToUpperInvariant();
 
-            using (var tr = db.TransactionManager.StartTransaction())
-            {
-                var blockDef = (BlockTableRecord)tr.GetObject(blockDefId, OpenMode.ForRead);
-                var pluginBlock = new PlugInBlockReference(_model.ActAcadDoc);
-                pluginBlock.AttachBlockTableRecord(blockDef, tr);
-                var values = BuildAttributeValues(elementId, blockName);
-                IList<string> missingTags;
-                ObjectId insertedId = pluginBlock.CreateBlockReference(
-                    SymbolUtilityServices.GetBlockModelSpaceId(db),
-                    insertionPoint,
-                    values,
-                    tr,
-                    out missingTags);
+            //using (var tr = db.TransactionManager.StartTransaction())
+            //{
+            //    var blockDef = (BlockTableRecord)tr.GetObject(blockDefId, OpenMode.ForRead);
+            //    var pluginBlock = new PlugInBlockReference(_model.ActAcadDoc);
+            //    //pluginBlock.AttachBlockTableRecord(blockDef, tr);
+            //    var values = BuildAttributeValues(elementId, blockName);
+            //    IList<string> missingTags;
+            //    ObjectId insertedId = pluginBlock.CreateBlockReference(
+            //        SymbolUtilityServices.GetBlockModelSpaceId(db),
+            //        insertionPoint,
+            //        values,
+            //        tr,
+            //        out missingTags);
 
-                string[] requiredTags = { "ELEMENT_ID", "BLOCK_TYPE", "Attribute_Check_string" };
-                var missingRequiredTags = missingTags
-                    .Where(tag => requiredTags.Any(required => string.Equals(required, tag, StringComparison.OrdinalIgnoreCase)))
-                    .ToList();
-                if (missingRequiredTags.Count > 0)
-                {
-                    throw new InvalidOperationException(
-                        "The selected block definition is not a plugin block. Missing required attribute definition(s): " +
-                        string.Join(", ", missingRequiredTags));
-                }
+            //    string[] requiredTags = { "ELEMENT_ID", "BLOCK_TYPE", "Attribute_Check_string" };
+            //    var missingRequiredTags = missingTags
+            //        .Where(tag => requiredTags.Any(required => string.Equals(required, tag, StringComparison.OrdinalIgnoreCase)))
+            //        .ToList();
+            //    if (missingRequiredTags.Count > 0)
+            //    {
+            //        throw new InvalidOperationException(
+            //            "The selected block definition is not a plugin block. Missing required attribute definition(s): " +
+            //            string.Join(", ", missingRequiredTags));
+            //    }
 
-                if (missingTags.Count > 0)
-                {
-                    Debug.Print("[Plugin] Block was inserted without optional attributes: " + string.Join(", ", missingTags));
-                }
+            //    if (missingTags.Count > 0)
+            //    {
+            //        Debug.Print("[Plugin] Block was inserted without optional attributes: " + string.Join(", ", missingTags));
+            //    }
 
-                tr.Commit();
-                return insertedId;
-            }
+            //    tr.Commit();
+            //    return insertedId;
+            //}
+
+            return ObjectId.Null;
         }
 
         private Dictionary<string, string> BuildAttributeValues(string elementId, string blockName)
