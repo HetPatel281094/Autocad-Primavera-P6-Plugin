@@ -27,9 +27,9 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
             ["Slot01"] = "BOUNDARY_CODE",
             ["Slot02"] = "BOUNDARY_CODE",
             ["Slot03"] = "BOUNDARY_CODE",
-            ["Slot04"] = "ITEM_ID_CODE",
-            ["Slot05"] = "ITEM_ID_CODE",
-            ["Slot06"] = "ITEM_ID_CODE",
+            ["Slot04"] = "ELEMENT_ID_CODE",
+            ["Slot05"] = "ELEMENT_ID_CODE",
+            ["Slot06"] = "ELEMENT_ID_CODE",
             ["Slot07"] = "LENGTH_L",
             ["Slot08"] = "BREADTH_B",
             ["Slot09"] = "HEIGHT_H"
