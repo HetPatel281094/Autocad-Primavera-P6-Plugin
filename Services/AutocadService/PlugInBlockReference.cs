@@ -245,6 +245,10 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
 
             AcadBlockRef = blockReference;
             AcadBlockTblRec = (BlockTableRecord)tr.GetObject(blockReference.BlockTableRecord, OpenMode.ForRead);
+
+            var bdryActCode = Get_BdryActCode();
+            var elementIdCode = Get_ElementIdCode();
+
         }
 
         // Rough Below
