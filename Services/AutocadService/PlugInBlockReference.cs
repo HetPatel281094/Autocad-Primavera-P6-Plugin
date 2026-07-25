@@ -72,8 +72,6 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
         private AttProps BlockAttProps = null;
 
         private ActivityCode BdryActCode = null;
-        public ActivityCode Get_BdryActCode() { return BdryActCode; }
-        public bool Set_BdryActCode(ActivityCode actCode, out ActivityCode result) { BdryActCode = actCode; result = actCode; return true; }
 
         private ActivityCode ElementIdCode = null;
         public ActivityCode Get_ElementIdCode() { return ElementIdCode; }
@@ -568,6 +566,87 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
             var blockType = (AttributeReference)tr.GetObject(BlockAttProps.BlockType.ObjectId, OpenMode.ForWrite);
             blockType.TextString = status ?? string.Empty;
             BlockAttProps.BlockType = blockType;
+        }
+
+        public ActivityCode Get_BdryActCode() 
+        { 
+            return BdryActCode; 
+        }
+
+        public bool Set_BdryActCode(ActivityCode actCode, out ActivityCode result) 
+        { 
+            BdryActCode = actCode; 
+            result = actCode;
+            return true; 
+        }
+
+        public string Get_SlotProperty(string propName)
+        {
+            var propSlotDict = BlockAttProps.PropSlotDict;
+            var slotFound = propSlotDict.TryGetValue(propName, out string slotKey);
+
+            if(!slotFound || slotKey == null || String.IsNullOrWhiteSpace(slotKey)) { return null; };
+
+            var slot = SlotsDict[slotKey];
+
+            if (slot == null) { return null; };
+
+            var SlotPropertyValueString = InitState switch
+            {
+                InitStateEnum.NotInitialized => null,
+                InitStateEnum.DefaultInitialized => slot.SlotPropValue,
+                InitStateEnum.BTRInitialized => slot.SlotPropValue,
+                InitStateEnum.BlockRefInitialized => slot.ValueAttRef?.TextString,
+                _ => null
+            };
+
+            return SlotPropertyValueString;
+        }
+
+        public bool Set_SlotProperty(string propName, string value, out string result, Transaction tr = null)
+        {
+            result = null;
+
+            if (String.IsNullOrWhiteSpace(propName)) { return false; };
+
+            var propSlotDict = BlockAttProps.PropSlotDict;
+            var slotFound = propSlotDict.TryGetValue(propName, out string slotKey);
+
+            if (!slotFound || slotKey == null || String.IsNullOrWhiteSpace(slotKey)) { return false; }
+
+            var slot = SlotsDict[slotKey];
+
+            if (slot == null) { return false; }
+
+            switch(InitState)
+            {
+                case InitStateEnum.NotInitialized:
+                    return false;
+
+                case InitStateEnum.DefaultInitialized:
+                    slot.SlotPropValue = value;
+                    result = value;
+                    return true;
+
+                case InitStateEnum.BTRInitialized:
+                    slot.SlotPropValue = value;
+                    result = value;
+                    return true;
+
+                case InitStateEnum.BlockRefInitialized:
+                    if (tr == null) { Debug.Print("Transaction is null"); return false; };
+
+                    var valueAttRef = (AttributeReference)tr.GetObject(slot.ValueAttRef.ObjectId, OpenMode.ForWrite);
+                    valueAttRef.TextString = value;
+                    slot.ValueAttRef = valueAttRef;
+                    slot.SlotPropValue = value;
+                    result = value;
+                    return true;
+
+                default:
+                    return false;
+            };
+
         }
 
     }
