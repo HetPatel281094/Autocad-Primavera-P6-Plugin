@@ -74,7 +74,7 @@ namespace Autocad_Primavera_P6_Plugin
             acadApp.ShowModalWindow(view);
         }
 
-        public void OpenTestButtonFunction()
+        public async void OpenTestButtonFunction()
         {
             try
             {
@@ -82,37 +82,35 @@ namespace Autocad_Primavera_P6_Plugin
 
                 var doc = acadApp.DocumentManager.MdiActiveDocument;
 
-                var pluginBlockRefTemp = new PlugInBlockReference(doc);
-
                 var blockRefList = MyAutocadService.GetPluginBlockImpliedSelected(doc);
                 var blockRef = blockRefList?.Count > 0 ? blockRefList.Last() : null;
                 if (blockRef == null) { return; };
-                var x = blockRef.DynamicBlockReferencePropertyCollection;
 
                 BlockReference freshRef;
+                ActivityCode bdryActCode;
+                ActivityCode elementIdCode;
+                PlugInBlockReference pluginBlockRef;
+
                 using (var tr = doc.Database.TransactionManager.StartTransaction())
                 {
                     freshRef = (BlockReference)tr.GetObject(blockRef.ObjectId, OpenMode.ForRead);
 
-                    var pluginBlockRef = new PlugInBlockReference(doc, freshRef, tr);
+                    pluginBlockRef = new PlugInBlockReference(this, doc, freshRef, tr);
+                    await pluginBlockRef.AsyncInit();
 
-                    var actCode = pluginBlockRef.Get_BdryActCode();
-                    var actCode2 = pluginBlockRef.Get_ElementIdCode();
+                    bdryActCode = await pluginBlockRef.Get_BdryActCode();
+                    elementIdCode = await pluginBlockRef.Get_ElementIdCode();
 
-                    bool isDyn = freshRef.IsDynamicBlock;
-                    var props = freshRef.DynamicBlockReferencePropertyCollection;
+                    tr.Commit();
+                };
 
-                    var dynPropDict = new Dictionary<string, DynamicBlockReferenceProperty>();
+                using (var tr = doc.Database.TransactionManager.StartTransaction())
+                {
+                    if (bdryActCode != null) { pluginBlockRef.Set_BdryActCode(bdryActCode, out _, tr); };
+                    if (elementIdCode != null) { pluginBlockRef.Set_BdryActCode(elementIdCode, out _, tr); };
 
-                    dynPropDict = props
-                                    .Cast<DynamicBlockReferenceProperty>()
-                                    .ToDictionary(val => val.PropertyName, val => val);
-
-                    Debug.Print($"IsDynamicBlock: {isDyn}, PropCount: {props.Count}");
-
-                    tr.Commit(); // or Abort() since you only read
-                }
-                ;
+                    tr.Commit();
+                };
 
                 Debug.Print("Test Function is Completed without error.");
             }

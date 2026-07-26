@@ -30,7 +30,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
 
                 if (_selected.Status != PromptStatus.OK || _selected.Value == null)
                 {
-                    _ed.WriteMessage("\nNo objects were pre-selected.");
+                    _ed.WriteMessage("\nNo objects were pre-selected.\n");
                     return null;
                 }
 
