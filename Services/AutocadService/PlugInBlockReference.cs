@@ -24,12 +24,12 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
     {
         public static readonly Dictionary<string, string> DefaultPropSlotDict = new()
         {
-            ["Slot01"] = "BOUNDARY_CODE",
-            ["Slot02"] = "BOUNDARY_CODE",
-            ["Slot03"] = "BOUNDARY_CODE",
-            ["Slot04"] = "ELEMENT_ID_CODE",
-            ["Slot05"] = "ELEMENT_ID_CODE",
-            ["Slot06"] = "ELEMENT_ID_CODE",
+            ["Slot01"] = "BOUNDARY_CODE_ID",
+            ["Slot02"] = "BOUNDARY_CODE_PATH",
+            ["Slot03"] = "BOUNDARY_CODE_VALUE",
+            ["Slot04"] = "ELEMENT_ID_CODE_ID",
+            ["Slot05"] = "ELEMENT_ID_CODE_PATH",
+            ["Slot06"] = "ELEMENT_ID_CODE_VALUE",
             ["Slot07"] = "LENGTH_L",
             ["Slot08"] = "BREADTH_B",
             ["Slot09"] = "HEIGHT_H"
@@ -64,6 +64,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
     /// </summary>
     public class PlugInBlockReference
     {
+        private MyPlugin PluginInstance = null;
         public InitStateEnum InitState { get; private set; } = InitStateEnum.NotInitialized;
         private AcadAppServ.Document AcadDoc = null;
         private BlockTableRecord AcadBlockTblRec = null;
@@ -72,31 +73,31 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
         private AttProps BlockAttProps = null;
 
         private ActivityCode BdryActCode = null;
-
         private ActivityCode ElementIdCode = null;
-        public ActivityCode Get_ElementIdCode() { return ElementIdCode; }
-        public bool Set_ElementIdCode(ActivityCode actCode, out ActivityCode result) { ElementIdCode = actCode; result = actCode; return true; }
 
         public IList<string> LoadWarnings = new List<string>();
 
         /// <summary>Creates a blank object. Attach a BTR or block reference later.</summary>
-        public PlugInBlockReference(AcadAppServ.Document acadDoc)
+        public PlugInBlockReference(MyPlugin pluginInstance, AcadAppServ.Document acadDoc)
         {
+            PluginInstance = pluginInstance ?? throw new ArgumentNullException(nameof(pluginInstance));
             AcadDoc = acadDoc ?? throw new ArgumentNullException(nameof(acadDoc));
             Init_PlugInBlockReference(InitStateEnum.DefaultInitialized);
         }
 
         /// <summary>Creates a definition-bound object. Call Init with the caller transaction.</summary>
-        public PlugInBlockReference(AcadAppServ.Document acadDoc, BlockTableRecord blockTableRecord, Transaction tr)
+        public PlugInBlockReference(MyPlugin pluginInstance, AcadAppServ.Document acadDoc, BlockTableRecord blockTableRecord, Transaction tr)
         {
+            PluginInstance = pluginInstance ?? throw new ArgumentNullException(nameof(pluginInstance));
             AcadDoc = acadDoc ?? throw new ArgumentNullException(nameof(acadDoc));
             AcadBlockTblRec = blockTableRecord ?? throw new ArgumentNullException(nameof(blockTableRecord));
             Init_PlugInBlockReference(InitStateEnum.BTRInitialized, tr);
         }
 
         /// <summary>Creates a reference-bound object. Call Init with the caller transaction.</summary>
-        public PlugInBlockReference(AcadAppServ.Document acadDoc, BlockReference blockRef, Transaction tr)
+        public PlugInBlockReference(MyPlugin pluginInstance, AcadAppServ.Document acadDoc, BlockReference blockRef, Transaction tr)
         {
+            PluginInstance = pluginInstance ?? throw new ArgumentNullException(nameof(pluginInstance));
             AcadDoc = acadDoc ?? throw new ArgumentNullException(nameof(acadDoc));
             AcadBlockRef = blockRef ?? throw new ArgumentNullException(nameof(blockRef));
             Init_PlugInBlockReference(InitStateEnum.BlockRefInitialized, tr);
@@ -573,10 +574,63 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
             return BdryActCode; 
         }
 
-        public bool Set_BdryActCode(ActivityCode actCode, out ActivityCode result) 
-        { 
-            BdryActCode = actCode; 
+        public bool Set_BdryActCode(ActivityCode actCode, out ActivityCode result, Transaction tr = null) 
+        {
+            result = null;
+
+            var boundaryCodeId = actCode.ObjectId.ToString();
+            var boundaryCodeValue = actCode.Description;
+            var boundaryCodePathArray = actCode.CodeConcatName.Split('.');
+            var boundaryCodePath = string.Join(" -> ", boundaryCodePathArray);
+
+            var idResult = Set_SlotProperty("BOUNDARY_CODE_ID", boundaryCodeId, out _, tr);
+            var valueResult = Set_SlotProperty("BOUNDARY_CODE_VALUE", boundaryCodeValue, out _, tr);
+            var pathResult = Set_SlotProperty("BOUNDARY_CODE_PATH", boundaryCodePath, out _, tr);
+
+            if (!idResult || !valueResult || !pathResult) { return false; };
+
+            BdryActCode = actCode;
+
             result = actCode;
+            return true;
+        }
+
+        public async ActivityCode Get_ElementIdCode()
+        {
+            var elementIdCodeIdString = Get_SlotProperty("ELEMENT_ID_CODE_ID");
+            var isElementIdCodeId = int.TryParse(elementIdCodeIdString, out int elementIdCodeId);
+
+            if(!isElementIdCodeId) { return null; };
+
+            if(ElementIdCode != null  && ElementIdCode.ObjectId == elementIdCodeId) { return ElementIdCode; };
+
+            var p6ApiService = PluginInstance.MyP6ApiService;
+            var actCode = await p6ApiService.GetP6ActivityCodeById(elementIdCodeId);
+
+            if(actCode == null) { return null; };
+
+            ElementIdCode = actCode;
+            return actCode; 
+        }
+
+        public bool Set_ElementIdCode(ActivityCode actCode, out ActivityCode result, Transaction tr = null)
+        {
+            result = null;
+
+            var elementIdCodeId = actCode.ObjectId.ToString();
+            var elementIdCodeValue = actCode.Description;
+            var elementIdCodePathArray = actCode.CodeConcatName.Split('.')[^2..];
+            var elementIdCodePath = string.Join(" -> ", elementIdCodePathArray);
+
+            var idResult = Set_SlotProperty("ELEMENT_ID_CODE_ID", elementIdCodeId, out _, tr);
+            var valueResult = Set_SlotProperty("ELEMENT_ID_CODE_VALUE", elementIdCodeValue, out _, tr);
+            var pathResult = Set_SlotProperty("ELEMENT_ID_CODE_PATH", elementIdCodePath, out _, tr);
+
+            if(!idResult || !valueResult || !pathResult) { return false; };
+
+            ElementIdCode = actCode;
+
+            result = actCode; 
             return true; 
         }
 
