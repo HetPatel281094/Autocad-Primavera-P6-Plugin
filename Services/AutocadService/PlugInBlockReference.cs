@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 using AcadAppServ = Autodesk.AutoCAD.ApplicationServices;
 
@@ -245,8 +246,27 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
             AcadBlockRef = blockReference;
             AcadBlockTblRec = (BlockTableRecord)tr.GetObject(blockReference.BlockTableRecord, OpenMode.ForRead);
 
-            var bdryActCode = Get_BdryActCode();
-            var elementIdCode = Get_ElementIdCode();
+        }
+
+        public async Task AsyncInit()
+        {
+            switch (InitState)
+            {
+                //case InitStateEnum.DefaultInitialized:
+                //    break;
+
+                //case InitStateEnum.BTRInitialized:
+                //    break;
+
+                case InitStateEnum.BlockRefInitialized:
+                    var bdryActCode = await Get_BdryActCode();
+                    var elementIdCode = await Get_ElementIdCode();
+                    break;
+
+                default:
+                    Debug.Print("AsyncInit called with unhandled InitState: " + InitState);
+                    return;
+            };
 
         }
 
@@ -569,9 +589,22 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
             BlockAttProps.BlockType = blockType;
         }
 
-        public ActivityCode Get_BdryActCode() 
-        { 
-            return BdryActCode; 
+        public async Task<ActivityCode> Get_BdryActCode() 
+        {
+            var boundaryCodeIdString = Get_SlotProperty("BOUNDARY_CODE_ID");
+            var isBoundaryCodeId = int.TryParse(boundaryCodeIdString, out int boundaryCodeId);
+
+            if (!isBoundaryCodeId) { return null; };
+
+            if (BdryActCode != null && BdryActCode.ObjectId == boundaryCodeId) { return BdryActCode; };
+
+            var p6ApiService = PluginInstance.MyP6ApiService;
+            var actCode = await p6ApiService.GetP6ActivityCodeById(boundaryCodeId);
+
+            if (actCode == null) { return null; };
+
+            BdryActCode = actCode;
+            return actCode;
         }
 
         public bool Set_BdryActCode(ActivityCode actCode, out ActivityCode result, Transaction tr = null) 
@@ -595,7 +628,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
             return true;
         }
 
-        public async ActivityCode Get_ElementIdCode()
+        public async Task<ActivityCode> Get_ElementIdCode()
         {
             var elementIdCodeIdString = Get_SlotProperty("ELEMENT_ID_CODE_ID");
             var isElementIdCodeId = int.TryParse(elementIdCodeIdString, out int elementIdCodeId);
