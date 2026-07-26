@@ -259,8 +259,8 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                 //    break;
 
                 case InitStateEnum.BlockRefInitialized:
-                    var bdryActCode = await Get_BdryActCode();
-                    var elementIdCode = await Get_ElementIdCode();
+                    _ = await Get_BdryActCode();
+                    _ = await Get_ElementIdCode();
                     break;
 
                 default:
@@ -357,7 +357,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
         // Helper methods for repeat use
         private static int ParseSlotNumber(string key)
         {
-            return int.Parse(key.Substring(key.Length - 2));
+            return int.Parse(key[^2..]);
         }
 
         private static string SlotNameTag(int slotNumber)
@@ -385,7 +385,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
 
         }
 
-        private Dictionary<string, AttributeReference> Get_AttDefDict(BlockReference acadBlockRef, Transaction tr)
+        private static Dictionary<string, AttributeReference> Get_AttDefDict(BlockReference acadBlockRef, Transaction tr)
         {
             return acadBlockRef.AttributeCollection
                 .Cast<ObjectId>()
@@ -397,7 +397,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                 );
         }
 
-        private Dictionary<string, DynamicBlockReferenceProperty> Get_DyBlockRefPropDict(BlockReference acadBlockRef)
+        private static Dictionary<string, DynamicBlockReferenceProperty> Get_DyBlockRefPropDict(BlockReference acadBlockRef)
         {
             return acadBlockRef.DynamicBlockReferencePropertyCollection
                 .Cast<DynamicBlockReferenceProperty>()
@@ -422,12 +422,11 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
 
         private void SetBlockTypeFromStatus(Transaction tr)
         {
-            if (tr == null || BlockAttProps.BlockType == null || BlockAttProps.Update_Status == null) { return; }
-            ;
+            if (tr == null || BlockAttProps.BlockType == null || BlockAttProps.Update_Status == null) { return; };
 
             string status = Convert.ToString(BlockAttProps.Update_Status.Value);
 
-            if (string.Equals(BlockAttProps.BlockType.TextString, status, StringComparison.Ordinal)) { return; }
+            if (string.Equals(BlockAttProps.BlockType.TextString, status, StringComparison.Ordinal)) { return; };
 
             var blockType = (AttributeReference)tr.GetObject(BlockAttProps.BlockType.ObjectId, OpenMode.ForWrite);
             blockType.TextString = status ?? string.Empty;

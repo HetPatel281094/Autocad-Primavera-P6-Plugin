@@ -87,30 +87,27 @@ namespace Autocad_Primavera_P6_Plugin
                 if (blockRef == null) { return; };
 
                 BlockReference freshRef;
-                ActivityCode bdryActCode;
-                ActivityCode elementIdCode;
-                PlugInBlockReference pluginBlockRef;
 
+                using (doc.LockDocument())
                 using (var tr = doc.Database.TransactionManager.StartTransaction())
                 {
                     freshRef = (BlockReference)tr.GetObject(blockRef.ObjectId, OpenMode.ForRead);
 
-                    pluginBlockRef = new PlugInBlockReference(this, doc, freshRef, tr);
+                    var pluginBlockRef = new PlugInBlockReference(this, doc, freshRef, tr);
                     await pluginBlockRef.AsyncInit();
 
-                    bdryActCode = await pluginBlockRef.Get_BdryActCode();
-                    elementIdCode = await pluginBlockRef.Get_ElementIdCode();
+                    var bdryActCode = await pluginBlockRef.Get_BdryActCode();
+                    var elementIdCode = await pluginBlockRef.Get_ElementIdCode();
 
-                    tr.Commit();
-                };
-
-                using (var tr = doc.Database.TransactionManager.StartTransaction())
-                {
                     if (bdryActCode != null) { pluginBlockRef.Set_BdryActCode(bdryActCode, out _, tr); };
-                    if (elementIdCode != null) { pluginBlockRef.Set_BdryActCode(elementIdCode, out _, tr); };
+                    if (elementIdCode != null) { pluginBlockRef.Set_ElementIdCode(elementIdCode, out _, tr); };
 
-                    tr.Commit();
+                    tr.Commit(); // or Abort() since you only read
                 };
+
+                var _ed = doc.Editor;
+                _ed.SetImpliedSelection(new ObjectId[0]);
+                _ed.SetImpliedSelection(new ObjectId[] { blockRef.ObjectId });
 
                 Debug.Print("Test Function is Completed without error.");
             }
