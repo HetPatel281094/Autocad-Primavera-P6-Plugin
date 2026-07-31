@@ -580,5 +580,57 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
 
         }
 
+        public object Get_Update_Status()
+        {
+            if (InitState != InitStateEnum.BlockRefInitialized || BlockAttProps.Update_Status == null)
+                {
+                        return null;
+                            }
+
+                                return BlockAttProps.Update_Status.Value;
+                                }
+
+                                public bool Set_Update_Status(object value, out object result, Transaction tr = null)
+                                {
+                                    result = null;
+
+                                        if (InitState != InitStateEnum.BlockRefInitialized || BlockAttProps.Update_Status == null) { return false; };
+                                            if (tr == null) { Debug.Print("Transaction is null"); return false; };
+                                                if (!TryGetWritableDynamicProperty(tr, "Update Status", out var writableProp)) { return false; };
+
+                                                    writableProp.Value = value;
+                                                        BlockAttProps.Update_Status = writableProp;
+
+                                                            result = value;
+                                                                return true;
+                                                                }
+
+        // ── Shared helper ────────────────────────────────────────────────────────────
+        // DynamicBlockReferenceProperty isn't a DBObject, so unlike AttributeReference
+        // it can't be reopened by ObjectId. The owning BlockReference must be reopened
+        // ForWrite, then the matching property re-fetched from its live collection.
+        private bool TryGetWritableDynamicProperty(Transaction tr, string propertyName, out DynamicBlockReferenceProperty property)
+        {
+            property = default;
+
+                if (InitState != InitStateEnum.BlockRefInitialized || AcadBlockRef == null)
+                    {
+                            return false;
+                                }
+
+                                    var blockRef = (BlockReference)tr.GetObject(AcadBlockRef.ObjectId, OpenMode.ForWrite);
+
+                                        foreach (DynamicBlockReferenceProperty candidate in blockRef.DynamicBlockReferencePropertyCollection)
+                                            {
+                                                    if (string.Equals(candidate.PropertyName, propertyName, StringComparison.OrdinalIgnoreCase))
+                                                            {
+                                                                        property = candidate;
+                                                                                    return true;
+                                                                                            }
+                                                                                                }
+
+                                                                                                    return false;
+                                                                                                    }
+
     }
 }
