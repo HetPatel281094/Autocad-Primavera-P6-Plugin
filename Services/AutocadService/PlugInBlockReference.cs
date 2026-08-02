@@ -834,7 +834,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                 case InitStateEnum.BlockRefInitialized:
                     var updateStatus = BlockAttProps.Update_Status;
                     
-                    if (value != null || string.IsNullOrWhiteSpace(value)) 
+                    if (value != null || !string.IsNullOrWhiteSpace(value)) 
                     {
                         var writableAttribute = (AttributeReference)tr.GetObject(BlockAttProps.BlockType.ObjectId, OpenMode.ForWrite);
                         writableAttribute.TextString = updateStatus.Value?.ToString();
