@@ -19,6 +19,7 @@ using Autodesk.AutoCAD.DatabaseServices;
 using System.Collections.Generic;
 using System.Linq;
 using System.Diagnostics;
+using Autodesk.AutoCAD.Geometry;
 
 [assembly: ExtensionApplication(typeof(Autocad_Primavera_P6_Plugin.MyPlugin))]
 
@@ -96,11 +97,26 @@ namespace Autocad_Primavera_P6_Plugin
                     var pluginBlockRef = new PlugInBlockReference(this, doc, freshRef, tr);
                     await pluginBlockRef.AsyncInit();
 
-                    var bdryActCode = await pluginBlockRef.Get_BdryActCode();
-                    var elementIdCode = await pluginBlockRef.Get_ElementIdCode();
+                    // Props
+                    var v1 = pluginBlockRef.InitState;
+                    var v2 = pluginBlockRef.LoadWarnings;
 
+                    var v3 = pluginBlockRef.Get_BlockPosition();
+                    if (v3.HasValue) { var v4 = pluginBlockRef.Set_BlockPosition(v3.Value, out _); };
+
+                    var v5 = pluginBlockRef.Get_InfoPosition();
+                    if (v5.HasValue) { var v6 = pluginBlockRef.Set_InfoPosition(v5.Value, out _, tr); };
+
+                    var bdryActCode = await pluginBlockRef.Get_BdryActCode();
                     if (bdryActCode != null) { pluginBlockRef.Set_BdryActCode(bdryActCode, out _, tr); };
-                    if (elementIdCode != null) { pluginBlockRef.Set_ElementIdCode(elementIdCode, out _, tr); };
+
+                    var elementIdCode = await pluginBlockRef.Get_ElementIdCode();
+                    if (elementIdCode != null) { 
+                        pluginBlockRef.Set_ElementIdCode(elementIdCode, out _, tr); 
+                        pluginBlockRef.Set_ElementId(out _, tr: tr);
+                    };
+
+                    var v7 = pluginBlockRef.Set_BlockType(out _, tr: tr);
 
                     tr.Commit(); // or Abort() since you only read
                 };

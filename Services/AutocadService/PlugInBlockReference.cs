@@ -1,9 +1,11 @@
 using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing.Text;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -51,7 +53,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
         public AttributeReference Attribute_Check_String;
         public AttributeReference ElementId;
         public AttributeReference BlockType;
-        public DynamicBlockReferenceProperty Update_Status;
+        public DynamicBlockReferenceProperty Update_Status; 
         public DynamicBlockReferenceProperty Moveinfo_X;
         public DynamicBlockReferenceProperty Moveinfo_Y;
         public Dictionary<string, string> PropSlotDict = new(StringComparer.OrdinalIgnoreCase);
@@ -70,6 +72,8 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
         private AcadAppServ.Document AcadDoc = null;
         private BlockTableRecord AcadBlockTblRec = null;
         private BlockReference AcadBlockRef = null;
+        private Point3d? PluginBlockPosition = null;
+        private Point3d? InfoPosition = null;
         private Dictionary<string, Slot> SlotsDict = new() { ["Slot01"] = null, ["Slot02"] = null, ["Slot03"] = null, ["Slot04"] = null, ["Slot05"] = null, ["Slot06"] = null, ["Slot07"] = null, ["Slot08"] = null, ["Slot09"] = null, ["Slot10"] = null, ["Slot11"] = null, ["Slot12"] = null, ["Slot13"] = null, ["Slot14"] = null, ["Slot15"] = null };
         private AttProps BlockAttProps = null;
 
@@ -355,6 +359,132 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
         //}
 
         // Helper methods for repeat use
+
+        public Point3d? Get_BlockPosition()
+        {
+            if(InitState == InitStateEnum.BlockRefInitialized)
+            {
+                return AcadBlockRef.Position;
+            } else
+            {
+                return PluginBlockPosition;
+            };
+        }
+
+        public bool Set_BlockPosition(Point3d newPosition, out Point3d? resultPosition, Transaction tr = null)
+        {
+            resultPosition = null;
+
+            switch (InitState)
+            {
+                case InitStateEnum.NotInitialized:
+                    return false;
+
+                case InitStateEnum.DefaultInitialized:
+                    PluginBlockPosition = newPosition;
+                    resultPosition = PluginBlockPosition;
+                    return true;
+
+                case InitStateEnum.BTRInitialized:
+                    PluginBlockPosition = newPosition;
+                    resultPosition = PluginBlockPosition;
+                    return true;
+
+                case InitStateEnum.BlockRefInitialized:
+                    if (AcadBlockRef == null || tr == null) { return false; };
+
+                    var blockRef = (BlockReference)tr.GetObject(AcadBlockRef.ObjectId, OpenMode.ForWrite);
+
+                    blockRef.Position = newPosition;
+
+                    AcadBlockRef = blockRef;
+                    PluginBlockPosition = newPosition;
+                    resultPosition = PluginBlockPosition;
+
+                    return true;
+
+                default:
+                    return false;
+            };
+
+        }
+
+        public Point3d? Get_InfoPosition()
+        {
+            if (InitState != InitStateEnum.BlockRefInitialized)
+            {
+                return InfoPosition;
+            };
+
+            if (AcadBlockRef == null ||
+                BlockAttProps?.Moveinfo_X == null ||
+                BlockAttProps?.Moveinfo_Y == null ||
+                BlockAttProps.Moveinfo_X.Value == null ||
+                BlockAttProps.Moveinfo_Y.Value == null)
+            {
+                return null;
+            };
+
+            try
+            {
+                double moveInfoX = Convert.ToDouble(BlockAttProps.Moveinfo_X.Value);
+                double moveInfoY = Convert.ToDouble(BlockAttProps.Moveinfo_Y.Value);
+                Point3d blockPosition = AcadBlockRef.Position;
+
+                return new Point3d(
+                    blockPosition.X + moveInfoX,
+                    blockPosition.Y + moveInfoY,
+                    blockPosition.Z);
+            }
+            catch (Exception)
+            {
+                return null;
+            };
+        }
+
+        public bool Set_InfoPosition(Point3d newPosition, out Point3d? resultPosition, Transaction tr = null)
+        {
+            resultPosition = null;
+
+            switch (InitState)
+            {
+                case InitStateEnum.NotInitialized:
+                    return false;
+
+                case InitStateEnum.DefaultInitialized:
+                case InitStateEnum.BTRInitialized:
+                    InfoPosition = newPosition;
+                    resultPosition = InfoPosition;
+                    return true;
+
+                case InitStateEnum.BlockRefInitialized:
+                    if (AcadBlockRef == null || tr == null) { return false; };
+
+                    var blockRef = (BlockReference)tr.GetObject(AcadBlockRef.ObjectId, OpenMode.ForWrite);
+                    var dyBlockRefPropDict = Get_DyBlockRefPropDict(blockRef);
+
+                    var moveInfoX = TryGetValue_DyBlockRefPropDict(dyBlockRefPropDict, "MoveInfo X");
+                    var moveInfoY = TryGetValue_DyBlockRefPropDict(dyBlockRefPropDict, "MoveInfo Y");
+
+                    if (moveInfoX == null || moveInfoY == null || moveInfoX.ReadOnly || moveInfoY.ReadOnly) { return false; };
+
+                    Point3d blockPosition = blockRef.Position;
+                    moveInfoX.Value = newPosition.X - blockPosition.X;
+                    moveInfoY.Value = newPosition.Y - blockPosition.Y;
+
+                    BlockAttProps.Moveinfo_X = moveInfoX;
+                    BlockAttProps.Moveinfo_Y = moveInfoY;
+
+                    InfoPosition = new Point3d( newPosition.X, newPosition.Y, blockPosition.Z);
+
+                    resultPosition = InfoPosition;
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
         private static int ParseSlotNumber(string key)
         {
             return int.Parse(key[^2..]);
@@ -457,8 +587,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
 
             var boundaryCodeId = actCode.ObjectId.ToString();
             var boundaryCodeValue = actCode.Description;
-            var boundaryCodePathArray = actCode.CodeConcatName.Split('.');
-            var boundaryCodePath = string.Join(" -> ", boundaryCodePathArray);
+            var boundaryCodePath = actCode.CodeConcatName;
 
             var idResult = Set_SlotProperty("BOUNDARY_CODE_ID", boundaryCodeId, out _, tr);
             var valueResult = Set_SlotProperty("BOUNDARY_CODE_VALUE", boundaryCodeValue, out _, tr);
@@ -496,8 +625,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
 
             var elementIdCodeId = actCode.ObjectId.ToString();
             var elementIdCodeValue = actCode.Description;
-            var elementIdCodePathArray = actCode.CodeConcatName.Split('.')[^2..];
-            var elementIdCodePath = string.Join(" -> ", elementIdCodePathArray);
+            var elementIdCodePath = actCode.CodeConcatName;
 
             var idResult = Set_SlotProperty("ELEMENT_ID_CODE_ID", elementIdCodeId, out _, tr);
             var valueResult = Set_SlotProperty("ELEMENT_ID_CODE_VALUE", elementIdCodeValue, out _, tr);
@@ -583,27 +711,30 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
         public object Get_Update_Status()
         {
             if (InitState != InitStateEnum.BlockRefInitialized || BlockAttProps.Update_Status == null)
-                {
-                        return null;
-                            }
+            {
+                return null;
+            }
 
-                                return BlockAttProps.Update_Status.Value;
-                                }
+            return BlockAttProps.Update_Status.Value;
+        }
 
-                                public bool Set_Update_Status(object value, out object result, Transaction tr = null)
-                                {
-                                    result = null;
+        public bool Set_Update_Status(object value, out object result, Transaction tr = null)
+        {
+            result = null;
 
-                                        if (InitState != InitStateEnum.BlockRefInitialized || BlockAttProps.Update_Status == null) { return false; };
-                                            if (tr == null) { Debug.Print("Transaction is null"); return false; };
-                                                if (!TryGetWritableDynamicProperty(tr, "Update Status", out var writableProp)) { return false; };
+            if (InitState != InitStateEnum.BlockRefInitialized || BlockAttProps.Update_Status == null) { return false; }
+            ;
+            if (tr == null) { Debug.Print("Transaction is null"); return false; }
+            ;
+            if (!TryGetWritableDynamicProperty(tr, "Update Status", out var writableProp)) { return false; }
+            ;
 
-                                                    writableProp.Value = value;
-                                                        BlockAttProps.Update_Status = writableProp;
+            writableProp.Value = value;
+            BlockAttProps.Update_Status = writableProp;
 
-                                                            result = value;
-                                                                return true;
-                                                                }
+            result = value;
+            return true;
+        }
 
         // ── Shared helper ────────────────────────────────────────────────────────────
         // DynamicBlockReferenceProperty isn't a DBObject, so unlike AttributeReference
@@ -613,24 +744,125 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
         {
             property = default;
 
-                if (InitState != InitStateEnum.BlockRefInitialized || AcadBlockRef == null)
+            if (InitState != InitStateEnum.BlockRefInitialized || AcadBlockRef == null)
+            {
+                return false;
+            }
+
+            var blockRef = (BlockReference)tr.GetObject(AcadBlockRef.ObjectId, OpenMode.ForWrite);
+
+            foreach (DynamicBlockReferenceProperty candidate in blockRef.DynamicBlockReferencePropertyCollection)
+            {
+                if (string.Equals(candidate.PropertyName, propertyName, StringComparison.OrdinalIgnoreCase))
+                {
+                    property = candidate;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public string Get_ElementId()
+        {
+            return InitState switch
+            {
+                InitStateEnum.DefaultInitialized => null,
+                InitStateEnum.BTRInitialized => null,
+                InitStateEnum.BlockRefInitialized => BlockAttProps?.ElementId?.TextString,
+                _ => null
+            };
+        }
+
+        public bool Set_ElementId(out string result, string value = null, Transaction tr = null)
+        {
+            result = null;
+
+            switch (InitState)
+            {
+                case InitStateEnum.BlockRefInitialized:
+                    var elementIdCodePathString = Get_SlotProperty("ELEMENT_ID_CODE_PATH");
+                    var elementIdPathString = Get_ElementIdString(elementIdCodePathString);
+
+                    var writableAttribute = (AttributeReference)tr.GetObject(BlockAttProps.ElementId.ObjectId, OpenMode.ForWrite);
+
+                    var finalValueString = value ?? elementIdPathString ?? string.Empty;
+
+                    writableAttribute.TextString = finalValueString;
+                    BlockAttProps.ElementId = writableAttribute;
+                    result = finalValueString;
+
+                    return true;
+
+                default:
+                    return false;
+            };
+
+            static string Get_ElementIdString(string pathString)
+            {
+                try
+                {
+                    var actCodePathArray = pathString.Split('.')[^2..];
+                    var elementIdCodePath = string.Join(" -> ", actCodePathArray);
+                    return elementIdCodePath;
+                }
+                catch
+                {
+                    return String.Empty;
+                };
+            };
+
+        }
+
+        public string Get_BlockType()
+        {
+            return InitState switch
+            {
+                InitStateEnum.DefaultInitialized => null,
+                InitStateEnum.BTRInitialized => null,
+                InitStateEnum.BlockRefInitialized => BlockAttProps?.BlockType?.TextString,
+                _ => null
+            };
+        }
+
+        public bool Set_BlockType(out string result, string value = null, Transaction tr = null)
+        {
+            result = null;
+
+            switch (InitState)
+            {
+                case InitStateEnum.BlockRefInitialized:
+                    var updateStatus = BlockAttProps.Update_Status;
+                    
+                    if (value != null || string.IsNullOrWhiteSpace(value)) 
                     {
-                            return false;
-                                }
+                        var writableAttribute = (AttributeReference)tr.GetObject(BlockAttProps.BlockType.ObjectId, OpenMode.ForWrite);
+                        writableAttribute.TextString = updateStatus.Value?.ToString();
+                        result = updateStatus.Value?.ToString();
 
-                                    var blockRef = (BlockReference)tr.GetObject(AcadBlockRef.ObjectId, OpenMode.ForWrite);
+                        return true;
+                    } 
+                    else
+                    {
+                        var allowedStatuses = updateStatus.GetAllowedValues();
 
-                                        foreach (DynamicBlockReferenceProperty candidate in blockRef.DynamicBlockReferencePropertyCollection)
-                                            {
-                                                    if (string.Equals(candidate.PropertyName, propertyName, StringComparison.OrdinalIgnoreCase))
-                                                            {
-                                                                        property = candidate;
-                                                                                    return true;
-                                                                                            }
-                                                                                                }
+                        var isAllowedValue = allowedStatuses.Any(v => string.Equals(v.ToString(), value, StringComparison.OrdinalIgnoreCase));
+                        if (!isAllowedValue) { return false; };
 
-                                                                                                    return false;
-                                                                                                    }
+                        var isSet_Update_Status = Set_Update_Status(value, out object Set_Update_Status_Result, tr);
+
+                        var writableAttribute = (AttributeReference)tr.GetObject(BlockAttProps.BlockType.ObjectId, OpenMode.ForWrite);
+                        writableAttribute.TextString = Set_Update_Status_Result?.ToString();
+                        result = Set_Update_Status_Result?.ToString();
+
+                        return true;
+                    };
+
+                default:
+                    return false;
+            };
+
+        }
 
     }
 }

@@ -419,5 +419,6 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             _isCancelled = true;
             RequestClose?.Invoke(false);
         }
+        
     }
 }
