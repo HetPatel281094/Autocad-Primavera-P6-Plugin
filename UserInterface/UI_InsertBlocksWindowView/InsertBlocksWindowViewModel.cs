@@ -188,9 +188,10 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                         break;
                     }
 
-                    // Start here
-                    var pluginBlockRef = new PlugInBloclckReference (_model.pluginInstance,doc);
-                    pluginBlockRef.Set_BlockPosition(pointResult.value);
+                    // Start Here
+                    var pluginBlockRef = new PlugInBlockReference(_model.PluginInstance,doc);
+                    var SetPositionResult = pluginBlockRef.Set_BlockPosition(pointResult.Value, out _);
+                    // Ends Here
 
                     bool boundaryReady = await BoundaryCode.EnsureResolvedAsync().ConfigureAwait(true);
                     if (boundaryReady && BoundaryCode.IsAutoGenerate)
@@ -208,7 +209,10 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                         break;
                     }
 
-                    pluginBlockRef.Set_BdryActCode(BoundaryCode.)
+                    // Start Here
+                    pluginBlockRef.Set_BdryActCode(BoundaryCode);
+                    pluginBlockRef.Set_ElementIdCode(ItemIdCode);
+                    // Ends Here
 
                     ObjectId insertedBlockId;
                     string elementId;
