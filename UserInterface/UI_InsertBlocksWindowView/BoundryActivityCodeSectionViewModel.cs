@@ -35,6 +35,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
 
 
+
         public string SelectedCodeValue
         {
             get => _model.SelectedCodeValue;

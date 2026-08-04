@@ -208,6 +208,8 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                         break;
                     }
 
+                    pluginBlockRef.Set_BdryActCode(BoundaryCode.)
+
                     ObjectId insertedBlockId;
                     string elementId;
                     string blockName;
