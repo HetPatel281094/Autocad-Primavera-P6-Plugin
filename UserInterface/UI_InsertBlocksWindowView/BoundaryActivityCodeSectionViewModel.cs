@@ -14,7 +14,7 @@ using PropertyChanged;
 namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 {
     [AddINotifyPropertyChangedInterface]
-    public sealed class BoundryActivityCodeSectionViewModel
+    public sealed class BoundaryActivityCodeSectionViewModel
     {
         private readonly MyPlugin _pluginInstance;
         private Project _project;
@@ -35,9 +35,6 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
         public string SectionLabel { get; private set; } = "Boundary Code";
         public ICommand SelectCommand { get; private set; }
-
-
-
 
         public string SelectedCodeValue
         {
@@ -97,7 +94,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         public bool HasAutoGenerateParent => _autoGenerateParentNode != null;
 
 
-        public BoundryActivityCodeSectionViewModel(MyPlugin pluginInstance, Project project = null, BlockReference selectedBlock = null)
+        public BoundaryActivityCodeSectionViewModel(MyPlugin pluginInstance, Project project = null, BlockReference selectedBlock = null)
         {
             _model = new BoundaryActivityCodeSectionModel
             {
