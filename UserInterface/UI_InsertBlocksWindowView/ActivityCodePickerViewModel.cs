@@ -63,6 +63,17 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                 .GroupBy(c => c.CodeTypeObjectId)
                 .ToDictionary(g => g.Key, g => g.OrderBy(c => c.SequenceNumber ?? int.MaxValue).ThenBy(c => c.CodeValue).ToList());
 
+            try
+            {
+                var x = codeTypes.Where(t => t != null).OrderBy(t => t.SequenceNumber ?? int.MaxValue).ThenBy(t => t.Name);
+            }
+            catch(Exception e)
+            {
+                Debug.Print("Break Point");
+            };
+
+
+
             foreach (var codeType in codeTypes.Where(t => t != null).OrderBy(t => t.SequenceNumber ?? int.MaxValue).ThenBy(t => t.Name))
             {
                 var root = new ActivityCodePickerNodeViewModel(codeType, NodeSelectedHandler);

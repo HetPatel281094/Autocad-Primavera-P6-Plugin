@@ -48,7 +48,8 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             BoundaryCode = new BoundryActivityCodeSectionViewModel(_model.PluginInstance, _model.CurrentProject);
             await BoundaryCode.Async_Init();
 
-            ItemIdCode = new ActivityCodeSectionViewModel(_model.PluginInstance, "Item ID", _model.CurrentProject);
+            ItemIdCode = new ActivityCodeSectionViewModel(_model.PluginInstance, _model.CurrentProject);
+            await ItemIdCode.Async_Init();
 
             ACadBlockVM = new ACadBlockSectionViewModel(_model.ActAcadDoc);
             await ACadBlockVM.Async_Init();
@@ -210,8 +211,15 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                     }
 
                     // Start Here
-                    pluginBlockRef.Set_BdryActCode(BoundaryCode);
-                    pluginBlockRef.Set_ElementIdCode(ItemIdCode);
+                    if (!pluginBlockRef.Set_BdryActCode(BoundaryCode.ResolvedActivityCode, out _))
+                    {
+                        throw new InvalidOperationException("Failed to prepare Boundary activity-code values.");
+                    }
+
+                    if (!pluginBlockRef.Set_ElementIdCode(ItemIdCode.ResolvedActivityCode, out _))
+                    {
+                        throw new InvalidOperationException("Failed to prepare Item ID activity-code values.");
+                    }
                     // Ends Here
 
                     ObjectId insertedBlockId;
