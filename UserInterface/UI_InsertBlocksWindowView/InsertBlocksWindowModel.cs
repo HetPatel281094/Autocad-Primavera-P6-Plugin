@@ -44,6 +44,8 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
     public sealed class BoundaryActivityCodeSectionModel
     {
         public string ActivtyCodeTypeName = "Boundary";
+        public ActivityCode SelectedActivityCode { get; set; }
+        
         public string SelectedCodeValue { get; set; }
         public string SelectedCodePath { get; set; }
         public string SelectedCodeValueId { get; set; }
