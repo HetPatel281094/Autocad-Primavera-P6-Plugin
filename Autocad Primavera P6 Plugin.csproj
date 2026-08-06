@@ -66,6 +66,7 @@
 
   <!-- ── NuGet packages (replaces packages.config) ──────────────────────── -->
   <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="Fody" Version="6.6.4" PrivateAssets="all" />
     <PackageReference Include="PropertyChanged.Fody" Version="4.1.0" />
     <PackageReference Include="LiteDB" Version="5.0.21" />
