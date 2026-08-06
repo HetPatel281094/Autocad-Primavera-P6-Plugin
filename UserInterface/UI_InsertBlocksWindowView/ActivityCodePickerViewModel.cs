@@ -185,5 +185,54 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         {
             CommandManager.InvalidateRequerySuggested();
         }
+
+        /// <summary>
+        /// Searches the hierarchy starting from RootNodes to find a node wrapped around an ActivityCode with the specified ObjectId.
+        /// </summary>
+        /// <param name="actCode">The ObjectId of the ActivityCode to search for.</param>
+        /// <returns>The matching <see cref="ActivityCodePickerNodeViewModel"/>, or <c>null</c> if not found.</returns>
+        public ActivityCodePickerNodeViewModel GetNodeByActivityCode(ActivityCode actCode)
+        {
+            foreach (var rootNode in RootNodes)
+            {
+                var match = FindNodeByCodeObjectIdRecursive(rootNode, actCode.ObjectId.Value);
+                if (match != null)
+                {
+                    return match;
+                }
+            }
+
+            return null;
+        }
+
+        private ActivityCodePickerNodeViewModel FindNodeByCodeObjectIdRecursive(
+            ActivityCodePickerNodeViewModel currentNode,
+            int targetObjectId)
+        {
+            if (currentNode == null) return null;
+
+            // Check if current node is a code and has a matching ObjectId
+            if (currentNode.IsCode && currentNode.Code != null && currentNode.Code.ObjectId == targetObjectId)
+            {
+                return currentNode;
+            }
+
+            // Traverse through child nodes recursively
+            if (currentNode.Children != null)
+            {
+                foreach (var childNode in currentNode.Children)
+                {
+                    var found = FindNodeByCodeObjectIdRecursive(childNode, targetObjectId);
+                    if (found != null)
+                    {
+                        return found;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+
     }
 }

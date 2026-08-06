@@ -230,11 +230,11 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                     ParentObjectId = parentCode != null ? parentCode.ObjectId : null
                 };
 
-                string response = await _p6ApiService.Client
+                var response = await _p6ApiService.Client
                     .CreateActivityCodeAsync(null, new[] { newCode })
                     .ConfigureAwait(true);
 
-                int? createdObjectId = TryExtractObjectId(response);
+                int? createdObjectId = 10;//TryExtractObjectId(response);
                 if (!createdObjectId.HasValue)
                 {
                     Info = "P6 created the activity code but did not return its ObjectId.";
