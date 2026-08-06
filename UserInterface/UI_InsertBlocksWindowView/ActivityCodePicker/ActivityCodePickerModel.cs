@@ -5,7 +5,7 @@ using System.Windows.Documents;
 using Autocad_Primavera_P6_Plugin.Services.LiteDBService;
 using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
 
-namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
+namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView.ActivityCodePicker
 {
     /// <summary>
     /// Plain data container for everything the Activity Code picker needs

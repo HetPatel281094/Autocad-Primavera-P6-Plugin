@@ -9,7 +9,7 @@ using Autocad_Primavera_P6_Plugin.Services.LiteDBService;
 using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
 using PropertyChanged;
 
-namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
+namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView.ActivityCodePicker
 {
     [AddINotifyPropertyChangedInterface]
     public sealed class ActivityCodePickerViewModel

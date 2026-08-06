@@ -23,7 +23,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         private bool _isCancelled;
 
         public BoundaryActivityCodeSectionViewModel BoundaryCode { get; private set; }
-        public ActivityCodeSectionViewModel ItemIdCode { get; private set; }
+        public ElementIdCodeSectionViewModel ItemIdCode { get; private set; }
         public ACadBlockSectionViewModel ACadBlockVM { get; private set; }
 
         public bool ContinuousInsert { get; set; }
@@ -48,7 +48,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             BoundaryCode = new BoundaryActivityCodeSectionViewModel(_model.PluginInstance, _model.CurrentProject);
             await BoundaryCode.Async_Init();
 
-            ItemIdCode = new ActivityCodeSectionViewModel(_model.PluginInstance, _model.CurrentProject);
+            ItemIdCode = new ElementIdCodeSectionViewModel(_model.PluginInstance, _model.CurrentProject);
             await ItemIdCode.Async_Init();
 
             ACadBlockVM = new ACadBlockSectionViewModel(_model.ActAcadDoc);

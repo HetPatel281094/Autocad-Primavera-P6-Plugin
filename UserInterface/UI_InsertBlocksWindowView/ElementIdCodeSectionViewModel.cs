@@ -8,13 +8,14 @@ using System.Windows;
 using System.Windows.Input;
 using Autocad_Primavera_P6_Plugin.Services.LiteDBService;
 using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
+using Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView.ActivityCodePicker;
 using Autodesk.AutoCAD.DatabaseServices;
 using PropertyChanged;
 
 namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 {
     [AddINotifyPropertyChangedInterface]
-    public sealed class ActivityCodeSectionViewModel
+    public sealed class ElementIdCodeSectionViewModel
     {
         private readonly MyPlugin _pluginInstance;
         private Project _project;
@@ -91,7 +92,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         public bool HasResolvedCode => ResolvedActivityCode?.ObjectId.HasValue == true;
         public bool HasAutoGenerateParent => _autoGenerateParentNode != null;
 
-        public ActivityCodeSectionViewModel(MyPlugin pluginInstance, Project project = null, BlockReference selectedBlock = null)
+        public ElementIdCodeSectionViewModel(MyPlugin pluginInstance, Project project = null, BlockReference selectedBlock = null)
         {
             _model = new ActivityCodeSectionModel
             {
