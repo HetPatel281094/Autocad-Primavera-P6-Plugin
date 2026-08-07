@@ -3,6 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="clr-namespace:Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView"
+    xmlns:codepickerlocal="clr-namespace:Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView.ActivityCodePicker"
     Title="{Binding Title}"
     Width="680"
     Height="560"
@@ -117,7 +118,7 @@
                     </Style>
                 </TreeView.ItemContainerStyle>
                 <TreeView.Resources>
-                    <HierarchicalDataTemplate DataType="{x:Type local:ActivityCodePickerNodeViewModel}" ItemsSource="{Binding Children}">
+                    <HierarchicalDataTemplate DataType="{x:Type codepickerlocal:ActivityCodePickerNodeViewModel}" ItemsSource="{Binding Children}">
                         <Border
                             x:Name="RowBorder"
                             MinHeight="24"

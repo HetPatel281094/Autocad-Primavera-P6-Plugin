@@ -11,6 +11,11 @@
     MinHeight="620"
     ResizeMode="CanResize"
     Topmost="True"
+    
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+
     WindowStartupLocation="CenterOwner">
 
     <Window.Resources>
@@ -203,7 +208,7 @@
 
             <Border Style="{StaticResource SectionBorderStyle}">
                 <StackPanel>
-                    <TextBlock FontWeight="Bold" Text="ITEM ID ACTIVITY CODE" />
+                    <TextBlock FontWeight="Bold" Text="BOUNDARY ACTIVITY CODE" />
 
                     <Grid Margin="0,6,0,0">
                         <Grid.ColumnDefinitions>
@@ -214,13 +219,14 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <Grid.Style>
                             <Style TargetType="Grid">
                                 <Setter Property="Opacity" Value="1" />
                                 <Setter Property="IsEnabled" Value="True" />
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding ItemIdCode.IsAutoGenerate}" Value="True">
+                                    <DataTrigger Binding="{Binding ElementIdCode.IsAutoGenerate}" Value="True">
                                         <Setter Property="Opacity" Value="0.45" />
                                         <Setter Property="IsEnabled" Value="False" />
                                     </DataTrigger>
@@ -236,27 +242,37 @@
                             Grid.Row="0"
                             Grid.Column="1"
                             Style="{StaticResource ValueTextStyle}"
-                            Text="{Binding ItemIdCode.SelectedCodeValue}" />
+                            Text="{Binding ElementIdCode.SelectedCodeValue}" />
                         <TextBlock
                             Grid.Row="1"
+                            Grid.Column="0"
+                            Style="{StaticResource FieldLabelStyle}"
+                            Text="Code Description" />
+                        <TextBlock
+                            Grid.Row="1"
+                            Grid.Column="1"
+                            Style="{StaticResource ValueTextStyle}"
+                            Text="{Binding ElementIdCode.SelectedCodeDescription}" />
+                        <TextBlock
+                            Grid.Row="2"
                             Grid.Column="0"
                             Style="{StaticResource FieldLabelStyle}"
                             Text="Code Path" />
                         <TextBlock
-                            Grid.Row="1"
+                            Grid.Row="2"
                             Grid.Column="1"
                             Style="{StaticResource ValueTextStyle}"
-                            Text="{Binding ItemIdCode.SelectedCodePath}" />
+                            Text="{Binding ElementIdCode.SelectedCodePath}" />
                         <TextBlock
-                            Grid.Row="2"
+                            Grid.Row="3"
                             Grid.Column="0"
                             Style="{StaticResource FieldLabelStyle}"
                             Text="Code Value Id" />
                         <TextBlock
-                            Grid.Row="2"
+                            Grid.Row="3"
                             Grid.Column="1"
                             Style="{StaticResource ValueTextStyle}"
-                            Text="{Binding ItemIdCode.SelectedCodeValueId}" />
+                            Text="{Binding ElementIdCode.SelectedCodeValueId}" />
                     </Grid>
 
                     <DockPanel Margin="0,6">
@@ -264,14 +280,15 @@
                             Width="96"
                             Margin="6,0,0,0"
                             HorizontalAlignment="Right"
-                            Command="{Binding ItemIdCode.SelectCommand}"
+                            Command="{Binding ElementIdCode.SelectCodeCommand}"
                             CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
                             Content="Select"
                             DockPanel.Dock="Right" />
                         <CheckBox
                             VerticalAlignment="Center"
-                            Content="Auto Generate New Code Value"
-                            IsChecked="{Binding ItemIdCode.IsAutoGenerate, Mode=TwoWay}" />
+                            Content="Auto Generate Element-Id Code Value"
+                            IsEnabled="{Binding ElementIdCode.CanAutoGenerate}"
+                            IsChecked="{Binding ElementIdCode.IsAutoGenerate, Mode=TwoWay}" />
                     </DockPanel>
 
                     <Grid>
@@ -283,12 +300,13 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <Grid.Style>
                             <Style TargetType="Grid">
                                 <Setter Property="Opacity" Value="0.65" />
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding ItemIdCode.IsAutoGenerate}" Value="True">
+                                    <DataTrigger Binding="{Binding ElementIdCode.IsAutoGenerate}" Value="True">
                                         <Setter Property="Opacity" Value="1" />
                                         <Setter Property="TextElement.FontWeight" Value="SemiBold" />
                                     </DataTrigger>
@@ -300,21 +318,25 @@
                             Grid.Column="0"
                             Style="{StaticResource FieldLabelStyle}"
                             Text="Code Value" />
-                        <TextBlock
+                        <TextBox
                             Grid.Row="0"
                             Grid.Column="1"
-                            Style="{StaticResource ValueTextStyle}"
-                            Text="{Binding ItemIdCode.AutoGeneratedCodeValue}" />
+                            IsEnabled="{Binding ElementIdCode.IsAutoGenerate}"
+                            Text="{Binding ElementIdCode.UserEnteredValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                            Margin="2"
+                            />
                         <TextBlock
                             Grid.Row="1"
                             Grid.Column="0"
                             Style="{StaticResource FieldLabelStyle}"
-                            Text="Code Path" />
-                        <TextBlock
+                            Text="Code Description" />
+                        <TextBox
                             Grid.Row="1"
                             Grid.Column="1"
-                            Style="{StaticResource ValueTextStyle}"
-                            Text="{Binding ItemIdCode.AutoGeneratedCodePath}" />
+                            IsEnabled="{Binding ElementIdCode.IsAutoGenerate}"
+                            Text="{Binding ElementIdCode.UserEnteredDescription, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                            Margin="2"
+                            />
                         <TextBlock
                             Grid.Row="2"
                             Grid.Column="0"
@@ -324,7 +346,20 @@
                             Grid.Row="2"
                             Grid.Column="1"
                             Style="{StaticResource ValueTextStyle}"
-                            Text="{Binding ItemIdCode.Info}" />
+                            Text="{Binding ElementIdCode.Info}" />
+                        <DockPanel Margin="0,6"                             
+                            Grid.Row="3"
+                            Grid.Column="1">
+                            <Button
+                                Width="96"
+                                Margin="6,0,0,0"
+                                HorizontalAlignment="Right"
+                                IsEnabled="{Binding ElementIdCode.IsAutoGenerate}"
+                                Command="{Binding ElementIdCode.AutoGenerateActivityCodeCommand}"
+                                CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
+                                Content="Generate New"
+                            DockPanel.Dock="Right"/>
+                        </DockPanel>
                     </Grid>
                 </StackPanel>
             </Border>
