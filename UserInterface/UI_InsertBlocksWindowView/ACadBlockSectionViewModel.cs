@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using Autocad_Primavera_P6_Plugin.Services.AutocadService;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
@@ -42,6 +43,11 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         partial void OnBlockTypeModeChanged(BlockTypeModeEnum oldValue, BlockTypeModeEnum newValue)
         {
             SelectedBlockTableRecord = null;
+
+            if (newValue == BlockTypeModeEnum.Predefined) { SelectedPredefinedBlock = null; };
+
+            NewBlockName = "";
+
         }
 
         public string SelectedBTRObjId => SelectedBlockTableRecord?.ObjectId.ToString() ?? String.Empty;
@@ -66,7 +72,12 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         }
 
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(CanAutoGenerate))]
         public PredefinedBlockInfo _selectedPredefinedBlock;
+        partial void OnSelectedPredefinedBlockChanged(PredefinedBlockInfo oldValue, PredefinedBlockInfo newValue)
+        {
+            NewBlockName = newValue != null ? $"{newValue.Name}_" : "";
+        }
 
         [ObservableProperty]
         public string _info;
@@ -74,8 +85,11 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         [ObservableProperty]
         public ObservableCollection<PredefinedBlockInfo> _availableBlocks = new();
 
-        public bool CanAutoGenerate => SelectedBlockTableRecord != null &&
-            SelectedBlockTableRecord.ObjectId.IsWellBehaved;
+        [ObservableProperty]
+        public bool _isRefreshAvailableBlocks = false;
+
+        public bool CanAutoGenerate => SelectedPredefinedBlock != null || (SelectedBlockTableRecord != null &&
+            SelectedBlockTableRecord.ObjectId.IsWellBehaved);
 
         public ACadBlockSectionViewModel(Document acadDoc, BlockReference preSelectedBlockRef = null)
         {
@@ -114,24 +128,16 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         {
             string folder = _defaultBlocksFolder;
 
-            if (SelectedPredefinedBlock != null && !string.IsNullOrWhiteSpace(SelectedPredefinedBlock.FilePath))
-            {
-                folder = Path.GetDirectoryName(SelectedPredefinedBlock.FilePath);
-            }
-
-            if (string.IsNullOrWhiteSpace(folder))
-            {
-                folder = _defaultBlocksFolder;
-            }
-
             try
             {
                 Directory.CreateDirectory(folder);
+
                 Process.Start(new ProcessStartInfo("explorer.exe", folder)
                 {
                     UseShellExecute = true
                 });
-                LoadPredefinedBlocks();
+
+                IsRefreshAvailableBlocks = true;
             }
             catch (Exception ex)
             {
@@ -171,20 +177,24 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                     using (var tr = doc.Database.TransactionManager.StartTransaction())
                     {
                         var blockRef = tr.GetObject(result.ObjectId, OpenMode.ForRead) as BlockReference;
-                        if (blockRef == null || !IsValidPluginBlock(blockRef, tr))
+
+                        var attRefDict = PluginBlockRefAutocadHelpers.Get_AttDefDict(blockRef, tr);
+
+                        if (blockRef == null || attRefDict == null || !PluginBlockRefAutocadHelpers.IsValidPluginBlock(attRefDict))
                         {
                             ed.WriteMessage("\nNot a valid plugin block.");
                             continue;
                         }
 
-                        ObjectId blockDefinitionId = GetSourceDefinitionId(blockRef);
-                        var blockDef = (BlockTableRecord)tr.GetObject(blockDefinitionId, OpenMode.ForRead);
-                        SelectedDrawingBlockId = blockDefinitionId;
-                        BlockTypeMode = BlockTypeModeEnum.SelectFromDrawing;
-                        tr.Commit();
+                        var BTR = blockRef.IsDynamicBlock ?
+                            (BlockTableRecord)tr.GetObject(blockRef.DynamicBlockTableRecord, OpenMode.ForRead)
+                            : (BlockTableRecord)tr.GetObject(blockRef.BlockTableRecord, OpenMode.ForRead);
+
+                        SelectedBlockTableRecord = BTR;
+
                         return;
-                    }
-                }
+                    };
+                };
             }
             catch (Exception ex)
             {
@@ -199,13 +209,24 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                     owner.Show();
                     owner.Activate();
                 }
-            }
+            };
+
         }
 
         [RelayCommand]
         private void GenerateNewBTR(object parameter)
         {
 
+        }
+
+        [RelayCommand]
+        private void RefreshAvailableBlocks()
+        {
+            if (IsRefreshAvailableBlocks)
+            {
+                LoadPredefinedBlocks();
+                IsRefreshAvailableBlocks = false;
+            };
         }
 
         private void LoadPredefinedBlocks()
@@ -240,7 +261,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             finally
             {
                 CommandManager.InvalidateRequerySuggested();
-            }
+            };
         }
 
 
@@ -270,32 +291,6 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         {
             string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             return Path.Combine(appData, "Autocad_Primavera_P6_Plugin", "Blocks");
-        }
-
-        private bool IsValidPluginBlock(BlockReference blockRef, Transaction tr)
-        {
-            foreach (ObjectId attributeId in blockRef.AttributeCollection)
-            {
-                var attribute = tr.GetObject(attributeId, OpenMode.ForRead) as AttributeReference;
-                if (attribute != null &&
-                    string.Equals(attribute.Tag, "Attribute_Check_string", StringComparison.OrdinalIgnoreCase) &&
-                    string.Equals(attribute.TextString, "FoundOK", StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private ObjectId GetSourceDefinitionId(BlockReference blockRef)
-        {
-            if (blockRef.IsDynamicBlock && !blockRef.DynamicBlockTableRecord.IsNull)
-            {
-                return blockRef.DynamicBlockTableRecord;
-            }
-
-            return blockRef.BlockTableRecord;
         }
 
         private BlockSourceResult ResolveDrawingBlockSource(Database db)
