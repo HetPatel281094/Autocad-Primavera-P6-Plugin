@@ -52,6 +52,61 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView.Ac
             BuildTree(types ?? new List<ActivityCodeType>(), codes ?? new List<ActivityCode>());
         }
 
+        public async Task AsyncInit(Project project = null, List<string> typesObjIds = null, List<ActivityCodeType> types = null, List<ActivityCode> codes = null)
+        {
+            var projectObjectId = project?.ObjectId.ToString();
+
+            List<ActivityCodeType> resolvedTypes;
+            List<ActivityCode> resolvedCodes;
+
+            try
+            {
+                if (types != null && types.Count > 0)
+                {
+                    resolvedTypes = types;
+                }
+                else
+                {
+                    var istypesObjIds = typesObjIds != null && typesObjIds.Count > 0;
+                    var typesObjectIdsStrings = istypesObjIds ? typesObjIds.Select(str => $"(ObjectId :eq: {str})") : null;
+                    var typesObjectIdsString = typesObjectIdsStrings != null ? string.Join(" :or: ", typesObjectIdsStrings) : "";
+
+                    var filter = "";
+                    filter += projectObjectId != null ? $"((ProjectObjectId :eq: '{projectObjectId}') :and: (Scope :eq: 'Project'))" : "";
+                    filter += filter.Length > 0 && !string.IsNullOrWhiteSpace(typesObjectIdsString) ? " :and: " : "";
+                    filter += !string.IsNullOrWhiteSpace(typesObjectIdsString) ? $"({typesObjectIdsString})" : "";
+                    var fields = "ObjectId,Name,Description,Scope,SequenceNumber";
+                    var fetchedtypes = await _model.PluginInstance.MyP6ApiService.Client.GetActivityCodeTypesAsync(filter, fields, null, null);
+                    resolvedTypes = fetchedtypes.ToList();
+                }
+
+                if (codes != null && codes.Count > 0)
+                {
+                    resolvedCodes = codes;
+                }
+                else
+                {
+                    var istypesObjIds = typesObjIds != null && typesObjIds.Count > 0;
+                    var typesObjectIdsStrings = istypesObjIds ? typesObjIds.Select(str => $"(CodeTypeObjectId :eq: {str})") : null;
+                    var typesObjectIdsString = typesObjectIdsStrings != null ? string.Join(" :or: ", typesObjectIdsStrings) : "";
+
+                    string filter = "";
+                    filter += projectObjectId != null ? $"(ProjectObjectId :eq: '{projectObjectId}')" : "";
+                    filter += filter.Length > 0 && !string.IsNullOrWhiteSpace(typesObjectIdsString) ? " :and: " : "";
+                    filter += !string.IsNullOrWhiteSpace(typesObjectIdsString) ? $"({typesObjectIdsString})" : "";
+                    var fields = "CodeConcatName, CodeTypeName, CodeTypeObjectId, CodeTypeScope, CodeValue, Color, CreateDate, CreateUser, Description, LastUpdateDate, LastUpdateUser, ObjectId, ParentObjectId, ProjectObjectId, SequenceNumber";
+                    var fetchedCodes = await _model.PluginInstance.MyP6ApiService.Client.GetActivityCodesAsync(filter, fields, null, null);
+                    resolvedCodes = fetchedCodes.ToList();
+                };
+
+                BuildTree(resolvedTypes ?? new List<ActivityCodeType>(), resolvedCodes ?? new List<ActivityCode>());
+            }
+            catch (Exception e)
+            {
+                Debug.Print(e.ToString());
+            };
+        }
+
         private void BuildTree(IEnumerable<ActivityCodeType> codeTypes, IEnumerable<ActivityCode> codes)
         {
             RootNodes.Clear();

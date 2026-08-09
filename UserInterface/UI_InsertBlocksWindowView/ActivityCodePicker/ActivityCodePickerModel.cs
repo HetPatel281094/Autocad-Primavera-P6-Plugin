@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Windows.Documents;
 using Autocad_Primavera_P6_Plugin.Services.LiteDBService;
@@ -28,24 +29,6 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView.Ac
             P6Client = PluginInstance.MyP6ApiService.Client;
             IsAutoGenerate = isAutoGenerate;
             SelectionActCodeType = selectionActCodeType;
-        }
-
-        public async Task AsyncInit()
-        {
-            try
-            {
-                var _SelectionActCodes = await P6Client.GetActivityCodesAsync(
-                    null,//$"CodeTypeObjectId :eq: '{SelectionActCodeType.ObjectId}'", 
-                    "ObjectId,CodeTypeObjectId,CodeTypeName,CodeTypeScope,CodeValue,CodeConcatName,Description,ParentObjectId,SequenceNumber",
-                    null,
-                    null);
-
-                SelectionActCodes = new List<ActivityCode>(_SelectionActCodes);
-            }
-            catch(Exception e)
-            {
-                
-            }
         }
 
     }

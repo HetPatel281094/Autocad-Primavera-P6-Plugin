@@ -280,7 +280,7 @@
                             Width="96"
                             Margin="6,0,0,0"
                             HorizontalAlignment="Right"
-                            Command="{Binding ElementIdCode.SelectCodeCommand}"
+                            Command="{Binding ElementIdCode.SelectCodeNodeCommand}"
                             CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
                             Content="Select"
                             DockPanel.Dock="Right" />
@@ -321,7 +321,16 @@
                         <TextBox
                             Grid.Row="0"
                             Grid.Column="1"
-                            IsEnabled="{Binding ElementIdCode.IsAutoGenerate}"
+                            Visibility="{Binding ElementIdCode.IsNumericSelectionVisibility}"
+                            IsEnabled="False"
+                            Text="{Binding ElementIdCode.NextNumericValue, Mode=OneWay}" 
+                            Margin="2"
+                            />
+                        <TextBox
+                            Grid.Row="0"
+                            Grid.Column="1"
+                            Visibility="{Binding ElementIdCode.IsTextSelectionVisibility}"
+                            IsEnabled="{Binding ElementIdCode.CanEditValue}"
                             Text="{Binding ElementIdCode.UserEnteredValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                             Margin="2"
                             />
@@ -333,7 +342,7 @@
                         <TextBox
                             Grid.Row="1"
                             Grid.Column="1"
-                            IsEnabled="{Binding ElementIdCode.IsAutoGenerate}"
+                            IsEnabled="{Binding ElementIdCode.CanEditDescription}"
                             Text="{Binding ElementIdCode.UserEnteredDescription, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                             Margin="2"
                             />
@@ -347,9 +356,19 @@
                             Grid.Column="1"
                             Style="{StaticResource ValueTextStyle}"
                             Text="{Binding ElementIdCode.Info}" />
-                        <DockPanel Margin="0,6"                             
+                        <StackPanel 
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            Margin="0,6"                             
                             Grid.Row="3"
                             Grid.Column="1">
+                            <Button
+                                Width="160"
+                                Margin="6,0,6,0"
+                                HorizontalAlignment="Center"
+                                Content="Generate First Element-Id"
+                                Command="{Binding ElementIdCode.GenerateFirstLeafCommand}"
+                                Visibility="{Binding ElementIdCode.GenerateFirstLeafVisibility}" />
                             <Button
                                 Width="96"
                                 Margin="6,0,0,0"
@@ -359,7 +378,7 @@
                                 CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
                                 Content="Generate New"
                             DockPanel.Dock="Right"/>
-                        </DockPanel>
+                        </StackPanel>
                     </Grid>
                 </StackPanel>
             </Border>

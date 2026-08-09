@@ -13,6 +13,51 @@ using AcadAppServ = Autodesk.AutoCAD.ApplicationServices;
 
 namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
 {
+    public class PluginBlockRefAutocadHelpers
+    {
+        public static Dictionary<string, AttributeReference> Get_AttDefDict(BlockReference acadBlockRef, Transaction tr)
+        {
+            return acadBlockRef.AttributeCollection
+                .Cast<ObjectId>()
+                .Select(id => (AttributeReference)tr.GetObject(id, OpenMode.ForRead))
+                .ToDictionary(
+                    ar => ar.Tag,
+                    ar => ar,
+                    StringComparer.OrdinalIgnoreCase
+                );
+        }
+
+        public static Dictionary<string, DynamicBlockReferenceProperty> Get_DyBlockRefPropDict(BlockReference acadBlockRef)
+        {
+            return acadBlockRef.DynamicBlockReferencePropertyCollection
+                .Cast<DynamicBlockReferenceProperty>()
+                .ToDictionary(
+                    p => p.PropertyName,
+                    p => p,
+                    StringComparer.OrdinalIgnoreCase
+                );
+        }
+
+        public static AttributeReference TryGetValue_AttDefDict(Dictionary<string, AttributeReference> attributes, string tag)
+        {
+            attributes.TryGetValue(tag, out AttributeReference attribute);
+            return attribute;
+        }
+
+        public static DynamicBlockReferenceProperty TryGetValue_DyBlockRefPropDict(Dictionary<string, DynamicBlockReferenceProperty> properties, string name)
+        {
+            properties.TryGetValue(name, out DynamicBlockReferenceProperty property);
+            return property;
+        }
+
+        public static bool IsValidPluginBlock(Dictionary<string, AttributeReference> attdefDict)
+        {
+            var checkStringAttRef = PluginBlockRefAutocadHelpers.TryGetValue_AttDefDict(attdefDict, "Attribute_Check_String");
+
+            return checkStringAttRef != null && string.Equals(checkStringAttRef.TextString, "FoundOK", StringComparison.OrdinalIgnoreCase);
+        }
+
+    };
     public class Slot
     {
         public string SlotPropName;
@@ -70,8 +115,8 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
         private MyPlugin PluginInstance = null;
         public InitStateEnum InitState { get; private set; } = InitStateEnum.NotInitialized;
         private AcadAppServ.Document AcadDoc = null;
-        private BlockTableRecord AcadBlockTblRec = null;
-        private BlockReference AcadBlockRef = null;
+        public BlockTableRecord AcadBlockTblRec = null;
+        public BlockReference AcadBlockRef = null;
         private Point3d? PluginBlockPosition = null;
         private Point3d? InfoPosition = null;
         private Dictionary<string, Slot> SlotsDict = new() { ["Slot01"] = null, ["Slot02"] = null, ["Slot03"] = null, ["Slot04"] = null, ["Slot05"] = null, ["Slot06"] = null, ["Slot07"] = null, ["Slot08"] = null, ["Slot09"] = null, ["Slot10"] = null, ["Slot11"] = null, ["Slot12"] = null, ["Slot13"] = null, ["Slot14"] = null, ["Slot15"] = null };
@@ -213,23 +258,23 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
         {
             var blockReference = (BlockReference)tr.GetObject(AcadBlockRef.ObjectId, OpenMode.ForRead);
 
-            var attDefDict = Get_AttDefDict(blockReference, tr);
-            var dyBlockRefPropDict = Get_DyBlockRefPropDict(blockReference);
+            var attDefDict = PluginBlockRefAutocadHelpers.Get_AttDefDict(blockReference, tr);
+            var dyBlockRefPropDict = PluginBlockRefAutocadHelpers.Get_DyBlockRefPropDict(blockReference);
 
-            BlockAttProps.Attribute_Check_String = TryGetValue_AttDefDict(attDefDict, "Attribute_Check_String");
-            BlockAttProps.ElementId = TryGetValue_AttDefDict(attDefDict, "ELEMENT_ID");
-            BlockAttProps.BlockType = TryGetValue_AttDefDict(attDefDict, "BLOCK_TYPE");
-            BlockAttProps.Update_Status = TryGetValue_DyBlockRefPropDict(dyBlockRefPropDict, "Update Status");
-            BlockAttProps.Moveinfo_X = TryGetValue_DyBlockRefPropDict(dyBlockRefPropDict, "MoveInfo X");
-            BlockAttProps.Moveinfo_Y = TryGetValue_DyBlockRefPropDict(dyBlockRefPropDict, "MoveInfo Y");
+            BlockAttProps.Attribute_Check_String = PluginBlockRefAutocadHelpers.TryGetValue_AttDefDict(attDefDict, "Attribute_Check_String");
+            BlockAttProps.ElementId = PluginBlockRefAutocadHelpers.TryGetValue_AttDefDict(attDefDict, "ELEMENT_ID");
+            BlockAttProps.BlockType = PluginBlockRefAutocadHelpers.TryGetValue_AttDefDict(attDefDict, "BLOCK_TYPE");
+            BlockAttProps.Update_Status = PluginBlockRefAutocadHelpers.TryGetValue_DyBlockRefPropDict(dyBlockRefPropDict, "Update Status");
+            BlockAttProps.Moveinfo_X = PluginBlockRefAutocadHelpers.TryGetValue_DyBlockRefPropDict(dyBlockRefPropDict, "MoveInfo X");
+            BlockAttProps.Moveinfo_Y = PluginBlockRefAutocadHelpers.TryGetValue_DyBlockRefPropDict(dyBlockRefPropDict, "MoveInfo Y");
 
             foreach (var key in SlotsDict.Keys.ToList())
             {
                 int slotNumber = ParseSlotNumber(key);
                 string nameTag = SlotNameTag(slotNumber);
                 string valueTag = SlotValueTag(slotNumber);
-                var nameAttribute = TryGetValue_AttDefDict(attDefDict, nameTag);
-                var valueAttribute = TryGetValue_AttDefDict(attDefDict, valueTag);
+                var nameAttribute = PluginBlockRefAutocadHelpers.TryGetValue_AttDefDict(attDefDict, nameTag);
+                var valueAttribute = PluginBlockRefAutocadHelpers.TryGetValue_AttDefDict(attDefDict, valueTag);
 
                 if (nameAttribute == null || valueAttribute == null || String.IsNullOrWhiteSpace(nameAttribute.TextString)) { continue; };
 
@@ -461,10 +506,10 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                     if (AcadBlockRef == null || tr == null) { return false; };
 
                     var blockRef = (BlockReference)tr.GetObject(AcadBlockRef.ObjectId, OpenMode.ForWrite);
-                    var dyBlockRefPropDict = Get_DyBlockRefPropDict(blockRef);
+                    var dyBlockRefPropDict = PluginBlockRefAutocadHelpers.Get_DyBlockRefPropDict(blockRef);
 
-                    var moveInfoX = TryGetValue_DyBlockRefPropDict(dyBlockRefPropDict, "MoveInfo X");
-                    var moveInfoY = TryGetValue_DyBlockRefPropDict(dyBlockRefPropDict, "MoveInfo Y");
+                    var moveInfoX = PluginBlockRefAutocadHelpers.TryGetValue_DyBlockRefPropDict(dyBlockRefPropDict, "MoveInfo X");
+                    var moveInfoY = PluginBlockRefAutocadHelpers.TryGetValue_DyBlockRefPropDict(dyBlockRefPropDict, "MoveInfo Y");
 
                     if (moveInfoX == null || moveInfoY == null || moveInfoX.ReadOnly || moveInfoY.ReadOnly) { return false; };
 
@@ -513,41 +558,6 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                 }
             };
 
-        }
-
-        private static Dictionary<string, AttributeReference> Get_AttDefDict(BlockReference acadBlockRef, Transaction tr)
-        {
-            return acadBlockRef.AttributeCollection
-                .Cast<ObjectId>()
-                .Select(id => (AttributeReference)tr.GetObject(id, OpenMode.ForRead))
-                .ToDictionary(
-                    ar => ar.Tag,
-                    ar => ar,
-                    StringComparer.OrdinalIgnoreCase
-                );
-        }
-
-        private static Dictionary<string, DynamicBlockReferenceProperty> Get_DyBlockRefPropDict(BlockReference acadBlockRef)
-        {
-            return acadBlockRef.DynamicBlockReferencePropertyCollection
-                .Cast<DynamicBlockReferenceProperty>()
-                .ToDictionary(
-                    p => p.PropertyName,
-                    p => p,
-                    StringComparer.OrdinalIgnoreCase
-                );
-        }
-
-        private static AttributeReference TryGetValue_AttDefDict(Dictionary<string, AttributeReference> attributes, string tag)
-        {
-            attributes.TryGetValue(tag, out AttributeReference attribute);
-            return attribute;
-        }
-
-        private static DynamicBlockReferenceProperty TryGetValue_DyBlockRefPropDict(Dictionary<string, DynamicBlockReferenceProperty> properties, string name)
-        {
-            properties.TryGetValue(name, out DynamicBlockReferenceProperty property);
-            return property;
         }
 
         private void SetBlockTypeFromStatus(Transaction tr)

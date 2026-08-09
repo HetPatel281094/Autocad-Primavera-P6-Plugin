@@ -82,7 +82,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             set => _model.CopyBlockDefinition = value;
         }
 
-        public ACadBlockSectionViewModel(Document acadDoc)
+        public ACadBlockSectionViewModel(Document acadDoc, BlockReference preSelectedBlockRef)
         {
             _acadDoc = acadDoc;
             _model = new ACadBlockSectionModel

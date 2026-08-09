@@ -7,11 +7,9 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 {
     public partial class ActivityCodePickerView : Window
     {
-        public ActivityCodePickerView(ActivityCodePickerModel model)
+        public ActivityCodePickerView(ActivityCodePickerViewModel viewModel)
         {
             InitializeComponent();
-
-            var viewModel = new ActivityCodePickerViewModel(model);
             viewModel.RequestClose += result =>
             {
                 DialogResult = result;

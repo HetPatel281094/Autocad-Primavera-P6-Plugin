@@ -46,10 +46,13 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                         {
                             BlockReference blockRef = tr.GetObject(selObj.ObjectId, OpenMode.ForRead) as BlockReference;
 
-                            if (blockRef != null && IsValidPluginBlock(blockRef, tr))
-                            {
-                                _blockRefs.Add(blockRef);
-                            }
+                            var attDefDict = PluginBlockRefAutocadHelpers.Get_AttDefDict(blockRef, tr);
+
+                            if (blockRef == null) { continue; };
+                            if (!PluginBlockRefAutocadHelpers.IsValidPluginBlock(attDefDict)){ continue;  };
+
+                            _blockRefs.Add(blockRef);
+
                         }
                     }
                 }
@@ -62,22 +65,6 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                 Debug.Print(e.ToString());
                 return new List<BlockReference>();
             }
-        }
-
-        public bool IsValidPluginBlock(BlockReference blockRef, Transaction tr)
-        {
-            foreach (ObjectId attributeId in blockRef.AttributeCollection)
-            {
-                var attribute = tr.GetObject(attributeId, OpenMode.ForRead) as AttributeReference;
-                if (attribute != null &&
-                    string.Equals(attribute.Tag, "Attribute_Check_String", StringComparison.OrdinalIgnoreCase) &&
-                    string.Equals(attribute.TextString, "FoundOK", StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
     }

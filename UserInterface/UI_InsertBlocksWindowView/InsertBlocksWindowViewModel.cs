@@ -38,18 +38,23 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         public InsertBlocksWindowViewModel(MyPlugin pluginInstance)
         {
             _model = new InsertBlocksWindowModel{ PluginInstance = pluginInstance };
-            _model.Init();
         }
 
         public async Task Async_Init()
         {
-            BoundaryCode = new BoundaryActivityCodeSectionViewModel(_model.PluginInstance, _model.CurrentProject);
+            await _model.Async_Init();
+
+            var preSelectBoundaryCode = await _model.PreselectedBlock.Get_BdryActCode();
+            var preSelectElementIdCode = await _model.PreselectedBlock.Get_ElementIdCode();
+            var preselectedAcadBlock = _model.PreselectedBlock.AcadBlockRef;
+
+            BoundaryCode = new BoundaryActivityCodeSectionViewModel(_model.PluginInstance, _model.CurrentProject, preSelectBoundaryCode);
             await BoundaryCode.Async_Init();
 
-            ElementIdCode = new ElementIdCodeSectionViewModel(_model.PluginInstance, _model.CurrentProject);
+            ElementIdCode = new ElementIdCodeSectionViewModel(_model.PluginInstance, _model.CurrentProject, preSelectElementIdCode);
             await ElementIdCode.Async_Init();
 
-            ACadBlockVM = new ACadBlockSectionViewModel(_model.ActAcadDoc);
+            ACadBlockVM = new ACadBlockSectionViewModel(_model.ActAcadDoc, preselectedAcadBlock);
             await ACadBlockVM.Async_Init();
 
             StatusMessage = string.Empty;
@@ -69,16 +74,10 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             var owner = parameter as Window;
             var doc = _model.ActAcadDoc;
 
-            var validationFailures = ValidateBeforeP6Resolution(doc);
-
-            if (validationFailures.Count > 0)
-            {
-                MessageBox.Show(string.Join(Environment.NewLine, validationFailures), "Insert Blocks", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
             IsInserting = true;
             _isCancelled = false;
+
+            ElementIdCode.IsAutoGenerateLoop = true;
 
             try
             {
@@ -86,13 +85,93 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             }
             catch (System.Exception ex)
             {
+                ElementIdCode.IsAutoGenerateLoop = false;
+
                 StatusMessage = "Failed before block insertion: " + ex.Message;
                 MessageBox.Show(StatusMessage, "Insert Blocks", MessageBoxButton.OK, MessageBoxImage.Error);
                 doc.Editor.WriteMessage("\n[Plugin] Failed before block insertion: " + ex.Message);
             }
             finally
             {
+                ElementIdCode.IsAutoGenerateLoop = false;
+
                 IsInserting = false;
+            }
+        }
+
+        private async Task RunInsertLoopAsync(Window owner, Autodesk.AutoCAD.ApplicationServices.Document doc)
+        {
+            var ed = doc.Editor;
+
+            try
+            {
+                owner?.Hide();
+
+                do
+                {
+                    if (_isCancelled) { break; };
+
+                    PromptPointResult pointResult = ed.GetPoint("\nPick insertion point: ");
+                    if (pointResult.Status != PromptStatus.OK || _isCancelled) { break; };
+
+                    // Must insert block or fail with error prompt.
+                    var pluginBlockRef = new PlugInBlockReference(_model.PluginInstance, doc);
+                    var SetPositionResult = pluginBlockRef.Set_BlockPosition(pointResult.Value, out _);
+
+                    if (BoundaryCode.IsAutoGenerate) { await BoundaryCode.AutoGenerateActivityCodeAsync(); };
+                    if (ElementIdCode.IsAutoGenerate) { await ElementIdCode.AutoGenerateActivityCodeAsync(); };
+
+                    var resolvedBoundaryCode = BoundaryCode.SelectedActivityCode;
+                    var resolvedElementIdCode = ElementIdCode.SelectedActivityCode;
+
+                    if (resolvedBoundaryCode == null || resolvedElementIdCode == null)
+                    {
+                        throw new InvalidOperationException("Failed to resolve required activity codes.");
+                    };
+
+                    var isBdrySet = pluginBlockRef.Set_BdryActCode(resolvedBoundaryCode, out _);
+                    var isElementIdSet = pluginBlockRef.Set_ElementIdCode(resolvedElementIdCode, out _);
+
+                    // Checks if the activity codes were successfully set on the plugin block reference.
+                    if (!isBdrySet || !isElementIdSet) { throw new InvalidOperationException("Failed to set activity-code values to plugin block reference."); };
+
+
+                    // --- Point ---
+                    ObjectId insertedBlockId;
+                    string elementId;
+                    string blockName;
+
+                    using (doc.LockDocument())
+                    {
+                        var source = ACadBlockVM.ResolveBlockSourceForInsert(doc.Database);
+                        blockName = source.BlockName;
+                        insertedBlockId = InsertBlockReference(doc.Database, source.BlockDefinitionId, blockName, pointResult.Value, out elementId);
+                    }
+
+                    if (EditLegendPosition)
+                    {
+                        EditLegendForBlock(doc, insertedBlockId);
+                    }
+
+                    ed.WriteMessage("\n[Plugin] Inserted " + elementId +
+                                    " | Boundary: " + BoundaryCode.SelectedCodeValue +
+                                    " | ItemId: " + ElementIdCode.SelectedActivityCode);
+                }
+                while (ContinuousInsert && !_isCancelled);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occurred during block insertion:\n{ex.Message}", "Insert Blocks Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ed.WriteMessage($"\n[Plugin] Error during insertion: {ex.Message}\n");
+                Debug.Print("[Plugin] Error during insertion: " + ex.ToString());
+            }
+            finally
+            {
+                if (owner != null)
+                {
+                    owner.Show();
+                    owner.Activate();
+                }
             }
         }
 
@@ -164,97 +243,6 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         private bool IsPlaceholderOrEmpty(string value)
         {
             return string.IsNullOrWhiteSpace(value) || value.StartsWith("--", StringComparison.Ordinal);
-        }
-
-        private async Task RunInsertLoopAsync(Window owner, Autodesk.AutoCAD.ApplicationServices.Document doc)
-        {
-            var ed = doc.Editor;
-
-            try
-            {
-                owner?.Hide();
-
-                do
-                {
-                    if (_isCancelled)
-                    {
-                        break;
-                    }
-
-                    PromptPointResult pointResult = ed.GetPoint("\nPick insertion point: ");
-                    if (pointResult.Status != PromptStatus.OK || _isCancelled)
-                    {
-                        break;
-                    }
-
-                    // Start Here
-                    var pluginBlockRef = new PlugInBlockReference(_model.PluginInstance,doc);
-                    var SetPositionResult = pluginBlockRef.Set_BlockPosition(pointResult.Value, out _);
-                    // Ends Here
-
-                    //bool boundaryReady = await BoundaryCode.EnsureResolvedAsync().ConfigureAwait(true);
-                    //if (boundaryReady && BoundaryCode.IsAutoGenerate)
-                    //{
-                    //    BoundaryCode.CommitAutoGeneratedAsSelected();
-                    //}
-
-                    //bool itemReady = await ItemIdCode.EnsureResolvedAsync(forceRegenerate: true).ConfigureAwait(true);
-
-                    var resolutionFailures = ValidateAfterP6Resolution();
-
-                    //if (!boundaryReady || !itemReady || resolutionFailures.Count > 0)
-                    //{
-                    //    MessageBox.Show(string.Join(Environment.NewLine, resolutionFailures), "Insert Blocks", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    //    break;
-                    //}
-
-                    // Start Here
-                    if (!pluginBlockRef.Set_BdryActCode(BoundaryCode.SelectedActivityCode, out _))
-                    {
-                        throw new InvalidOperationException("Failed to prepare Boundary activity-code values.");
-                    }
-
-                    //if (!pluginBlockRef.Set_ElementIdCode(ItemIdCode.ResolvedActivityCode, out _))
-                    //{
-                    //    throw new InvalidOperationException("Failed to prepare Item ID activity-code values.");
-                    //}
-                    // Ends Here
-
-                    ObjectId insertedBlockId;
-                    string elementId;
-                    string blockName;
-
-                    using (doc.LockDocument())
-                    {
-                        var source = ACadBlockVM.ResolveBlockSourceForInsert(doc.Database);
-                        blockName = source.BlockName;
-                        insertedBlockId = InsertBlockReference(doc.Database, source.BlockDefinitionId, blockName, pointResult.Value, out elementId);
-                    }
-
-                    if (EditLegendPosition)
-                    {
-                        EditLegendForBlock(doc, insertedBlockId);
-                    }
-
-                    ed.WriteMessage("\n[Plugin] Inserted " + elementId +
-                                    " | Boundary: " + BoundaryCode.SelectedCodeValue +
-                                    " | ItemId: " + ElementIdCode.SelectedActivityCode);
-                }
-                while (ContinuousInsert && !_isCancelled);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"An error occurred during block insertion:\n{ex.Message}", "Insert Blocks Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                ed.WriteMessage($"\n[Plugin] Error during insertion: {ex.Message}\n");
-            }
-            finally
-            {
-                if (owner != null)
-                {
-                    owner.Show();
-                    owner.Activate();
-                }
-            }
         }
 
         private ObjectId InsertBlockReference(Database db, ObjectId blockDefId, string blockName, Point3d insertionPoint, out string elementId)
