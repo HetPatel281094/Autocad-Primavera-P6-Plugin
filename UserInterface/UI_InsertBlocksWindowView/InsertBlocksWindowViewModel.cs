@@ -44,9 +44,9 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         {
             await _model.Async_Init();
 
-            var preSelectBoundaryCode = await _model.PreselectedBlock.Get_BdryActCode();
-            var preSelectElementIdCode = await _model.PreselectedBlock.Get_ElementIdCode();
-            var preselectedAcadBlock = _model.PreselectedBlock.AcadBlockRef;
+            var preSelectBoundaryCode = _model.PreselectedBlock != null ? await _model.PreselectedBlock?.Get_BdryActCode() : null;
+            var preSelectElementIdCode = _model.PreselectedBlock != null ? await _model.PreselectedBlock?.Get_ElementIdCode() : null;
+            var preselectedAcadBlock = _model.PreselectedBlock != null ? _model.PreselectedBlock.AcadBlockRef : null;
 
             BoundaryCode = new BoundaryActivityCodeSectionViewModel(_model.PluginInstance, _model.CurrentProject, preSelectBoundaryCode);
             await BoundaryCode.Async_Init();
@@ -205,12 +205,12 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             //    failures.Add("Select an Item ID parent code before auto generation.");
             //}
 
-            if (ACadBlockVM.BlockTypeMode == BlockTypeMode.Predefined && ACadBlockVM.SelectedPredefinedBlock == null)
+            if (ACadBlockVM.BlockTypeMode == BlockTypeModeEnum.Predefined && ACadBlockVM.SelectedPredefinedBlock == null)
             {
                 failures.Add("Select a predefined .dwg block file.");
             }
 
-            if (ACadBlockVM.BlockTypeMode == BlockTypeMode.SelectFromDrawing && !ACadBlockVM.HasValidDrawingBlockSelection())
+            if (ACadBlockVM.BlockTypeMode == BlockTypeModeEnum.SelectFromDrawing && !ACadBlockVM.HasValidDrawingBlockSelection())
             {
                 failures.Add("Select a valid plugin block from the drawing.");
             }

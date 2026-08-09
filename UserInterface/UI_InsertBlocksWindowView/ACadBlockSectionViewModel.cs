@@ -10,25 +10,16 @@ using System.Windows.Input;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using PropertyChanged;
 
 namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 {
-    public sealed class ACadBlockSectionModel
+    public enum BlockTypeModeEnum
     {
-        public ObservableCollection<PredefinedBlockInfo> AvailableBlocks { get; } = new ObservableCollection<PredefinedBlockInfo>();
-
-        public string DefaultBlocksFolder { get; set; }
-
-        public BlockTypeMode BlockTypeMode { get; set; } = BlockTypeMode.Predefined;
-
-        public PredefinedBlockInfo SelectedPredefinedBlock { get; set; }
-
-        public ObjectId SelectedDrawingBlockId { get; set; } = ObjectId.Null;
-
-        public string SelectedDrawingBlockName { get; set; } = "No drawing block selected.";
-
-        public bool CopyBlockDefinition { get; set; }
+        Predefined,
+        SelectFromDrawing
     }
 
     public sealed class BlockSourceResult
@@ -38,131 +29,91 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         public string BlockName { get; set; }
     }
 
-    [AddINotifyPropertyChangedInterface]
-    public sealed class ACadBlockSectionViewModel
+    public partial class ACadBlockSectionViewModel: ObservableObject
     {
         private readonly Document _acadDoc;
-        private readonly ACadBlockSectionModel _model;
 
-        public string StatusMessage { get; set; }
+        private BlockReference _preSelectedBlockRef;
+        private string _defaultBlocksFolder => GetDefaultBlocksFolder();
 
-        public ICommand BrowseBlocksFolderCommand { get; private set; }
 
-        public ICommand SelectDrawingBlockCommand { get; private set; }
-
-        public BlockTypeMode BlockTypeMode
+        [ObservableProperty]
+        public BlockTypeModeEnum _blockTypeMode;
+        partial void OnBlockTypeModeChanged(BlockTypeModeEnum oldValue, BlockTypeModeEnum newValue)
         {
-            get => _model.BlockTypeMode;
-            set => _model.BlockTypeMode = value;
+            SelectedBlockTableRecord = null;
         }
 
-        public ObservableCollection<PredefinedBlockInfo> AvailableBlocks => _model.AvailableBlocks;
+        public string SelectedBTRObjId => SelectedBlockTableRecord?.ObjectId.ToString() ?? String.Empty;
 
-        public PredefinedBlockInfo SelectedPredefinedBlock
+        public string SelectedBTRName => SelectedBlockTableRecord?.Name ?? String.Empty;
+
+        [ObservableProperty]
+        public bool _isCopyBlockDefinition;
+
+        [ObservableProperty]
+        public string _newBlockName;
+
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(SelectedBTRObjId))]
+        [NotifyPropertyChangedFor(nameof(SelectedBTRName))]
+        [NotifyPropertyChangedFor(nameof(CanAutoGenerate))]
+        public BlockTableRecord _selectedBlockTableRecord;
+        partial void OnSelectedBlockTableRecordChanged(BlockTableRecord oldValue, BlockTableRecord newValue)
         {
-            get => _model.SelectedPredefinedBlock;
-            set => _model.SelectedPredefinedBlock = value;
+            NewBlockName = newValue != null ? $"{newValue.Name}_" : "";
         }
 
-        public ObjectId SelectedDrawingBlockId
-        {
-            get => _model.SelectedDrawingBlockId;
-            set => _model.SelectedDrawingBlockId = value;
-        }
+        [ObservableProperty]
+        public PredefinedBlockInfo _selectedPredefinedBlock;
 
-        public string SelectedDrawingBlockName
-        {
-            get => _model.SelectedDrawingBlockName;
-            set => _model.SelectedDrawingBlockName = value;
-        }
+        [ObservableProperty]
+        public string _info;
 
-        public bool CopyBlockDefinition
-        {
-            get => _model.CopyBlockDefinition;
-            set => _model.CopyBlockDefinition = value;
-        }
+        [ObservableProperty]
+        public ObservableCollection<PredefinedBlockInfo> _availableBlocks = new();
 
-        public ACadBlockSectionViewModel(Document acadDoc, BlockReference preSelectedBlockRef)
+        public bool CanAutoGenerate => SelectedBlockTableRecord != null &&
+            SelectedBlockTableRecord.ObjectId.IsWellBehaved;
+
+        public ACadBlockSectionViewModel(Document acadDoc, BlockReference preSelectedBlockRef = null)
         {
             _acadDoc = acadDoc;
-            _model = new ACadBlockSectionModel
-            {
-                DefaultBlocksFolder = GetDefaultBlocksFolder()
-            };
-
-            StatusMessage = string.Empty;
-            BrowseBlocksFolderCommand = new RelayCommand(BrowseBlocksFolder);
-            SelectDrawingBlockCommand = new RelayCommand(SelectBlockFromDrawing);
+            _preSelectedBlockRef = preSelectedBlockRef;
+            Info = string.Empty;
         }
 
         public Task Async_Init()
         {
-            LoadPredefinedBlocks(_model.DefaultBlocksFolder);
+            if (_preSelectedBlockRef != null)
+            {
+                BlockTypeMode = BlockTypeModeEnum.SelectFromDrawing;
+
+                using(var tr = _acadDoc.TransactionManager.StartTransaction())
+                {
+                    var reFetchedreSelectedBlockRef = (BlockReference)tr.GetObject(_preSelectedBlockRef.ObjectId, OpenMode.ForRead);
+
+                    var BTR = reFetchedreSelectedBlockRef.IsDynamicBlock ?
+                        (BlockTableRecord)tr.GetObject(reFetchedreSelectedBlockRef.DynamicBlockTableRecord, OpenMode.ForRead)
+                        : (BlockTableRecord)tr.GetObject(reFetchedreSelectedBlockRef.BlockTableRecord, OpenMode.ForRead);
+
+                    SelectedBlockTableRecord = BTR;
+                };
+
+            };
+
+            LoadPredefinedBlocks();
+
             return Task.CompletedTask;
         }
 
-        public bool HasValidDrawingBlockSelection()
-        {
-            return !SelectedDrawingBlockId.IsNull && SelectedDrawingBlockId.IsValid;
-        }
 
-        public BlockSourceResult ResolveBlockSourceForInsert(Database db)
-        {
-            if (BlockTypeMode == BlockTypeMode.Predefined)
-            {
-                return CopyBlockDefinition
-                    ? ResolveCopiedPredefinedBlockSource(db)
-                    : ResolvePredefinedBlockSource(db);
-            }
-
-            var source = ResolveDrawingBlockSource(db);
-            return CopyBlockDefinition ? CopyBlockDefinitionToUniqueRecord(db, source.BlockDefinitionId) : source;
-        }
-
-        private void LoadPredefinedBlocks(string folder)
-        {
-            try
-            {
-                string targetFolder = string.IsNullOrWhiteSpace(folder) ? GetDefaultBlocksFolder() : folder;
-
-                AvailableBlocks.Clear();
-                Directory.CreateDirectory(targetFolder);
-
-                foreach (var file in Directory.GetFiles(targetFolder, "*.dwg", SearchOption.TopDirectoryOnly)
-                             .OrderBy(Path.GetFileNameWithoutExtension))
-                {
-                    AvailableBlocks.Add(new PredefinedBlockInfo
-                    {
-                        Name = Path.GetFileNameWithoutExtension(file),
-                        FilePath = file
-                    });
-                }
-
-                SelectedPredefinedBlock = AvailableBlocks.FirstOrDefault();
-                StatusMessage = AvailableBlocks.Count == 0
-                    ? "No predefined .dwg block files found in " + targetFolder
-                    : "Loaded " + AvailableBlocks.Count + " predefined block file(s).";
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = "Failed to load predefined blocks: " + ex.Message;
-                Debug.Print(ex.ToString());
-            }
-            finally
-            {
-                CommandManager.InvalidateRequerySuggested();
-            }
-        }
-
-        private string GetDefaultBlocksFolder()
-        {
-            string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            return Path.Combine(appData, "Autocad_Primavera_P6_Plugin", "Blocks");
-        }
-
+        [RelayCommand]
         private void BrowseBlocksFolder(object parameter)
         {
-            string folder = _model.DefaultBlocksFolder;
+            string folder = _defaultBlocksFolder;
+
             if (SelectedPredefinedBlock != null && !string.IsNullOrWhiteSpace(SelectedPredefinedBlock.FilePath))
             {
                 folder = Path.GetDirectoryName(SelectedPredefinedBlock.FilePath);
@@ -170,7 +121,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
             if (string.IsNullOrWhiteSpace(folder))
             {
-                folder = GetDefaultBlocksFolder();
+                folder = _defaultBlocksFolder;
             }
 
             try
@@ -180,15 +131,16 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                 {
                     UseShellExecute = true
                 });
-                LoadPredefinedBlocks(folder);
+                LoadPredefinedBlocks();
             }
             catch (Exception ex)
             {
-                StatusMessage = "Failed to open blocks folder: " + ex.Message;
-                MessageBox.Show(StatusMessage, "Insert Blocks", MessageBoxButton.OK, MessageBoxImage.Error);
+                Info = "Failed to open blocks folder: " + ex.Message;
+                MessageBox.Show(Info, "Insert Blocks", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
+        [RelayCommand]
         private void SelectBlockFromDrawing(object parameter)
         {
             var owner = parameter as Window;
@@ -228,8 +180,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                         ObjectId blockDefinitionId = GetSourceDefinitionId(blockRef);
                         var blockDef = (BlockTableRecord)tr.GetObject(blockDefinitionId, OpenMode.ForRead);
                         SelectedDrawingBlockId = blockDefinitionId;
-                        SelectedDrawingBlockName = blockDef.Name;
-                        BlockTypeMode = BlockTypeMode.SelectFromDrawing;
+                        BlockTypeMode = BlockTypeModeEnum.SelectFromDrawing;
                         tr.Commit();
                         return;
                     }
@@ -237,9 +188,9 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             }
             catch (Exception ex)
             {
-                StatusMessage = "Failed to select drawing block: " + ex.Message;
+                Info = "Failed to select drawing block: " + ex.Message;
                 ed.WriteMessage("\n[Plugin] Failed to select drawing block: " + ex.Message);
-                MessageBox.Show(StatusMessage, "Insert Blocks", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(Info, "Insert Blocks", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -249,6 +200,76 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                     owner.Activate();
                 }
             }
+        }
+
+        [RelayCommand]
+        private void GenerateNewBTR(object parameter)
+        {
+
+        }
+
+        private void LoadPredefinedBlocks()
+        {
+            try
+            {
+                string targetFolder = _defaultBlocksFolder;
+
+                AvailableBlocks.Clear();
+
+                Directory.CreateDirectory(targetFolder);
+
+                foreach (var file in Directory.GetFiles(targetFolder, "*.dwg", SearchOption.TopDirectoryOnly)
+                             .OrderBy(Path.GetFileNameWithoutExtension))
+                {
+                    AvailableBlocks.Add(new PredefinedBlockInfo
+                    {
+                        Name = Path.GetFileNameWithoutExtension(file),
+                        FilePath = file
+                    });
+                }
+
+                Info = AvailableBlocks.Count == 0
+                    ? "No predefined .dwg block files found in " + targetFolder
+                    : "Loaded " + AvailableBlocks.Count + " predefined block file(s).";
+            }
+            catch (Exception ex)
+            {
+                Info = "Failed to load predefined blocks: " + ex.Message;
+                Debug.Print(ex.ToString());
+            }
+            finally
+            {
+                CommandManager.InvalidateRequerySuggested();
+            }
+        }
+
+
+
+
+        public ObjectId SelectedDrawingBlockId;
+
+        public bool HasValidDrawingBlockSelection()
+        {
+            return !SelectedDrawingBlockId.IsNull && SelectedDrawingBlockId.IsValid;
+        }
+
+        public BlockSourceResult ResolveBlockSourceForInsert(Database db)
+        {
+            if (BlockTypeMode == BlockTypeModeEnum.Predefined)
+            {
+                return IsCopyBlockDefinition
+                    ? ResolveCopiedPredefinedBlockSource(db)
+                    : ResolvePredefinedBlockSource(db);
+            }
+
+            var source = ResolveDrawingBlockSource(db);
+            return IsCopyBlockDefinition ? CopyBlockDefinitionToUniqueRecord(db, source.BlockDefinitionId) : source;
+        }
+
+        private string GetDefaultBlocksFolder()
+        {
+            string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            return Path.Combine(appData, "Autocad_Primavera_P6_Plugin", "Blocks");
         }
 
         private bool IsValidPluginBlock(BlockReference blockRef, Transaction tr)

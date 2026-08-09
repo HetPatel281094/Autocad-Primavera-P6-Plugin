@@ -386,6 +386,52 @@
             <Border Style="{StaticResource SectionBorderStyle}">
                 <StackPanel>
                     <TextBlock FontWeight="Bold" Text="BLOCK TYPE" />
+                    
+                    <Grid Margin="0,6,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="130" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Setter Property="Opacity" Value="1" />
+                                <Setter Property="IsEnabled" Value="True" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ACadBlockVM.IsCopyBlockDefinition}" Value="True">
+                                        <Setter Property="Opacity" Value="0.45" />
+                                        <Setter Property="IsEnabled" Value="False" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
+                        <TextBlock
+                            Grid.Row="0"
+                            Grid.Column="0"
+                            Style="{StaticResource FieldLabelStyle}"
+                            Text="Block ObjectId" />
+                        <TextBlock
+                            Grid.Row="0"
+                            Grid.Column="1"
+                            Style="{StaticResource ValueTextStyle}"
+                            Text="{Binding ACadBlockVM.SelectedBTRObjId}" />
+                        <TextBlock
+                            Grid.Row="1"
+                            Grid.Column="0"
+                            Style="{StaticResource FieldLabelStyle}"
+                            Text="Block Name" />
+                        <TextBlock
+                            Grid.Row="1"
+                            Grid.Column="1"
+                            Style="{StaticResource ValueTextStyle}"
+                            Text="{Binding ACadBlockVM.SelectedBTRName}" />
+                    </Grid>
+                    
                     <UniformGrid Margin="0,8,0,6" Columns="2">
                         <RadioButton
                             Margin="2"
@@ -416,26 +462,40 @@
 
                     <Grid Visibility="{Binding ACadBlockVM.BlockTypeMode, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=SelectFromDrawing}">
                         <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="140" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <Button
-                            Grid.Column="0"
-                            Command="{Binding ACadBlockVM.SelectDrawingBlockCommand}"
+                            Grid.Column="1"
+                            Command="{Binding ACadBlockVM.SelectBlockFromDrawingCommand}"
                             CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
                             Content="Select Block" />
-                        <TextBlock
-                            Grid.Column="1"
-                            Margin="8,0,0,0"
-                            VerticalAlignment="Center"
-                            Text="{Binding ACadBlockVM.SelectedDrawingBlockName}"
-                            TextTrimming="CharacterEllipsis" />
                     </Grid>
 
                     <CheckBox
                         Margin="0,8,0,0"
+                        IsEnabled="{Binding ACadBlockVM.CanAutoGenerate}"
                         Content="Copy block definition as independent block"
-                        IsChecked="{Binding ACadBlockVM.CopyBlockDefinition, Mode=TwoWay}" />
+                        IsChecked="{Binding ACadBlockVM.IsCopyBlockDefinition, Mode=TwoWay}" />
+
+                    <TextBox
+                            Grid.Column="0"
+                            IsEnabled="{Binding ACadBlockVM.IsCopyBlockDefinition}"
+                            Text="{Binding ACadBlockVM.NewBlockName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                            Margin="75,6,75,0"
+                            />
+                    
+                    <Button
+                            Grid.Column="0"
+                            Width="96"
+                            Margin="6"
+                            IsEnabled="{Binding ACadBlockVM.IsCopyBlockDefinition}"
+                            HorizontalAlignment="Center"
+                            Command="{Binding ACadBlockVM.GenerateNewBTRCommand}"
+                            CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
+                            Content="Generate New" />
+                    
                 </StackPanel>
             </Border>
 
