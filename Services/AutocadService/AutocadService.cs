@@ -46,7 +46,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                         {
                             BlockReference blockRef = tr.GetObject(selObj.ObjectId, OpenMode.ForRead) as BlockReference;
 
-                            var attDefDict = PluginBlockRefAutocadHelpers.Get_AttDefDict(blockRef, tr);
+                            var attDefDict = PluginBlockRefAutocadHelpers.Get_AttRefDict(blockRef, tr);
 
                             if (blockRef == null) { continue; };
                             if (!PluginBlockRefAutocadHelpers.IsValidPluginBlock(attDefDict)){ continue;  };

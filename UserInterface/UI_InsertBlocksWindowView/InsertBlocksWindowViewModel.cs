@@ -115,47 +115,75 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                     if (pointResult.Status != PromptStatus.OK || _isCancelled) { break; };
 
                     // Must insert block or fail with error prompt.
-                    var pluginBlockRef = new PlugInBlockReference(_model.PluginInstance, doc);
-                    var SetPositionResult = pluginBlockRef.Set_BlockPosition(pointResult.Value, out _);
-
                     if (BoundaryCode.IsAutoGenerate) { await BoundaryCode.AutoGenerateActivityCodeAsync(); };
                     if (ElementIdCode.IsAutoGenerate) { await ElementIdCode.AutoGenerateActivityCodeAsync(); };
+                    if (ACadBlockVM.IsCopyBlockDefinition) { ACadBlockVM.GenerateNewBTR(); };
+
+                    if (BoundaryCode.IsAutoGenerate || ACadBlockVM.IsCopyBlockDefinition)
+                    {
+                        throw new InvalidOperationException("Failed to turn autogenerate off for required activity codes or blockTableRecord.");
+                    };
 
                     var resolvedBoundaryCode = BoundaryCode.SelectedActivityCode;
                     var resolvedElementIdCode = ElementIdCode.SelectedActivityCode;
+                    var resolvedBTRRecord = ACadBlockVM.SelectedBlockTableRecord;
 
-                    if (resolvedBoundaryCode == null || resolvedElementIdCode == null)
+                    if (resolvedBoundaryCode == null || resolvedElementIdCode == null || resolvedBTRRecord == null)
                     {
-                        throw new InvalidOperationException("Failed to resolve required activity codes.");
+                        throw new InvalidOperationException("Failed to resolve required activity codes or blockTableRecord.");
                     };
 
-                    var isBdrySet = pluginBlockRef.Set_BdryActCode(resolvedBoundaryCode, out _);
-                    var isElementIdSet = pluginBlockRef.Set_ElementIdCode(resolvedElementIdCode, out _);
-
-                    // Checks if the activity codes were successfully set on the plugin block reference.
-                    if (!isBdrySet || !isElementIdSet) { throw new InvalidOperationException("Failed to set activity-code values to plugin block reference."); };
-
-
-                    // --- Point ---
-                    ObjectId insertedBlockId;
-                    string elementId;
-                    string blockName;
+                    PlugInBlockReference newPluginBlockRef;
 
                     using (doc.LockDocument())
+                    using (var tr = doc.TransactionManager.StartTransaction())
                     {
-                        var source = ACadBlockVM.ResolveBlockSourceForInsert(doc.Database);
-                        blockName = source.BlockName;
-                        insertedBlockId = InsertBlockReference(doc.Database, source.BlockDefinitionId, blockName, pointResult.Value, out elementId);
-                    }
+                        var pluginBlockRef = new PlugInBlockReference(_model.PluginInstance, doc, resolvedBTRRecord, tr);
+
+                        var SetPositionResult = pluginBlockRef.Set_BlockPosition(pointResult.Value, out _);
+
+                        if (!SetPositionResult) { throw new InvalidOperationException("Failed to set activity-code values to plugin block reference."); };
+
+                        var isBdrySet = pluginBlockRef.Set_BdryActCode(resolvedBoundaryCode, out _);
+                        var isElementIdSet = pluginBlockRef.Set_ElementIdCode(resolvedElementIdCode, out _);
+
+                        // Checks if the activity codes were successfully set on the plugin block reference.
+                        if (!isBdrySet || !isElementIdSet) { throw new InvalidOperationException("Failed to set activity-code values to plugin block reference."); };
+
+                        var insertedPluginRef = pluginBlockRef.InsertAsNewBlockRef(tr);
+
+                        tr.Commit();
+
+                        newPluginBlockRef = insertedPluginRef;
+
+                    };
 
                     if (EditLegendPosition)
                     {
-                        EditLegendForBlock(doc, insertedBlockId);
-                    }
+                        var pointOptions = new PromptPointOptions("\nPick MoveInfo point or press Esc to keep current value: ")
+                        {
+                            UseBasePoint = true, BasePoint = newPluginBlockRef.Get_BlockPosition().Value
+                        };
 
-                    ed.WriteMessage("\n[Plugin] Inserted " + elementId +
-                                    " | Boundary: " + BoundaryCode.SelectedCodeValue +
-                                    " | ItemId: " + ElementIdCode.SelectedActivityCode);
+                        PromptPointResult pointResultMoveInfo = ed.GetPoint(pointOptions);
+
+                        if (pointResultMoveInfo.Status == PromptStatus.OK)
+                        {
+                            using (doc.LockDocument())
+                            using (var tr = doc.TransactionManager.StartTransaction())
+                            {
+                                newPluginBlockRef.Set_InfoPosition(pointResultMoveInfo.Value, out _, tr);
+                                tr.Commit();
+                            };
+
+                        };
+
+                    };
+
+                    ed.WriteMessage("\n[Plugin] Inserted " + newPluginBlockRef.Get_ElementId() +
+                        " | Boundary: " + BoundaryCode.SelectedCodeValue +
+                        " | ItemId: " + ElementIdCode.SelectedCodeValue + "\n");
+
                 }
                 while (ContinuousInsert && !_isCancelled);
             }
@@ -173,54 +201,6 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                     owner.Activate();
                 }
             }
-        }
-
-        private List<string> ValidateBeforeP6Resolution(acadAppService.Document doc)
-        {
-            var failures = new List<string>();
-
-            if (ACadBlockVM == null)
-            {
-                failures.Add("Block selection is not initialized.");
-                return failures;
-            }
-
-            if (!BoundaryCode.IsAutoGenerate && IsPlaceholderOrEmpty(BoundaryCode.SelectedCodeValue))
-            {
-                failures.Add("Select a Boundary activity code or enable auto generate.");
-            }
-
-            //if (BoundaryCode.IsAutoGenerate && !BoundaryCode.HasResolvedCode && !BoundaryCode.HasAutoGenerateParent)
-            //{
-            //    failures.Add("Select a Boundary parent code before auto generation.");
-            //}
-
-            //if (!ItemIdCode.IsAutoGenerate && IsPlaceholderOrEmpty(ItemIdCode.SelectedCodeValue))
-            //{
-            //    failures.Add("Select an Item ID activity code or enable auto generate.");
-            //}
-
-            //if (ItemIdCode.IsAutoGenerate && !ItemIdCode.HasResolvedCode && !ItemIdCode.HasAutoGenerateParent)
-            //{
-            //    failures.Add("Select an Item ID parent code before auto generation.");
-            //}
-
-            if (ACadBlockVM.BlockTypeMode == BlockTypeModeEnum.Predefined && ACadBlockVM.SelectedPredefinedBlock == null)
-            {
-                failures.Add("Select a predefined .dwg block file.");
-            }
-
-            if (ACadBlockVM.BlockTypeMode == BlockTypeModeEnum.SelectFromDrawing && !ACadBlockVM.HasValidDrawingBlockSelection())
-            {
-                failures.Add("Select a valid plugin block from the drawing.");
-            }
-
-            if (doc == null)
-            {
-                failures.Add("No active AutoCAD document is available.");
-            }
-
-            return failures;
         }
 
         private List<string> ValidateAfterP6Resolution()

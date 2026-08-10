@@ -1,5 +1,6 @@
 using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
 using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Newtonsoft.Json.Linq;
 using System;
@@ -15,7 +16,20 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
 {
     public class PluginBlockRefAutocadHelpers
     {
-        public static Dictionary<string, AttributeReference> Get_AttDefDict(BlockReference acadBlockRef, Transaction tr)
+        public static Dictionary<string, AttributeDefinition> Get_AttDefDict(BlockTableRecord acadBlockTblRec, Transaction tr)
+        {
+            return acadBlockTblRec
+                .Cast<ObjectId>()
+                .Select(entityId => tr.GetObject(entityId, OpenMode.ForRead) as AttributeDefinition)
+                .Where(attDef => attDef != null)
+                .ToDictionary(
+                    ad => ad.Tag,
+                    ad => ad,
+                    StringComparer.OrdinalIgnoreCase
+                    );
+        }
+
+        public static Dictionary<string, AttributeReference> Get_AttRefDict(BlockReference acadBlockRef, Transaction tr)
         {
             return acadBlockRef.AttributeCollection
                 .Cast<ObjectId>()
@@ -38,7 +52,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                 );
         }
 
-        public static AttributeReference TryGetValue_AttDefDict(Dictionary<string, AttributeReference> attributes, string tag)
+        public static AttributeReference TryGetValue_AttRefDict(Dictionary<string, AttributeReference> attributes, string tag)
         {
             attributes.TryGetValue(tag, out AttributeReference attribute);
             return attribute;
@@ -52,7 +66,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
 
         public static bool IsValidPluginBlock(Dictionary<string, AttributeReference> attdefDict)
         {
-            var checkStringAttRef = PluginBlockRefAutocadHelpers.TryGetValue_AttDefDict(attdefDict, "Attribute_Check_String");
+            var checkStringAttRef = PluginBlockRefAutocadHelpers.TryGetValue_AttRefDict(attdefDict, "Attribute_Check_String");
 
             return checkStringAttRef != null && string.Equals(checkStringAttRef.TextString, "FoundOK", StringComparison.OrdinalIgnoreCase);
         }
@@ -235,11 +249,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                 string nameTag = SlotNameTag(slotNumber);
                 string valueTag = SlotValueTag(slotNumber);
 
-                if (!definitions.TryGetValue(nameTag, out AttributeDefinition NameAttDef) ||
-                    !definitions.ContainsKey(valueTag))
-                {
-                    continue;
-                };
+                if (!definitions.TryGetValue(nameTag, out AttributeDefinition NameAttDef) || !definitions.ContainsKey(valueTag)) { continue; };
 
                 SlotsDict[key] = new Slot()
                 {
@@ -258,12 +268,12 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
         {
             var blockReference = (BlockReference)tr.GetObject(AcadBlockRef.ObjectId, OpenMode.ForRead);
 
-            var attDefDict = PluginBlockRefAutocadHelpers.Get_AttDefDict(blockReference, tr);
+            var attDefDict = PluginBlockRefAutocadHelpers.Get_AttRefDict(blockReference, tr);
             var dyBlockRefPropDict = PluginBlockRefAutocadHelpers.Get_DyBlockRefPropDict(blockReference);
 
-            BlockAttProps.Attribute_Check_String = PluginBlockRefAutocadHelpers.TryGetValue_AttDefDict(attDefDict, "Attribute_Check_String");
-            BlockAttProps.ElementId = PluginBlockRefAutocadHelpers.TryGetValue_AttDefDict(attDefDict, "ELEMENT_ID");
-            BlockAttProps.BlockType = PluginBlockRefAutocadHelpers.TryGetValue_AttDefDict(attDefDict, "BLOCK_TYPE");
+            BlockAttProps.Attribute_Check_String = PluginBlockRefAutocadHelpers.TryGetValue_AttRefDict(attDefDict, "Attribute_Check_String");
+            BlockAttProps.ElementId = PluginBlockRefAutocadHelpers.TryGetValue_AttRefDict(attDefDict, "ELEMENT_ID");
+            BlockAttProps.BlockType = PluginBlockRefAutocadHelpers.TryGetValue_AttRefDict(attDefDict, "BLOCK_TYPE");
             BlockAttProps.Update_Status = PluginBlockRefAutocadHelpers.TryGetValue_DyBlockRefPropDict(dyBlockRefPropDict, "Update Status");
             BlockAttProps.Moveinfo_X = PluginBlockRefAutocadHelpers.TryGetValue_DyBlockRefPropDict(dyBlockRefPropDict, "MoveInfo X");
             BlockAttProps.Moveinfo_Y = PluginBlockRefAutocadHelpers.TryGetValue_DyBlockRefPropDict(dyBlockRefPropDict, "MoveInfo Y");
@@ -273,8 +283,8 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                 int slotNumber = ParseSlotNumber(key);
                 string nameTag = SlotNameTag(slotNumber);
                 string valueTag = SlotValueTag(slotNumber);
-                var nameAttribute = PluginBlockRefAutocadHelpers.TryGetValue_AttDefDict(attDefDict, nameTag);
-                var valueAttribute = PluginBlockRefAutocadHelpers.TryGetValue_AttDefDict(attDefDict, valueTag);
+                var nameAttribute = PluginBlockRefAutocadHelpers.TryGetValue_AttRefDict(attDefDict, nameTag);
+                var valueAttribute = PluginBlockRefAutocadHelpers.TryGetValue_AttRefDict(attDefDict, valueTag);
 
                 if (nameAttribute == null || valueAttribute == null || String.IsNullOrWhiteSpace(nameAttribute.TextString)) { continue; };
 
@@ -514,8 +524,11 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                     if (moveInfoX == null || moveInfoY == null || moveInfoX.ReadOnly || moveInfoY.ReadOnly) { return false; };
 
                     Point3d blockPosition = blockRef.Position;
-                    moveInfoX.Value = newPosition.X - blockPosition.X;
-                    moveInfoY.Value = newPosition.Y - blockPosition.Y;
+
+                    var delta = newPosition - blockPosition;
+
+                    moveInfoX.Value = delta.X;
+                    moveInfoY.Value = delta.Y;
 
                     BlockAttProps.Moveinfo_X = moveInfoX;
                     BlockAttProps.Moveinfo_Y = moveInfoY;
@@ -870,6 +883,88 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
 
                 default:
                     return false;
+            };
+
+        }
+
+        public PlugInBlockReference InsertAsNewBlockRef(Transaction tr)
+        {
+            switch (InitState)
+            {
+                case InitStateEnum.NotInitialized:
+                case InitStateEnum.DefaultInitialized:
+                    return null;
+
+                case InitStateEnum.BTRInitialized:
+                    var modelSpaceBTR = (BlockTableRecord)tr.GetObject(SymbolUtilityServices.GetBlockModelSpaceId(AcadDoc.Database), OpenMode.ForWrite);
+
+                    var BTRattDefDict = PluginBlockRefAutocadHelpers.Get_AttDefDict(AcadBlockTblRec, tr);
+
+                    var newBlockRef = new BlockReference(PluginBlockPosition.Value, AcadBlockTblRec.ObjectId);
+
+                    modelSpaceBTR.AppendEntity(newBlockRef);
+                    tr.AddNewlyCreatedDBObject(newBlockRef, true);
+
+                    var replaceAttRefDict = new Dictionary<string, AttributeReference>();
+
+                    if (BlockAttProps.Attribute_Check_String != null) { replaceAttRefDict.Add(BlockAttProps.Attribute_Check_String.Tag, BlockAttProps.Attribute_Check_String); };
+                    if (BlockAttProps.ElementId != null) { replaceAttRefDict.Add(BlockAttProps.ElementId.Tag, BlockAttProps.ElementId); };
+                    if (BlockAttProps.BlockType != null) { replaceAttRefDict.Add(BlockAttProps.BlockType.Tag, BlockAttProps.BlockType); };
+
+                    foreach (var slotKeyVal in SlotsDict)
+                    {
+                        var slot = slotKeyVal.Value;
+
+                        if (slot == null) { continue; };
+                        if ((slot.NameAttRef == null || String.IsNullOrWhiteSpace(slot.NameAttRef.TextString)) && String.IsNullOrWhiteSpace(slot.SlotPropName)) { continue; };
+                        if ((slot.ValueAttRef == null || String.IsNullOrWhiteSpace(slot.ValueAttRef.TextString)) && String.IsNullOrWhiteSpace(slot.SlotPropValue)) { continue; }
+
+                        if (slot.NameAttRef != null)
+                        {
+                            replaceAttRefDict.Add(slot.NameAttRef.TextString, slot.NameAttRef);
+                        }
+                        else
+                        {
+                            replaceAttRefDict.Add(slot.NameAttRefTag, new AttributeReference() { Tag = slot.NameAttRefTag, TextString = slot.SlotPropName });
+                        };
+
+                        if (slot.ValueAttRef != null)
+                        {
+                            replaceAttRefDict.Add(slot.ValueAttRef.TextString, slot.ValueAttRef);
+                        }
+                        else
+                        {
+                            replaceAttRefDict.Add(slot.ValueAttRefTag, new AttributeReference() { Tag = slot.ValueAttRefTag, TextString = slot.SlotPropValue });
+                        };
+
+                    };
+
+
+                    foreach (var BTRattDefKeyVal in BTRattDefDict)
+                    {
+                        var newAttRef = new AttributeReference();
+                        newAttRef.SetAttributeFromBlock(BTRattDefKeyVal.Value, newBlockRef.BlockTransform);
+
+                        var isValueUpdate = replaceAttRefDict.TryGetValue(BTRattDefKeyVal.Key, out var replaceAttDef);
+
+                        if (isValueUpdate) { newAttRef.TextString = replaceAttDef.TextString; };
+
+                        newBlockRef.AttributeCollection.AppendAttribute(newAttRef);
+                    };
+
+                    var newPluginBlockRef = new PlugInBlockReference(PluginInstance, AcadDoc, newBlockRef, tr);
+
+                    newPluginBlockRef.Set_BdryActCode(BdryActCode, out _, tr);
+                    newPluginBlockRef.Set_ElementIdCode(ElementIdCode, out _, tr);
+
+                    return newPluginBlockRef;
+
+                case InitStateEnum.BlockRefInitialized:
+                    return null;
+
+                default:
+                    return null;
+
             };
 
         }

@@ -6,7 +6,7 @@
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
     Title="P6 AutoCAD - Insert Blocks"
     Width="520"
-    Height="900"
+    Height="1100"
     MinWidth="500"
     MinHeight="620"
     ResizeMode="CanResize"
