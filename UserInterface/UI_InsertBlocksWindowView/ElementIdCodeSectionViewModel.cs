@@ -1,19 +1,13 @@
-using Autocad_Primavera_P6_Plugin.Services.LiteDBService;
 using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
 using Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView.ActivityCodePicker;
-using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.EditorInput;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using PropertyChanged;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using AcadApp = Autodesk.AutoCAD.ApplicationServices.Application;
 
 namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 {
@@ -136,10 +130,12 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             var activityCodePicker = new ActivityCodePickerView(pickerVM);
 
             var owner = parameter as Window;
-            if (owner != null) { activityCodePicker.Owner = owner; };
+            if (owner != null) { activityCodePicker.Owner = owner; }
+            ;
 
             bool? result = activityCodePicker.ShowDialog();
-            if (result != true || activityCodePicker.ViewModel == null || activityCodePicker.ViewModel.SelectedNode == null) { return false; };
+            if (result != true || activityCodePicker.ViewModel == null || activityCodePicker.ViewModel.SelectedNode == null) { return false; }
+            ;
 
             SelectedActivityCodeNode = activityCodePicker.ViewModel.SelectedNode;
             SelectedActivityCode = SelectedActivityCodeNode.Code;
@@ -164,7 +160,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                     await GenerateTextAsync();
                 }
 
-                return true;    
+                return true;
             }
             catch (Exception ex)
             {
@@ -210,7 +206,8 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             {
                 Info = $"Generated {branch.CodeConcatName}";
                 return;
-            };
+            }
+            ;
 
             ActivityCode firstLeaf = await CreateFirstLeafAsync();
 

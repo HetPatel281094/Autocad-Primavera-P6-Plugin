@@ -1,23 +1,16 @@
+using Autocad_Primavera_P6_Plugin.Services.AutocadService;
+using Autodesk.AutoCAD.EditorInput;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using Autocad_Primavera_P6_Plugin.Services.AutocadService;
-using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.EditorInput;
-using Autodesk.AutoCAD.Geometry;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using acadAppService = Autodesk.AutoCAD.ApplicationServices;
 
 namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 {
-    public partial class InsertBlocksWindowViewModel: ObservableObject
+    public partial class InsertBlocksWindowViewModel : ObservableObject
     {
         private InsertBlocksWindowModel _model;
         private bool _isCancelled;
@@ -37,7 +30,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
         public InsertBlocksWindowViewModel(MyPlugin pluginInstance)
         {
-            _model = new InsertBlocksWindowModel{ PluginInstance = pluginInstance };
+            _model = new InsertBlocksWindowModel { PluginInstance = pluginInstance };
         }
 
         public async Task Async_Init()
@@ -60,12 +53,6 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             StatusMessage = string.Empty;
 
             CancelCommand = new RelayCommand(Cancel);
-        }
-
-        private void OnIsInsertingChanged()
-        {
-            InsertButtonText = IsInserting ? "Inserting..." : "Insert Block";
-            CommandManager.InvalidateRequerySuggested();
         }
 
         [RelayCommand]
@@ -109,20 +96,26 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
                 do
                 {
-                    if (_isCancelled) { break; };
+                    if (_isCancelled) { break; }
+                    ;
 
                     PromptPointResult pointResult = ed.GetPoint("\nPick insertion point: ");
-                    if (pointResult.Status != PromptStatus.OK || _isCancelled) { break; };
+                    if (pointResult.Status != PromptStatus.OK || _isCancelled) { break; }
+                    ;
 
                     // Must insert block or fail with error prompt.
-                    if (BoundaryCode.IsAutoGenerate) { await BoundaryCode.AutoGenerateActivityCodeAsync(); };
-                    if (ElementIdCode.IsAutoGenerate) { await ElementIdCode.AutoGenerateActivityCodeAsync(); };
-                    if (ACadBlockVM.IsCopyBlockDefinition) { ACadBlockVM.GenerateNewBTR(); };
+                    if (BoundaryCode.IsAutoGenerate) { await BoundaryCode.AutoGenerateActivityCodeAsync(); }
+                    ;
+                    if (ElementIdCode.IsAutoGenerate) { await ElementIdCode.AutoGenerateActivityCodeAsync(); }
+                    ;
+                    if (ACadBlockVM.IsCopyBlockDefinition) { ACadBlockVM.GenerateNewBTR(); }
+                    ;
 
                     if (BoundaryCode.IsAutoGenerate || ACadBlockVM.IsCopyBlockDefinition)
                     {
                         throw new InvalidOperationException("Failed to turn autogenerate off for required activity codes or blockTableRecord.");
-                    };
+                    }
+                    ;
 
                     var resolvedBoundaryCode = BoundaryCode.SelectedActivityCode;
                     var resolvedElementIdCode = ElementIdCode.SelectedActivityCode;
@@ -131,7 +124,8 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                     if (resolvedBoundaryCode == null || resolvedElementIdCode == null || resolvedBTRRecord == null)
                     {
                         throw new InvalidOperationException("Failed to resolve required activity codes or blockTableRecord.");
-                    };
+                    }
+                    ;
 
                     PlugInBlockReference newPluginBlockRef;
 
@@ -142,13 +136,15 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
                         var SetPositionResult = pluginBlockRef.Set_BlockPosition(pointResult.Value, out _);
 
-                        if (!SetPositionResult) { throw new InvalidOperationException("Failed to set activity-code values to plugin block reference."); };
+                        if (!SetPositionResult) { throw new InvalidOperationException("Failed to set activity-code values to plugin block reference."); }
+                        ;
 
                         var isBdrySet = pluginBlockRef.Set_BdryActCode(resolvedBoundaryCode, out _);
                         var isElementIdSet = pluginBlockRef.Set_ElementIdCode(resolvedElementIdCode, out _);
 
                         // Checks if the activity codes were successfully set on the plugin block reference.
-                        if (!isBdrySet || !isElementIdSet) { throw new InvalidOperationException("Failed to set activity-code values to plugin block reference."); };
+                        if (!isBdrySet || !isElementIdSet) { throw new InvalidOperationException("Failed to set activity-code values to plugin block reference."); }
+                        ;
 
                         var insertedPluginRef = pluginBlockRef.InsertAsNewBlockRef(tr);
 
@@ -156,13 +152,15 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
                         newPluginBlockRef = insertedPluginRef;
 
-                    };
+                    }
+                    ;
 
                     if (EditLegendPosition)
                     {
                         var pointOptions = new PromptPointOptions("\nPick MoveInfo point or press Esc to keep current value: ")
                         {
-                            UseBasePoint = true, BasePoint = newPluginBlockRef.Get_BlockPosition().Value
+                            UseBasePoint = true,
+                            BasePoint = newPluginBlockRef.Get_BlockPosition().Value
                         };
 
                         PromptPointResult pointResultMoveInfo = ed.GetPoint(pointOptions);
@@ -174,11 +172,14 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                             {
                                 newPluginBlockRef.Set_InfoPosition(pointResultMoveInfo.Value, out _, tr);
                                 tr.Commit();
-                            };
+                            }
+                            ;
 
-                        };
+                        }
+                        ;
 
-                    };
+                    }
+                    ;
 
                     ed.WriteMessage("\n[Plugin] Inserted " + newPluginBlockRef.Get_ElementId() +
                         " | Boundary: " + BoundaryCode.SelectedCodeValue +
@@ -203,206 +204,11 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             }
         }
 
-        private List<string> ValidateAfterP6Resolution()
-        {
-            var failures = new List<string>();
-
-            //if (!BoundaryCode.HasResolvedCode)
-            //{
-            //    failures.Add("Boundary activity code is not resolved. " + BoundaryCode.Info);
-            //}
-
-            //if (!ItemIdCode.HasResolvedCode)
-            //{
-            //    failures.Add("Item ID activity code is not resolved. " + ItemIdCode.Info);
-            //}
-
-            return failures;
-        }
-
-        private bool IsPlaceholderOrEmpty(string value)
-        {
-            return string.IsNullOrWhiteSpace(value) || value.StartsWith("--", StringComparison.Ordinal);
-        }
-
-        private ObjectId InsertBlockReference(Database db, ObjectId blockDefId, string blockName, Point3d insertionPoint, out string elementId)
-        {
-            elementId = Guid.NewGuid().ToString("N").Substring(0, 8).ToUpperInvariant();
-
-            //using (var tr = db.TransactionManager.StartTransaction())
-            //{
-            //    var blockDef = (BlockTableRecord)tr.GetObject(blockDefId, OpenMode.ForRead);
-            //    var pluginBlock = new PlugInBlockReference(_model.ActAcadDoc);
-            //    //pluginBlock.AttachBlockTableRecord(blockDef, tr);
-            //    var values = BuildAttributeValues(elementId, blockName);
-            //    IList<string> missingTags;
-            //    ObjectId insertedId = pluginBlock.CreateBlockReference(
-            //        SymbolUtilityServices.GetBlockModelSpaceId(db),
-            //        insertionPoint,
-            //        values,
-            //        tr,
-            //        out missingTags);
-
-            //    string[] requiredTags = { "ELEMENT_ID", "BLOCK_TYPE", "Attribute_Check_string" };
-            //    var missingRequiredTags = missingTags
-            //        .Where(tag => requiredTags.Any(required => string.Equals(required, tag, StringComparison.OrdinalIgnoreCase)))
-            //        .ToList();
-            //    if (missingRequiredTags.Count > 0)
-            //    {
-            //        throw new InvalidOperationException(
-            //            "The selected block definition is not a plugin block. Missing required attribute definition(s): " +
-            //            string.Join(", ", missingRequiredTags));
-            //    }
-
-            //    if (missingTags.Count > 0)
-            //    {
-            //        Debug.Print("[Plugin] Block was inserted without optional attributes: " + string.Join(", ", missingTags));
-            //    }
-
-            //    tr.Commit();
-            //    return insertedId;
-            //}
-
-            return ObjectId.Null;
-        }
-
-        private Dictionary<string, string> BuildAttributeValues(string elementId, string blockName)
-        {
-            return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                { "ELEMENT_ID", elementId },
-                { "BLOCK_TYPE", blockName },
-                { "ATT_1_NAME", "BOUNDARY_CODE_VALUE" },
-                { "ATT_1_VALUE", BoundaryCode.SelectedCodeValue },
-                { "ATT_2_NAME", "BOUNDARY_CODE_PATH" },
-                { "ATT_2_VALUE", BoundaryCode.SelectedCodePath },
-                { "ATT_3_NAME", "BOUNDARY_CODE_ID" },
-                { "ATT_3_VALUE", BoundaryCode.SelectedCodeValueId },
-                { "ATT_4_NAME", "ITEM_ID_CODE_VALUE" },
-                { "ATT_4_VALUE", ElementIdCode.SelectedActivityCode.CodeValue },
-                { "ATT_5_NAME", "ITEM_ID_CODE_PATH" },
-                { "ATT_5_VALUE", ElementIdCode.SelectedActivityCode.CodeConcatName },
-                { "ATT_6_NAME", "ITEM_ID_CODE_ID" },
-                { "ATT_6_VALUE", ElementIdCode.SelectedActivityCode.ObjectId.ToString() },
-                { "ATT_7_NAME", "Attribute_Check_string" },
-                { "ATT_7_VALUE", "FoundOK" },
-                { "ATT_8_NAME", string.Empty },
-                { "ATT_8_VALUE", string.Empty },
-                { "ATT_9_NAME", string.Empty },
-                { "ATT_9_VALUE", string.Empty },
-                { "ATT_10_NAME", string.Empty },
-                { "ATT_10_VALUE", string.Empty },
-                { "Attribute_Check_string", "FoundOK" }
-            };
-        }
-
-        private void EditLegendForBlock(Autodesk.AutoCAD.ApplicationServices.Document doc, ObjectId blockRefId)
-        {
-            var ed = doc.Editor;
-            Point3d blockBasePoint;
-
-            using (doc.LockDocument())
-            using (var tr = doc.Database.TransactionManager.StartTransaction())
-            {
-                var blockRef = tr.GetObject(blockRefId, OpenMode.ForRead) as BlockReference;
-                if (blockRef == null || !HasWritableMoveInfoProperties(blockRef))
-                {
-                    tr.Commit();
-                    return;
-                }
-
-                blockBasePoint = blockRef.Position;
-                tr.Commit();
-            }
-
-            var pointOptions = new PromptPointOptions("\nPick MoveInfo point or press Esc to keep current value: ")
-            {
-                UseBasePoint = true,
-                BasePoint = blockBasePoint
-            };
-
-            PromptPointResult pointResult = ed.GetPoint(pointOptions);
-            if (pointResult.Status != PromptStatus.OK)
-            {
-                return;
-            }
-
-            using (doc.LockDocument())
-            using (var tr = doc.Database.TransactionManager.StartTransaction())
-            {
-                var blockRef = tr.GetObject(blockRefId, OpenMode.ForWrite) as BlockReference;
-                if (blockRef == null)
-                {
-                    return;
-                }
-
-                if (SetMoveInfoDynamicProperty(blockRef, pointResult.Value - blockBasePoint))
-                {
-                    tr.Commit();
-                }
-            }
-        }
-
-        private bool HasWritableMoveInfoProperties(BlockReference blockRef)
-        {
-            DynamicBlockReferenceProperty xProperty;
-            DynamicBlockReferenceProperty yProperty;
-            return TryGetWritableMoveInfoProperties(blockRef, out xProperty, out yProperty);
-        }
-
-        private bool SetMoveInfoDynamicProperty(BlockReference blockRef, Vector3d relativeValue)
-        {
-            DynamicBlockReferenceProperty xProperty;
-            DynamicBlockReferenceProperty yProperty;
-
-            if (!TryGetWritableMoveInfoProperties(blockRef, out xProperty, out yProperty))
-            {
-                return false;
-            }
-
-            xProperty.Value = relativeValue.X;
-            yProperty.Value = relativeValue.Y;
-            return true;
-        }
-
-        private bool TryGetWritableMoveInfoProperties(
-            BlockReference blockRef,
-            out DynamicBlockReferenceProperty xProperty,
-            out DynamicBlockReferenceProperty yProperty)
-        {
-            xProperty = null;
-            yProperty = null;
-
-            if (!blockRef.IsDynamicBlock)
-            {
-                return false;
-            }
-
-            foreach (DynamicBlockReferenceProperty property in blockRef.DynamicBlockReferencePropertyCollection)
-            {
-                if (property.ReadOnly)
-                {
-                    continue;
-                }
-
-                if (string.Equals(property.PropertyName, _model.MoveInfoXPropertyName, StringComparison.OrdinalIgnoreCase))
-                {
-                    xProperty = property;
-                }
-                else if (string.Equals(property.PropertyName, _model.MoveInfoYPropertyName, StringComparison.OrdinalIgnoreCase))
-                {
-                    yProperty = property;
-                }
-            }
-
-            return xProperty != null && yProperty != null;
-        }
-
         private void Cancel(object parameter)
         {
             _isCancelled = true;
             RequestClose?.Invoke(false);
         }
-        
+
     }
 }
