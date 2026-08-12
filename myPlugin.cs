@@ -1,5 +1,7 @@
 ﻿// (C) Copyright 2026 by  
 //
+using Autocad_Primavera_P6_Plugin.ServiceReference.ActivityService;
+using Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService;
 using Autocad_Primavera_P6_Plugin.Services;
 using Autocad_Primavera_P6_Plugin.Services.AutocadService;
 using Autocad_Primavera_P6_Plugin.Services.LiteDBService;
@@ -7,8 +9,9 @@ using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
 using Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView;
 using Autocad_Primavera_P6_Plugin.UserInterface.UI_LinkedFoldersManagerView;
 using Autodesk.AutoCAD.Runtime;
-using P6SOAP_AuthenticationService;
 using System.Diagnostics;
+using System.Linq;
+using System.ServiceModel.Channels;
 using System.Threading.Tasks;
 using acadApp = Autodesk.AutoCAD.ApplicationServices.Application;
 
@@ -72,21 +75,48 @@ namespace Autocad_Primavera_P6_Plugin
             {
                 Debug.Print("Test Function is invoked.");
 
-                var authClient = new AuthenticationServicePortTypeClient();
+                var DBInstanceName = "PMDB";
 
-                //var login = new Login
-                //{
-                //    UserName = "admin",
-                //    Password = "Uvpce2006"
-                //};
 
-                //var loginResponse = await authClient.LoginAsync(login);
+                var AuthClient = new AuthenticationServicePortTypeClient();
+                P6SessionCookieManager.Instance.Bind(AuthClient);
 
-                //Debug.Print(loginResponse.ToString());
+                var ReadDBInstancesReq = new ReadDatabaseInstancesRequest();
+                ReadDBInstancesReq.ReadDatabaseInstances = "?";
 
-                var ReadDatabaseInstancesResponse = await authClient.ReadDatabaseInstancesAsync(new ReadDatabaseInstancesRequest());
+                var ReadDBInstancesRes = await AuthClient.ReadDatabaseInstancesAsync(ReadDBInstancesReq);
 
-                Debug.Print(ReadDatabaseInstancesResponse.ToString());
+                var DBInstance = ReadDBInstancesRes.ReadDatabaseInstancesResponse1.First(inst => inst.DatabaseName == DBInstanceName);
+
+                var Login = new Login() { UserName = "admin", Password = "Uvpce2006", DatabaseInstanceId = DBInstance.DatabaseInstanceId, DatabaseInstanceIdSpecified = true };
+
+                var LoginReq = new LoginRequest(Login);
+
+                var LoginRes = await AuthClient.LoginAsync(LoginReq);
+
+                var LoginResString = LoginRes.LoginResponse.Return;
+
+                Debug.Print(LoginResString.ToString());
+
+
+                var ActivityServiceClient = new ActivityPortTypeClient();
+                var cookieManager = ActivityServiceClient.InnerChannel.GetProperty<IHttpCookieContainerManager>();
+                P6SessionCookieManager.Instance.Bind(ActivityServiceClient);
+
+                var ReadActivities = new ReadActivities();
+                ReadActivities.Filter = "ProjectId = 'MASTER'";
+                ReadActivities.Field = [ ActivityFieldType.ObjectId, ActivityFieldType.Name, ActivityFieldType.ProjectId, ActivityFieldType.ProjectName, ActivityFieldType.WBSPath];
+
+                var ReadActivitiesReq = new ReadActivitiesRequest(ReadActivities);
+
+                var ReadActivitiesRes = await ActivityServiceClient.ReadActivitiesAsync(ReadActivitiesReq);
+
+                var activities = ReadActivitiesRes.ReadActivitiesResponse1;
+
+                foreach (var item in activities)
+                {
+                    Debug.Print($"WBS Path : {item.WBSPath} - Act Name : {item.Name}");
+                };
 
                 Debug.Print("Test Function is Completed without error.");
             }

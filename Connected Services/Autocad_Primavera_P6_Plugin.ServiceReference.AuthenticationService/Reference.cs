@@ -7,7 +7,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace P6SOAP_AuthenticationService
+namespace Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService
 {
     
     
@@ -107,32 +107,33 @@ namespace P6SOAP_AuthenticationService
     }
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "8.0.0")]
-    [System.ServiceModel.ServiceContractAttribute(Namespace="http://xmlns.oracle.com/Primavera/P6/WS/Authentication/V1", ConfigurationName="P6SOAP_AuthenticationService.AuthenticationServicePortType")]
+    [System.ServiceModel.ServiceContractAttribute(Namespace="http://xmlns.oracle.com/Primavera/P6/WS/Authentication/V1", ConfigurationName="Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.Authentication" +
+        "ServicePortType")]
     public interface AuthenticationServicePortType
     {
         
         [System.ServiceModel.OperationContractAttribute(Action="urn:Login", ReplyAction="*")]
-        [System.ServiceModel.FaultContractAttribute(typeof(P6SOAP_AuthenticationService.IntegrationFaultType), Action="urn:Login", Name="IntegrationFault", Namespace="http://xmlns.oracle.com/Primavera/P6/WS/IntegrationFaultType/V1")]
+        [System.ServiceModel.FaultContractAttribute(typeof(Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.IntegrationFaultType), Action="urn:Login", Name="IntegrationFault", Namespace="http://xmlns.oracle.com/Primavera/P6/WS/IntegrationFaultType/V1")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<P6SOAP_AuthenticationService.LoginResponse1> LoginAsync(P6SOAP_AuthenticationService.LoginRequest request);
+        System.Threading.Tasks.Task<Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.LoginResponse1> LoginAsync(Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.LoginRequest request);
         
         [System.ServiceModel.OperationContractAttribute(Action="urn:Logout", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<P6SOAP_AuthenticationService.LogoutResponse1> LogoutAsync(P6SOAP_AuthenticationService.LogoutRequest request);
+        System.Threading.Tasks.Task<Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.LogoutResponse1> LogoutAsync(Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.LogoutRequest request);
         
         [System.ServiceModel.OperationContractAttribute(Action="urn:ReadDatabaseInstances", ReplyAction="*")]
-        [System.ServiceModel.FaultContractAttribute(typeof(P6SOAP_AuthenticationService.IntegrationFaultType), Action="urn:ReadDatabaseInstances", Name="IntegrationFault", Namespace="http://xmlns.oracle.com/Primavera/P6/WS/IntegrationFaultType/V1")]
+        [System.ServiceModel.FaultContractAttribute(typeof(Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.IntegrationFaultType), Action="urn:ReadDatabaseInstances", Name="IntegrationFault", Namespace="http://xmlns.oracle.com/Primavera/P6/WS/IntegrationFaultType/V1")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<P6SOAP_AuthenticationService.ReadDatabaseInstancesResponse> ReadDatabaseInstancesAsync(P6SOAP_AuthenticationService.ReadDatabaseInstancesRequest request);
+        System.Threading.Tasks.Task<Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.ReadDatabaseInstancesResponse> ReadDatabaseInstancesAsync(Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.ReadDatabaseInstancesRequest request);
         
         [System.ServiceModel.OperationContractAttribute(Action="urn:ReadSessionProperties", ReplyAction="*")]
-        [System.ServiceModel.FaultContractAttribute(typeof(P6SOAP_AuthenticationService.IntegrationFaultType), Action="urn:ReadSessionProperties", Name="IntegrationFault", Namespace="http://xmlns.oracle.com/Primavera/P6/WS/IntegrationFaultType/V1")]
+        [System.ServiceModel.FaultContractAttribute(typeof(Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.IntegrationFaultType), Action="urn:ReadSessionProperties", Name="IntegrationFault", Namespace="http://xmlns.oracle.com/Primavera/P6/WS/IntegrationFaultType/V1")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<P6SOAP_AuthenticationService.ReadSessionPropertiesResponse1> ReadSessionPropertiesAsync(P6SOAP_AuthenticationService.ReadSessionPropertiesRequest request);
+        System.Threading.Tasks.Task<Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.ReadSessionPropertiesResponse1> ReadSessionPropertiesAsync(Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.ReadSessionPropertiesRequest request);
         
         [System.ServiceModel.OperationContractAttribute(Action="urn:UpdateSessionProperties", ReplyAction="*")]
         [System.ServiceModel.XmlSerializerFormatAttribute(SupportFaults=true)]
-        System.Threading.Tasks.Task<P6SOAP_AuthenticationService.UpdateSessionPropertiesResponse1> UpdateSessionPropertiesAsync(P6SOAP_AuthenticationService.UpdateSessionPropertiesRequest request);
+        System.Threading.Tasks.Task<Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.UpdateSessionPropertiesResponse1> UpdateSessionPropertiesAsync(Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.UpdateSessionPropertiesRequest request);
     }
     
     /// <remarks/>
@@ -249,19 +250,18 @@ namespace P6SOAP_AuthenticationService
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "8.0.0")]
-    [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
     [System.ServiceModel.MessageContractAttribute(IsWrapped=false)]
     public partial class LoginRequest
     {
         
         [System.ServiceModel.MessageBodyMemberAttribute(Namespace="http://xmlns.oracle.com/Primavera/P6/WS/Authentication/V1", Order=0)]
-        public P6SOAP_AuthenticationService.Login Login;
+        public Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.Login Login;
         
         public LoginRequest()
         {
         }
         
-        public LoginRequest(P6SOAP_AuthenticationService.Login Login)
+        public LoginRequest(Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.Login Login)
         {
             this.Login = Login;
         }
@@ -269,19 +269,18 @@ namespace P6SOAP_AuthenticationService
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "8.0.0")]
-    [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
     [System.ServiceModel.MessageContractAttribute(IsWrapped=false)]
     public partial class LoginResponse1
     {
         
         [System.ServiceModel.MessageBodyMemberAttribute(Namespace="http://xmlns.oracle.com/Primavera/P6/WS/Authentication/V1", Order=0)]
-        public P6SOAP_AuthenticationService.LoginResponse LoginResponse;
+        public Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.LoginResponse LoginResponse;
         
         public LoginResponse1()
         {
         }
         
-        public LoginResponse1(P6SOAP_AuthenticationService.LoginResponse LoginResponse)
+        public LoginResponse1(Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.LoginResponse LoginResponse)
         {
             this.LoginResponse = LoginResponse;
         }
@@ -329,7 +328,6 @@ namespace P6SOAP_AuthenticationService
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "8.0.0")]
-    [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
     [System.ServiceModel.MessageContractAttribute(IsWrapped=false)]
     public partial class LogoutRequest
     {
@@ -349,19 +347,18 @@ namespace P6SOAP_AuthenticationService
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "8.0.0")]
-    [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
     [System.ServiceModel.MessageContractAttribute(IsWrapped=false)]
     public partial class LogoutResponse1
     {
         
         [System.ServiceModel.MessageBodyMemberAttribute(Namespace="http://xmlns.oracle.com/Primavera/P6/WS/Authentication/V1", Order=0)]
-        public P6SOAP_AuthenticationService.LogoutResponse LogoutResponse;
+        public Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.LogoutResponse LogoutResponse;
         
         public LogoutResponse1()
         {
         }
         
-        public LogoutResponse1(P6SOAP_AuthenticationService.LogoutResponse LogoutResponse)
+        public LogoutResponse1(Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.LogoutResponse LogoutResponse)
         {
             this.LogoutResponse = LogoutResponse;
         }
@@ -471,7 +468,6 @@ namespace P6SOAP_AuthenticationService
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "8.0.0")]
-    [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
     [System.ServiceModel.MessageContractAttribute(IsWrapped=false)]
     public partial class ReadDatabaseInstancesRequest
     {
@@ -491,20 +487,19 @@ namespace P6SOAP_AuthenticationService
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "8.0.0")]
-    [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
     [System.ServiceModel.MessageContractAttribute(IsWrapped=false)]
     public partial class ReadDatabaseInstancesResponse
     {
         
         [System.ServiceModel.MessageBodyMemberAttribute(Name="ReadDatabaseInstancesResponse", Namespace="http://xmlns.oracle.com/Primavera/P6/WS/Authentication/V1", Order=0)]
         [System.Xml.Serialization.XmlArrayItemAttribute("DatabaseInstance", IsNullable=false)]
-        public P6SOAP_AuthenticationService.ReadDatabaseInstancesResponseDatabaseInstance[] ReadDatabaseInstancesResponse1;
+        public Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.ReadDatabaseInstancesResponseDatabaseInstance[] ReadDatabaseInstancesResponse1;
         
         public ReadDatabaseInstancesResponse()
         {
         }
         
-        public ReadDatabaseInstancesResponse(P6SOAP_AuthenticationService.ReadDatabaseInstancesResponseDatabaseInstance[] ReadDatabaseInstancesResponse1)
+        public ReadDatabaseInstancesResponse(Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.ReadDatabaseInstancesResponseDatabaseInstance[] ReadDatabaseInstancesResponse1)
         {
             this.ReadDatabaseInstancesResponse1 = ReadDatabaseInstancesResponse1;
         }
@@ -664,7 +659,6 @@ namespace P6SOAP_AuthenticationService
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "8.0.0")]
-    [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
     [System.ServiceModel.MessageContractAttribute(IsWrapped=false)]
     public partial class ReadSessionPropertiesRequest
     {
@@ -684,19 +678,18 @@ namespace P6SOAP_AuthenticationService
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "8.0.0")]
-    [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
     [System.ServiceModel.MessageContractAttribute(IsWrapped=false)]
     public partial class ReadSessionPropertiesResponse1
     {
         
         [System.ServiceModel.MessageBodyMemberAttribute(Namespace="http://xmlns.oracle.com/Primavera/P6/WS/Authentication/V1", Order=0)]
-        public P6SOAP_AuthenticationService.ReadSessionPropertiesResponse ReadSessionPropertiesResponse;
+        public Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.ReadSessionPropertiesResponse ReadSessionPropertiesResponse;
         
         public ReadSessionPropertiesResponse1()
         {
         }
         
-        public ReadSessionPropertiesResponse1(P6SOAP_AuthenticationService.ReadSessionPropertiesResponse ReadSessionPropertiesResponse)
+        public ReadSessionPropertiesResponse1(Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.ReadSessionPropertiesResponse ReadSessionPropertiesResponse)
         {
             this.ReadSessionPropertiesResponse = ReadSessionPropertiesResponse;
         }
@@ -784,19 +777,18 @@ namespace P6SOAP_AuthenticationService
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "8.0.0")]
-    [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
     [System.ServiceModel.MessageContractAttribute(IsWrapped=false)]
     public partial class UpdateSessionPropertiesRequest
     {
         
         [System.ServiceModel.MessageBodyMemberAttribute(Namespace="http://xmlns.oracle.com/Primavera/P6/WS/Authentication/V1", Order=0)]
-        public P6SOAP_AuthenticationService.UpdateSessionProperties UpdateSessionProperties;
+        public Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.UpdateSessionProperties UpdateSessionProperties;
         
         public UpdateSessionPropertiesRequest()
         {
         }
         
-        public UpdateSessionPropertiesRequest(P6SOAP_AuthenticationService.UpdateSessionProperties UpdateSessionProperties)
+        public UpdateSessionPropertiesRequest(Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.UpdateSessionProperties UpdateSessionProperties)
         {
             this.UpdateSessionProperties = UpdateSessionProperties;
         }
@@ -804,32 +796,31 @@ namespace P6SOAP_AuthenticationService
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "8.0.0")]
-    [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
     [System.ServiceModel.MessageContractAttribute(IsWrapped=false)]
     public partial class UpdateSessionPropertiesResponse1
     {
         
         [System.ServiceModel.MessageBodyMemberAttribute(Namespace="http://xmlns.oracle.com/Primavera/P6/WS/Authentication/V1", Order=0)]
-        public P6SOAP_AuthenticationService.UpdateSessionPropertiesResponse UpdateSessionPropertiesResponse;
+        public Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.UpdateSessionPropertiesResponse UpdateSessionPropertiesResponse;
         
         public UpdateSessionPropertiesResponse1()
         {
         }
         
-        public UpdateSessionPropertiesResponse1(P6SOAP_AuthenticationService.UpdateSessionPropertiesResponse UpdateSessionPropertiesResponse)
+        public UpdateSessionPropertiesResponse1(Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.UpdateSessionPropertiesResponse UpdateSessionPropertiesResponse)
         {
             this.UpdateSessionPropertiesResponse = UpdateSessionPropertiesResponse;
         }
     }
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "8.0.0")]
-    public interface AuthenticationServicePortTypeChannel : P6SOAP_AuthenticationService.AuthenticationServicePortType, System.ServiceModel.IClientChannel
+    public interface AuthenticationServicePortTypeChannel : Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.AuthenticationServicePortType, System.ServiceModel.IClientChannel
     {
     }
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "8.0.0")]
-    public partial class AuthenticationServicePortTypeClient : System.ServiceModel.ClientBase<P6SOAP_AuthenticationService.AuthenticationServicePortType>, P6SOAP_AuthenticationService.AuthenticationServicePortType
+    public partial class AuthenticationServicePortTypeClient : System.ServiceModel.ClientBase<Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.AuthenticationServicePortType>, Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.AuthenticationServicePortType
     {
         
         /// <summary>
@@ -872,69 +863,29 @@ namespace P6SOAP_AuthenticationService
         {
         }
         
-        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<P6SOAP_AuthenticationService.LoginResponse1> P6SOAP_AuthenticationService.AuthenticationServicePortType.LoginAsync(P6SOAP_AuthenticationService.LoginRequest request)
+        public System.Threading.Tasks.Task<Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.LoginResponse1> LoginAsync(Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.LoginRequest request)
         {
             return base.Channel.LoginAsync(request);
         }
         
-        public System.Threading.Tasks.Task<P6SOAP_AuthenticationService.LoginResponse1> LoginAsync(P6SOAP_AuthenticationService.Login Login)
-        {
-            P6SOAP_AuthenticationService.LoginRequest inValue = new P6SOAP_AuthenticationService.LoginRequest();
-            inValue.Login = Login;
-            return ((P6SOAP_AuthenticationService.AuthenticationServicePortType)(this)).LoginAsync(inValue);
-        }
-        
-        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<P6SOAP_AuthenticationService.LogoutResponse1> P6SOAP_AuthenticationService.AuthenticationServicePortType.LogoutAsync(P6SOAP_AuthenticationService.LogoutRequest request)
+        public System.Threading.Tasks.Task<Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.LogoutResponse1> LogoutAsync(Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.LogoutRequest request)
         {
             return base.Channel.LogoutAsync(request);
         }
         
-        public System.Threading.Tasks.Task<P6SOAP_AuthenticationService.LogoutResponse1> LogoutAsync(object Logout)
-        {
-            P6SOAP_AuthenticationService.LogoutRequest inValue = new P6SOAP_AuthenticationService.LogoutRequest();
-            inValue.Logout = Logout;
-            return ((P6SOAP_AuthenticationService.AuthenticationServicePortType)(this)).LogoutAsync(inValue);
-        }
-        
-        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<P6SOAP_AuthenticationService.ReadDatabaseInstancesResponse> P6SOAP_AuthenticationService.AuthenticationServicePortType.ReadDatabaseInstancesAsync(P6SOAP_AuthenticationService.ReadDatabaseInstancesRequest request)
+        public System.Threading.Tasks.Task<Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.ReadDatabaseInstancesResponse> ReadDatabaseInstancesAsync(Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.ReadDatabaseInstancesRequest request)
         {
             return base.Channel.ReadDatabaseInstancesAsync(request);
         }
         
-        public System.Threading.Tasks.Task<P6SOAP_AuthenticationService.ReadDatabaseInstancesResponse> ReadDatabaseInstancesAsync(object ReadDatabaseInstances)
-        {
-            P6SOAP_AuthenticationService.ReadDatabaseInstancesRequest inValue = new P6SOAP_AuthenticationService.ReadDatabaseInstancesRequest();
-            inValue.ReadDatabaseInstances = ReadDatabaseInstances;
-            return ((P6SOAP_AuthenticationService.AuthenticationServicePortType)(this)).ReadDatabaseInstancesAsync(inValue);
-        }
-        
-        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<P6SOAP_AuthenticationService.ReadSessionPropertiesResponse1> P6SOAP_AuthenticationService.AuthenticationServicePortType.ReadSessionPropertiesAsync(P6SOAP_AuthenticationService.ReadSessionPropertiesRequest request)
+        public System.Threading.Tasks.Task<Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.ReadSessionPropertiesResponse1> ReadSessionPropertiesAsync(Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.ReadSessionPropertiesRequest request)
         {
             return base.Channel.ReadSessionPropertiesAsync(request);
         }
         
-        public System.Threading.Tasks.Task<P6SOAP_AuthenticationService.ReadSessionPropertiesResponse1> ReadSessionPropertiesAsync(object ReadSessionProperties)
-        {
-            P6SOAP_AuthenticationService.ReadSessionPropertiesRequest inValue = new P6SOAP_AuthenticationService.ReadSessionPropertiesRequest();
-            inValue.ReadSessionProperties = ReadSessionProperties;
-            return ((P6SOAP_AuthenticationService.AuthenticationServicePortType)(this)).ReadSessionPropertiesAsync(inValue);
-        }
-        
-        [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<P6SOAP_AuthenticationService.UpdateSessionPropertiesResponse1> P6SOAP_AuthenticationService.AuthenticationServicePortType.UpdateSessionPropertiesAsync(P6SOAP_AuthenticationService.UpdateSessionPropertiesRequest request)
+        public System.Threading.Tasks.Task<Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.UpdateSessionPropertiesResponse1> UpdateSessionPropertiesAsync(Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService.UpdateSessionPropertiesRequest request)
         {
             return base.Channel.UpdateSessionPropertiesAsync(request);
-        }
-        
-        public System.Threading.Tasks.Task<P6SOAP_AuthenticationService.UpdateSessionPropertiesResponse1> UpdateSessionPropertiesAsync(P6SOAP_AuthenticationService.UpdateSessionProperties UpdateSessionProperties)
-        {
-            P6SOAP_AuthenticationService.UpdateSessionPropertiesRequest inValue = new P6SOAP_AuthenticationService.UpdateSessionPropertiesRequest();
-            inValue.UpdateSessionProperties = UpdateSessionProperties;
-            return ((P6SOAP_AuthenticationService.AuthenticationServicePortType)(this)).UpdateSessionPropertiesAsync(inValue);
         }
         
         public virtual System.Threading.Tasks.Task OpenAsync()
@@ -969,7 +920,6 @@ namespace P6SOAP_AuthenticationService
             {
                 return new System.ServiceModel.EndpointAddress("http://localhost:8206/p6ws/services/AuthenticationService");
             }
-
             throw new System.InvalidOperationException(string.Format("Could not find endpoint with name \'{0}\'.", endpointConfiguration));
         }
         
