@@ -1,48 +1,38 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <RootNamespace>Autocad_Primavera_P6_Plugin</RootNamespace>
     <AssemblyName>Autocad Primavera P6 Plugin</AssemblyName>
     <ProjectGuid>{EF78A7A7-0612-46CC-8F47-A0DBC2CB84DA}</ProjectGuid>
-
     <!-- We keep our own Properties/AssemblyInfo.cs, so let the SDK skip generating one -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-
     <!-- The project mixes WPF windows/user controls with a couple of WinForms dialogs -->
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
-
     <Platforms>x64</Platforms>
     <Nullable>disable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
-
     <AppDesignerFolder>Properties</AppDesignerFolder>
-
     <Configurations>Debug;Release;nn</Configurations>
-      <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
-
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(Configuration)'=='nn'">
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
   </PropertyGroup>
-
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <DefineConstants>TRACE</DefineConstants>
   </PropertyGroup>
-
   <!-- ── AutoCAD 2026 managed API references ────────────────────────────── -->
   <!-- EDIT these HintPaths to match your local AutoCAD 2026 install folder -->
   <ItemGroup>
@@ -63,7 +53,6 @@
       <Private>False</Private>
     </Reference>
   </ItemGroup>
-
   <!-- ── NuGet packages (replaces packages.config) ──────────────────────── -->
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
@@ -74,7 +63,6 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <!-- System.Buffers is part of the BCL in .NET 8 — intentionally NOT referenced -->
   </ItemGroup>
-
   <!-- ── myCommands.resx / Designer.cs pairing (preserve nesting in Solution Explorer) ── -->
   <ItemGroup>
     <Compile Update="myCommands.Designer.cs">
@@ -87,7 +75,6 @@
       <LastGenOutput>myCommands.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
-
   <!-- ── Ribbon icon resources ───────────────────────────────────────────── -->
   <!-- SDK-style projects do NOT auto-embed .png files like the old project system did,
        so these must stay explicit or RibbonService.LoadBitmap() will get null streams. -->
@@ -103,7 +90,6 @@
     <EmbeddedResource Include="Services\RibbonService\RCDATA_16_ONLINE_OPEN_FOLDER.png" />
     <EmbeddedResource Include="Services\RibbonService\RCDATA_32_ONLINE_OPEN_FOLDER.png" />
   </ItemGroup>
-
   <!--
     Everything else — all .cs files (InsertBlocksWindowView.xaml.cs, LiteDBService.cs,
     P6ApiService.cs, myPlugin.cs, myCommands.cs, Class1.cs, Properties/AssemblyInfo.cs, etc.)
@@ -113,5 +99,9 @@
     by the SDK's default globs (Compile for *.cs, Page for *.xaml since UseWPF=true).
     No explicit <Compile>/<Page> list is needed anymore — delete the old one.
   -->
-
+  <ItemGroup>
+    <PackageReference Include="System.ServiceModel.Http" Version="8.*" />
+    <PackageReference Include="System.ServiceModel.NetTcp" Version="8.*" />
+    <PackageReference Include="System.ServiceModel.Primitives" Version="8.*" />
+  </ItemGroup>
 </Project>

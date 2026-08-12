@@ -1,25 +1,16 @@
 ﻿// (C) Copyright 2026 by  
 //
-using System;
-using System.Threading.Tasks;
-using Autodesk.AutoCAD.Runtime;
-using Autodesk.AutoCAD.ApplicationServices;
 using Autocad_Primavera_P6_Plugin.Services;
+using Autocad_Primavera_P6_Plugin.Services.AutocadService;
 using Autocad_Primavera_P6_Plugin.Services.LiteDBService;
 using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
 using Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView;
 using Autocad_Primavera_P6_Plugin.UserInterface.UI_LinkedFoldersManagerView;
-using System.Reflection;
-using System.IO;
-
-using acadApp = Autodesk.AutoCAD.ApplicationServices.Application;
-using Autodesk.AutoCAD.EditorInput;
-using Autocad_Primavera_P6_Plugin.Services.AutocadService;
-using Autodesk.AutoCAD.DatabaseServices;
-using System.Collections.Generic;
-using System.Linq;
+using Autodesk.AutoCAD.Runtime;
+using P6SOAP_AuthenticationService;
 using System.Diagnostics;
-using Autodesk.AutoCAD.Geometry;
+using System.Threading.Tasks;
+using acadApp = Autodesk.AutoCAD.ApplicationServices.Application;
 
 [assembly: ExtensionApplication(typeof(Autocad_Primavera_P6_Plugin.MyPlugin))]
 
@@ -81,49 +72,21 @@ namespace Autocad_Primavera_P6_Plugin
             {
                 Debug.Print("Test Function is invoked.");
 
-                var doc = acadApp.DocumentManager.MdiActiveDocument;
+                var authClient = new AuthenticationServicePortTypeClient();
 
-                var blockRefList = MyAutocadService.GetPluginBlockImpliedSelected(doc);
-                var blockRef = blockRefList?.Count > 0 ? blockRefList.Last() : null;
-                if (blockRef == null) { return; };
+                //var login = new Login
+                //{
+                //    UserName = "admin",
+                //    Password = "Uvpce2006"
+                //};
 
-                BlockReference freshRef;
+                //var loginResponse = await authClient.LoginAsync(login);
 
-                using (doc.LockDocument())
-                using (var tr = doc.Database.TransactionManager.StartTransaction())
-                {
-                    freshRef = (BlockReference)tr.GetObject(blockRef.ObjectId, OpenMode.ForRead);
+                //Debug.Print(loginResponse.ToString());
 
-                    var pluginBlockRef = new PlugInBlockReference(this, doc, freshRef, tr);
-                    await pluginBlockRef.AsyncInit();
+                var ReadDatabaseInstancesResponse = await authClient.ReadDatabaseInstancesAsync(new ReadDatabaseInstancesRequest());
 
-                    // Props
-                    var v1 = pluginBlockRef.InitState;
-                    var v2 = pluginBlockRef.LoadWarnings;
-
-                    var v3 = pluginBlockRef.Get_BlockPosition();
-                    if (v3.HasValue) { var v4 = pluginBlockRef.Set_BlockPosition(v3.Value, out _); };
-
-                    var v5 = pluginBlockRef.Get_InfoPosition();
-                    if (v5.HasValue) { var v6 = pluginBlockRef.Set_InfoPosition(v5.Value, out _, tr); };
-
-                    var bdryActCode = await pluginBlockRef.Get_BdryActCode();
-                    if (bdryActCode != null) { pluginBlockRef.Set_BdryActCode(bdryActCode, out _, tr); };
-
-                    var elementIdCode = await pluginBlockRef.Get_ElementIdCode();
-                    if (elementIdCode != null) { 
-                        pluginBlockRef.Set_ElementIdCode(elementIdCode, out _, tr); 
-                        pluginBlockRef.Set_ElementId(out _, tr: tr);
-                    };
-
-                    var v7 = pluginBlockRef.Set_BlockType(out _, tr: tr);
-
-                    tr.Commit(); // or Abort() since you only read
-                };
-
-                var _ed = doc.Editor;
-                _ed.SetImpliedSelection(new ObjectId[0]);
-                _ed.SetImpliedSelection(new ObjectId[] { blockRef.ObjectId });
+                Debug.Print(ReadDatabaseInstancesResponse.ToString());
 
                 Debug.Print("Test Function is Completed without error.");
             }

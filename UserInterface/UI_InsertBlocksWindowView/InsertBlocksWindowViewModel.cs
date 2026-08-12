@@ -24,7 +24,6 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         public bool IsInserting { get; set; }
         public string InsertButtonText { get; private set; } = "Insert Block";
         public string StatusMessage { get; set; }
-        public ICommand CancelCommand { get; private set; }
 
         public event Action<bool?> RequestClose;
 
@@ -51,8 +50,6 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             await ACadBlockVM.Async_Init();
 
             StatusMessage = string.Empty;
-
-            CancelCommand = new RelayCommand(Cancel);
         }
 
         [RelayCommand]
@@ -204,6 +201,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             }
         }
 
+        [RelayCommand]
         private void Cancel(object parameter)
         {
             _isCancelled = true;

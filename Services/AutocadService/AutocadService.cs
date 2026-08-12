@@ -1,17 +1,9 @@
-﻿using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
-using Autodesk.AutoCAD.DatabaseServices;
+﻿using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Text.RegularExpressions;
-
-
-using AcadAppServ = Autodesk.AutoCAD.ApplicationServices;
-using System.Xml;
 using System.Diagnostics;
+using AcadAppServ = Autodesk.AutoCAD.ApplicationServices;
 
 namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
 {
@@ -48,8 +40,10 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
 
                             var attDefDict = PluginBlockRefAutocadHelpers.Get_AttRefDict(blockRef, tr);
 
-                            if (blockRef == null) { continue; };
-                            if (!PluginBlockRefAutocadHelpers.IsValidPluginBlock(attDefDict)){ continue;  };
+                            if (blockRef == null) { continue; }
+                            ;
+                            if (!PluginBlockRefAutocadHelpers.IsValidPluginBlock(attDefDict)) { continue; }
+                            ;
 
                             _blockRefs.Add(blockRef);
 
