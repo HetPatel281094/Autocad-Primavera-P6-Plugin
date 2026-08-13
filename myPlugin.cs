@@ -75,41 +75,17 @@ namespace Autocad_Primavera_P6_Plugin
             {
                 Debug.Print("Test Function is invoked.");
 
-                var DBInstanceName = "PMDB";
+                var soapClient = MyP6ApiService.SOAPClient;
 
-
-                var AuthClient = new AuthenticationServicePortTypeClient();
-                P6SessionCookieManager.Instance.Bind(AuthClient);
-
-                var ReadDBInstancesReq = new ReadDatabaseInstancesRequest();
-                ReadDBInstancesReq.ReadDatabaseInstances = "?";
-
-                var ReadDBInstancesRes = await AuthClient.ReadDatabaseInstancesAsync(ReadDBInstancesReq);
-
-                var DBInstance = ReadDBInstancesRes.ReadDatabaseInstancesResponse1.First(inst => inst.DatabaseName == DBInstanceName);
-
-                var Login = new Login() { UserName = "admin", Password = "Uvpce2006", DatabaseInstanceId = DBInstance.DatabaseInstanceId, DatabaseInstanceIdSpecified = true };
-
-                var LoginReq = new LoginRequest(Login);
-
-                var LoginRes = await AuthClient.LoginAsync(LoginReq);
-
-                var LoginResString = LoginRes.LoginResponse.Return;
-
-                Debug.Print(LoginResString.ToString());
-
-
-                var ActivityServiceClient = new ActivityPortTypeClient();
-                var cookieManager = ActivityServiceClient.InnerChannel.GetProperty<IHttpCookieContainerManager>();
-                P6SessionCookieManager.Instance.Bind(ActivityServiceClient);
-
-                var ReadActivities = new ReadActivities();
-                ReadActivities.Filter = "ProjectId = 'MASTER'";
-                ReadActivities.Field = [ ActivityFieldType.ObjectId, ActivityFieldType.Name, ActivityFieldType.ProjectId, ActivityFieldType.ProjectName, ActivityFieldType.WBSPath];
-
-                var ReadActivitiesReq = new ReadActivitiesRequest(ReadActivities);
-
-                var ReadActivitiesRes = await ActivityServiceClient.ReadActivitiesAsync(ReadActivitiesReq);
+                var ReadActivitiesRes = await soapClient.ActivityClient.ReadActivitiesAsync(
+                    new ReadActivitiesRequest(
+                        new ReadActivities
+                        {
+                            Filter = "ProjectId = 'MASTER'",
+                            Field = [ActivityFieldType.ObjectId, ActivityFieldType.Name, ActivityFieldType.ProjectId, ActivityFieldType.ProjectName, ActivityFieldType.WBSPath]
+                        }
+                    )
+                );
 
                 var activities = ReadActivitiesRes.ReadActivitiesResponse1;
 
