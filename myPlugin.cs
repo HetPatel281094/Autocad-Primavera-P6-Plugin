@@ -77,22 +77,21 @@ namespace Autocad_Primavera_P6_Plugin
 
                 var soapClient = MyP6ApiService.SOAPClient;
 
-                var ReadActivitiesRes = await soapClient.ActivityClient.ReadActivitiesAsync(
-                    new ReadActivitiesRequest(
-                        new ReadActivities
-                        {
-                            Filter = "ProjectId = 'MASTER'",
-                            Field = [ActivityFieldType.ObjectId, ActivityFieldType.Name, ActivityFieldType.ProjectId, ActivityFieldType.ProjectName, ActivityFieldType.WBSPath]
-                        }
-                    )
-                );
+                var sourceActivityObjId = 113976;
 
-                var activities = ReadActivitiesRes.ReadActivitiesResponse1;
+                var destinationWBSObjId = 27821;
 
-                foreach (var item in activities)
+                var copyActObj = new CopyActivity
                 {
-                    Debug.Print($"WBS Path : {item.WBSPath} - Act Name : {item.Name}");
+                    ObjectId = sourceActivityObjId,
+                    TargetWBSObjectId = destinationWBSObjId,
+                    TargetWBSObjectIdSpecified = true,
+                    CopyResourceAndRoleAssignmentsSpecified = true
                 };
+
+                var CopyActivityRes = await soapClient.ActivityClient.CopyActivityAsync(
+                    new CopyActivityRequest(copyActObj)
+                );
 
                 Debug.Print("Test Function is Completed without error.");
             }
