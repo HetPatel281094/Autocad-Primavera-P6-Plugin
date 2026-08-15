@@ -1,15 +1,11 @@
 using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
 using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing.Text;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 using AcadAppServ = Autodesk.AutoCAD.ApplicationServices;
 
 namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
@@ -112,7 +108,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
         public AttributeReference Attribute_Check_String;
         public AttributeReference ElementId;
         public AttributeReference BlockType;
-        public DynamicBlockReferenceProperty Update_Status; 
+        public DynamicBlockReferenceProperty Update_Status;
         public DynamicBlockReferenceProperty Moveinfo_X;
         public DynamicBlockReferenceProperty Moveinfo_Y;
         public Dictionary<string, string> PropSlotDict = new(StringComparer.OrdinalIgnoreCase);
@@ -171,7 +167,8 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
         {
             bool needsTransaction = refInitState == InitStateEnum.BTRInitialized || refInitState == InitStateEnum.BlockRefInitialized;
 
-            if (needsTransaction && tr == null){ throw new ArgumentNullException(nameof(tr)); };
+            if (needsTransaction && tr == null) { throw new ArgumentNullException(nameof(tr)); }
+            ;
 
             BlockAttProps = new AttProps();
 
@@ -195,7 +192,8 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                 default:
                     Debug.Print("Init_PlugInBlockReference called with unhandled InitState: " + refInitState);
                     return;
-            };
+            }
+            ;
         }
 
         private void LoadDefaultSlots()
@@ -219,7 +217,8 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                         ValueAttRefTag = valueTag
                     };
                 }
-            };
+            }
+            ;
 
             Reset_PropSlotDict();
 
@@ -239,9 +238,11 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                 if (attDef != null && !String.IsNullOrWhiteSpace(attDefTag) && !definitions.ContainsKey(attDefTag))
                 {
                     definitions.Add(attDef.Tag, attDef);
-                };
+                }
+                ;
 
-            };
+            }
+            ;
 
             foreach (var key in SlotsDict.Keys.ToList())
             {
@@ -249,7 +250,8 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                 string nameTag = SlotNameTag(slotNumber);
                 string valueTag = SlotValueTag(slotNumber);
 
-                if (!definitions.TryGetValue(nameTag, out AttributeDefinition NameAttDef) || !definitions.ContainsKey(valueTag)) { continue; };
+                if (!definitions.TryGetValue(nameTag, out AttributeDefinition NameAttDef) || !definitions.ContainsKey(valueTag)) { continue; }
+                ;
 
                 SlotsDict[key] = new Slot()
                 {
@@ -257,7 +259,8 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                     NameAttRefTag = nameTag,
                     ValueAttRefTag = valueTag
                 };
-            };
+            }
+            ;
 
             Reset_PropSlotDict();
 
@@ -286,7 +289,8 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                 var nameAttribute = PluginBlockRefAutocadHelpers.TryGetValue_AttRefDict(attDefDict, nameTag);
                 var valueAttribute = PluginBlockRefAutocadHelpers.TryGetValue_AttRefDict(attDefDict, valueTag);
 
-                if (nameAttribute == null || valueAttribute == null || String.IsNullOrWhiteSpace(nameAttribute.TextString)) { continue; };
+                if (nameAttribute == null || valueAttribute == null || String.IsNullOrWhiteSpace(nameAttribute.TextString)) { continue; }
+                ;
 
                 SlotsDict[key] = new Slot()
                 {
@@ -298,7 +302,8 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                     ValueAttRef = valueAttribute
                 };
 
-            };
+            }
+            ;
 
             Reset_PropSlotDict();
 
@@ -325,7 +330,8 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                 default:
                     Debug.Print("AsyncInit called with unhandled InitState: " + InitState);
                     return;
-            };
+            }
+            ;
 
         }
 
@@ -417,13 +423,15 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
 
         public Point3d? Get_BlockPosition()
         {
-            if(InitState == InitStateEnum.BlockRefInitialized)
+            if (InitState == InitStateEnum.BlockRefInitialized)
             {
                 return AcadBlockRef.Position;
-            } else
+            }
+            else
             {
                 return PluginBlockPosition;
-            };
+            }
+            ;
         }
 
         public bool Set_BlockPosition(Point3d newPosition, out Point3d? resultPosition, Transaction tr = null)
@@ -446,7 +454,8 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                     return true;
 
                 case InitStateEnum.BlockRefInitialized:
-                    if (AcadBlockRef == null || tr == null) { return false; };
+                    if (AcadBlockRef == null || tr == null) { return false; }
+                    ;
 
                     var blockRef = (BlockReference)tr.GetObject(AcadBlockRef.ObjectId, OpenMode.ForWrite);
 
@@ -460,7 +469,8 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
 
                 default:
                     return false;
-            };
+            }
+            ;
 
         }
 
@@ -469,7 +479,8 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
             if (InitState != InitStateEnum.BlockRefInitialized)
             {
                 return InfoPosition;
-            };
+            }
+            ;
 
             if (AcadBlockRef == null ||
                 BlockAttProps?.Moveinfo_X == null ||
@@ -478,7 +489,8 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                 BlockAttProps.Moveinfo_Y.Value == null)
             {
                 return null;
-            };
+            }
+            ;
 
             try
             {
@@ -494,7 +506,8 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
             catch (Exception)
             {
                 return null;
-            };
+            }
+            ;
         }
 
         public bool Set_InfoPosition(Point3d newPosition, out Point3d? resultPosition, Transaction tr = null)
@@ -513,7 +526,8 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                     return true;
 
                 case InitStateEnum.BlockRefInitialized:
-                    if (AcadBlockRef == null || tr == null) { return false; };
+                    if (AcadBlockRef == null || tr == null) { return false; }
+                    ;
 
                     var blockRef = (BlockReference)tr.GetObject(AcadBlockRef.ObjectId, OpenMode.ForWrite);
                     var dyBlockRefPropDict = PluginBlockRefAutocadHelpers.Get_DyBlockRefPropDict(blockRef);
@@ -521,7 +535,8 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                     var moveInfoX = PluginBlockRefAutocadHelpers.TryGetValue_DyBlockRefPropDict(dyBlockRefPropDict, "MoveInfo X");
                     var moveInfoY = PluginBlockRefAutocadHelpers.TryGetValue_DyBlockRefPropDict(dyBlockRefPropDict, "MoveInfo Y");
 
-                    if (moveInfoX == null || moveInfoY == null || moveInfoX.ReadOnly || moveInfoY.ReadOnly) { return false; };
+                    if (moveInfoX == null || moveInfoY == null || moveInfoX.ReadOnly || moveInfoY.ReadOnly) { return false; }
+                    ;
 
                     Point3d blockPosition = blockRef.Position;
 
@@ -533,7 +548,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                     BlockAttProps.Moveinfo_X = moveInfoX;
                     BlockAttProps.Moveinfo_Y = moveInfoY;
 
-                    InfoPosition = new Point3d( newPosition.X, newPosition.Y, blockPosition.Z);
+                    InfoPosition = new Point3d(newPosition.X, newPosition.Y, blockPosition.Z);
 
                     resultPosition = InfoPosition;
                     return true;
@@ -569,42 +584,48 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                 {
                     BlockAttProps.PropSlotDict.Add(propertyName, entry.Key);
                 }
-            };
+            }
+            ;
 
         }
 
         private void SetBlockTypeFromStatus(Transaction tr)
         {
-            if (tr == null || BlockAttProps.BlockType == null || BlockAttProps.Update_Status == null) { return; };
+            if (tr == null || BlockAttProps.BlockType == null || BlockAttProps.Update_Status == null) { return; }
+            ;
 
             string status = Convert.ToString(BlockAttProps.Update_Status.Value);
 
-            if (string.Equals(BlockAttProps.BlockType.TextString, status, StringComparison.Ordinal)) { return; };
+            if (string.Equals(BlockAttProps.BlockType.TextString, status, StringComparison.Ordinal)) { return; }
+            ;
 
             var blockType = (AttributeReference)tr.GetObject(BlockAttProps.BlockType.ObjectId, OpenMode.ForWrite);
             blockType.TextString = status ?? string.Empty;
             BlockAttProps.BlockType = blockType;
         }
 
-        public async Task<ActivityCode> Get_BdryActCode() 
+        public async Task<ActivityCode> Get_BdryActCode()
         {
             var boundaryCodeIdString = Get_SlotProperty("BOUNDARY_CODE_ID");
             var isBoundaryCodeId = int.TryParse(boundaryCodeIdString, out int boundaryCodeId);
 
-            if (!isBoundaryCodeId) { return null; };
+            if (!isBoundaryCodeId) { return null; }
+            ;
 
-            if (BdryActCode != null && BdryActCode.ObjectId == boundaryCodeId) { return BdryActCode; };
+            if (BdryActCode != null && BdryActCode.ObjectId == boundaryCodeId) { return BdryActCode; }
+            ;
 
             var p6ApiService = PluginInstance.MyP6ApiService;
             var actCode = await p6ApiService.GetP6ActivityCodeById(boundaryCodeId);
 
-            if (actCode == null) { return null; };
+            if (actCode == null) { return null; }
+            ;
 
             BdryActCode = actCode;
             return actCode;
         }
 
-        public bool Set_BdryActCode(ActivityCode actCode, out ActivityCode result, Transaction tr = null) 
+        public bool Set_BdryActCode(ActivityCode actCode, out ActivityCode result, Transaction tr = null)
         {
             result = null;
 
@@ -616,7 +637,8 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
             var valueResult = Set_SlotProperty("BOUNDARY_CODE_VALUE", boundaryCodeValue, out _, tr);
             var pathResult = Set_SlotProperty("BOUNDARY_CODE_PATH", boundaryCodePath, out _, tr);
 
-            if (!idResult || !valueResult || !pathResult) { return false; };
+            if (!idResult || !valueResult || !pathResult) { return false; }
+            ;
 
             BdryActCode = actCode;
 
@@ -629,17 +651,20 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
             var elementIdCodeIdString = Get_SlotProperty("ELEMENT_ID_CODE_ID");
             var isElementIdCodeId = int.TryParse(elementIdCodeIdString, out int elementIdCodeId);
 
-            if(!isElementIdCodeId) { return null; };
+            if (!isElementIdCodeId) { return null; }
+            ;
 
-            if(ElementIdCode != null  && ElementIdCode.ObjectId == elementIdCodeId) { return ElementIdCode; };
+            if (ElementIdCode != null && ElementIdCode.ObjectId == elementIdCodeId) { return ElementIdCode; }
+            ;
 
             var p6ApiService = PluginInstance.MyP6ApiService;
             var actCode = await p6ApiService.GetP6ActivityCodeById(elementIdCodeId);
 
-            if(actCode == null) { return null; };
+            if (actCode == null) { return null; }
+            ;
 
             ElementIdCode = actCode;
-            return actCode; 
+            return actCode;
         }
 
         public bool Set_ElementIdCode(ActivityCode actCode, out ActivityCode result, Transaction tr = null)
@@ -654,12 +679,13 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
             var valueResult = Set_SlotProperty("ELEMENT_ID_CODE_VALUE", elementIdCodeValue, out _, tr);
             var pathResult = Set_SlotProperty("ELEMENT_ID_CODE_PATH", elementIdCodePath, out _, tr);
 
-            if(!idResult || !valueResult || !pathResult) { return false; };
+            if (!idResult || !valueResult || !pathResult) { return false; }
+            ;
 
             ElementIdCode = actCode;
 
-            result = actCode; 
-            return true; 
+            result = actCode;
+            return true;
         }
 
         public string Get_SlotProperty(string propName)
@@ -667,11 +693,13 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
             var propSlotDict = BlockAttProps.PropSlotDict;
             var slotFound = propSlotDict.TryGetValue(propName, out string slotKey);
 
-            if(!slotFound || slotKey == null || String.IsNullOrWhiteSpace(slotKey)) { return null; };
+            if (!slotFound || slotKey == null || String.IsNullOrWhiteSpace(slotKey)) { return null; }
+            ;
 
             var slot = SlotsDict[slotKey];
 
-            if (slot == null) { return null; };
+            if (slot == null) { return null; }
+            ;
 
             var SlotPropertyValueString = InitState switch
             {
@@ -689,7 +717,8 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
         {
             result = null;
 
-            if (String.IsNullOrWhiteSpace(propName)) { return false; };
+            if (String.IsNullOrWhiteSpace(propName)) { return false; }
+            ;
 
             var propSlotDict = BlockAttProps.PropSlotDict;
             var slotFound = propSlotDict.TryGetValue(propName, out string slotKey);
@@ -700,7 +729,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
 
             if (slot == null) { return false; }
 
-            switch(InitState)
+            switch (InitState)
             {
                 case InitStateEnum.NotInitialized:
                     return false;
@@ -716,7 +745,8 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                     return true;
 
                 case InitStateEnum.BlockRefInitialized:
-                    if (tr == null) { Debug.Print("Transaction is null"); return false; };
+                    if (tr == null) { Debug.Print("Transaction is null"); return false; }
+                    ;
 
                     var valueAttRef = (AttributeReference)tr.GetObject(slot.ValueAttRef.ObjectId, OpenMode.ForWrite);
                     valueAttRef.TextString = value;
@@ -727,7 +757,8 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
 
                 default:
                     return false;
-            };
+            }
+            ;
 
         }
 
@@ -819,7 +850,8 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
 
                 default:
                     return false;
-            };
+            }
+            ;
 
             static string Get_ElementIdString(string pathString)
             {
@@ -832,8 +864,10 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                 catch
                 {
                     return String.Empty;
-                };
-            };
+                }
+                ;
+            }
+            ;
 
         }
 
@@ -856,21 +890,22 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
             {
                 case InitStateEnum.BlockRefInitialized:
                     var updateStatus = BlockAttProps.Update_Status;
-                    
-                    if (value != null || !string.IsNullOrWhiteSpace(value)) 
+
+                    if (value != null || !string.IsNullOrWhiteSpace(value))
                     {
                         var writableAttribute = (AttributeReference)tr.GetObject(BlockAttProps.BlockType.ObjectId, OpenMode.ForWrite);
                         writableAttribute.TextString = updateStatus.Value?.ToString();
                         result = updateStatus.Value?.ToString();
 
                         return true;
-                    } 
+                    }
                     else
                     {
                         var allowedStatuses = updateStatus.GetAllowedValues();
 
                         var isAllowedValue = allowedStatuses.Any(v => string.Equals(v.ToString(), value, StringComparison.OrdinalIgnoreCase));
-                        if (!isAllowedValue) { return false; };
+                        if (!isAllowedValue) { return false; }
+                        ;
 
                         var isSet_Update_Status = Set_Update_Status(value, out object Set_Update_Status_Result, tr);
 
@@ -879,11 +914,13 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                         result = Set_Update_Status_Result?.ToString();
 
                         return true;
-                    };
+                    }
+                    ;
 
                 default:
                     return false;
-            };
+            }
+            ;
 
         }
 
@@ -907,16 +944,21 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
 
                     var replaceAttRefDict = new Dictionary<string, AttributeReference>();
 
-                    if (BlockAttProps.Attribute_Check_String != null) { replaceAttRefDict.Add(BlockAttProps.Attribute_Check_String.Tag, BlockAttProps.Attribute_Check_String); };
-                    if (BlockAttProps.ElementId != null) { replaceAttRefDict.Add(BlockAttProps.ElementId.Tag, BlockAttProps.ElementId); };
-                    if (BlockAttProps.BlockType != null) { replaceAttRefDict.Add(BlockAttProps.BlockType.Tag, BlockAttProps.BlockType); };
+                    if (BlockAttProps.Attribute_Check_String != null) { replaceAttRefDict.Add(BlockAttProps.Attribute_Check_String.Tag, BlockAttProps.Attribute_Check_String); }
+                    ;
+                    if (BlockAttProps.ElementId != null) { replaceAttRefDict.Add(BlockAttProps.ElementId.Tag, BlockAttProps.ElementId); }
+                    ;
+                    if (BlockAttProps.BlockType != null) { replaceAttRefDict.Add(BlockAttProps.BlockType.Tag, BlockAttProps.BlockType); }
+                    ;
 
                     foreach (var slotKeyVal in SlotsDict)
                     {
                         var slot = slotKeyVal.Value;
 
-                        if (slot == null) { continue; };
-                        if ((slot.NameAttRef == null || String.IsNullOrWhiteSpace(slot.NameAttRef.TextString)) && String.IsNullOrWhiteSpace(slot.SlotPropName)) { continue; };
+                        if (slot == null) { continue; }
+                        ;
+                        if ((slot.NameAttRef == null || String.IsNullOrWhiteSpace(slot.NameAttRef.TextString)) && String.IsNullOrWhiteSpace(slot.SlotPropName)) { continue; }
+                        ;
                         if ((slot.ValueAttRef == null || String.IsNullOrWhiteSpace(slot.ValueAttRef.TextString)) && String.IsNullOrWhiteSpace(slot.SlotPropValue)) { continue; }
 
                         if (slot.NameAttRef != null)
@@ -926,7 +968,8 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                         else
                         {
                             replaceAttRefDict.Add(slot.NameAttRefTag, new AttributeReference() { Tag = slot.NameAttRefTag, TextString = slot.SlotPropName });
-                        };
+                        }
+                        ;
 
                         if (slot.ValueAttRef != null)
                         {
@@ -935,9 +978,11 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                         else
                         {
                             replaceAttRefDict.Add(slot.ValueAttRefTag, new AttributeReference() { Tag = slot.ValueAttRefTag, TextString = slot.SlotPropValue });
-                        };
+                        }
+                        ;
 
-                    };
+                    }
+                    ;
 
 
                     foreach (var BTRattDefKeyVal in BTRattDefDict)
@@ -947,10 +992,12 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
 
                         var isValueUpdate = replaceAttRefDict.TryGetValue(BTRattDefKeyVal.Key, out var replaceAttDef);
 
-                        if (isValueUpdate) { newAttRef.TextString = replaceAttDef.TextString; };
+                        if (isValueUpdate) { newAttRef.TextString = replaceAttDef.TextString; }
+                        ;
 
                         newBlockRef.AttributeCollection.AppendAttribute(newAttRef);
-                    };
+                    }
+                    ;
 
                     var newPluginBlockRef = new PlugInBlockReference(PluginInstance, AcadDoc, newBlockRef, tr);
 
@@ -965,7 +1012,8 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                 default:
                     return null;
 
-            };
+            }
+            ;
 
         }
 

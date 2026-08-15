@@ -1,19 +1,31 @@
 using Autocad_Primavera_P6_Plugin.Services.AutocadService;
+using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
+using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Input;
+using AcadApp = Autodesk.AutoCAD.ApplicationServices.Application;
+using AcadDoc = Autodesk.AutoCAD.ApplicationServices.Document;
 
 namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 {
     public partial class InsertBlocksWindowViewModel : ObservableObject
     {
-        private InsertBlocksWindowModel _model;
-        private bool _isCancelled;
+        private readonly MyPlugin _pluginInstance;
+        private P6ApiService _p6ApiService => _pluginInstance.MyP6ApiService;
+        public AutocadService _autocadService => _pluginInstance.MyAutocadService;
+        public AcadDoc _currentAcadDoc;
+        public Project _currentProject;
+        public PlugInBlockReference _selectedPluginBlockRef;
+
+
+        private bool _isInsertCancelled;
 
         public BoundaryActivityCodeSectionViewModel BoundaryCode { get; private set; }
         public ElementIdCodeSectionViewModel ElementIdCode { get; private set; }
@@ -29,24 +41,75 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
         public InsertBlocksWindowViewModel(MyPlugin pluginInstance)
         {
-            _model = new InsertBlocksWindowModel { PluginInstance = pluginInstance };
+            _pluginInstance = pluginInstance;
         }
 
         public async Task Async_Init()
         {
-            await _model.Async_Init();
+            // Set Current Drawing
+            _currentAcadDoc = AcadApp.DocumentManager.MdiActiveDocument;
 
-            var preSelectBoundaryCode = _model.PreselectedBlock != null ? await _model.PreselectedBlock?.Get_BdryActCode() : null;
-            var preSelectElementIdCode = _model.PreselectedBlock != null ? await _model.PreselectedBlock?.Get_ElementIdCode() : null;
-            var preselectedAcadBlock = _model.PreselectedBlock != null ? _model.PreselectedBlock.AcadBlockRef : null;
 
-            BoundaryCode = new BoundaryActivityCodeSectionViewModel(_model.PluginInstance, _model.CurrentProject, preSelectBoundaryCode);
+            // Set Project of the Drawing
+            _currentProject = await _p6ApiService.GetP6ProjectFromDWGFile(_currentAcadDoc);
+
+
+            // Get Selected Blockreferences
+            var editor = _currentAcadDoc.Editor;
+            var database = _currentAcadDoc.Database;
+            var impliedSelected = editor.SelectImplied();
+            var impliedSelectedObjects = impliedSelected.Status == PromptStatus.OK ? impliedSelected.Value : null;
+            List<BlockReference> impliedSelectedBlockRefs = new();
+
+            if (impliedSelectedObjects != null || impliedSelectedObjects.Count > 0)
+            {
+                var selectedBlockRefs = impliedSelectedObjects
+                    .Cast<SelectedObject>()
+                    .Where(obj => obj != null && obj.ObjectId.ObjectClass.DxfName == "INSERT");
+
+                if (selectedBlockRefs != null && selectedBlockRefs.Count() > 0)
+                {
+                    using (Transaction tr = database.TransactionManager.StartTransaction())
+                    {
+                        impliedSelectedBlockRefs = selectedBlockRefs
+                            .Select(
+                                obj => (BlockReference)tr.GetObject(obj.ObjectId, OpenMode.ForRead)
+                            )
+                            .Where(
+                                blockRef => PluginBlockRefAutocadHelpers.IsValidPluginBlock(
+                                    PluginBlockRefAutocadHelpers.Get_AttRefDict(blockRef, tr)
+                                )
+                            )
+                            .ToList();
+                    }
+                }
+            }
+
+            if (impliedSelectedBlockRefs.Count > 0)
+            {
+                using (var tr = database.TransactionManager.StartTransaction())
+                {
+                    var lastSelectedBlockRef = impliedSelectedBlockRefs.Last();
+                    _selectedPluginBlockRef = new PlugInBlockReference(_pluginInstance, _currentAcadDoc, lastSelectedBlockRef, tr);
+                }
+            }
+            else
+            {
+                editor.WriteMessage("\n No Plugin Block References were Selected. \n");
+            }
+
+
+            var preSelectBoundaryCode = _selectedPluginBlockRef != null ? await _selectedPluginBlockRef?.Get_BdryActCode() : null;
+            var preSelectElementIdCode = _selectedPluginBlockRef != null ? await _selectedPluginBlockRef?.Get_ElementIdCode() : null;
+            var preselectedAcadBlock = _selectedPluginBlockRef != null ? _selectedPluginBlockRef.AcadBlockRef : null;
+
+            BoundaryCode = new BoundaryActivityCodeSectionViewModel(_pluginInstance, _currentProject, preSelectBoundaryCode);
             await BoundaryCode.Async_Init();
 
-            ElementIdCode = new ElementIdCodeSectionViewModel(_model.PluginInstance, _model.CurrentProject, preSelectElementIdCode);
+            ElementIdCode = new ElementIdCodeSectionViewModel(_pluginInstance, _currentProject, preSelectElementIdCode);
             await ElementIdCode.Async_Init();
 
-            ACadBlockVM = new ACadBlockSectionViewModel(_model.ActAcadDoc, preselectedAcadBlock);
+            ACadBlockVM = new ACadBlockSectionViewModel(_currentAcadDoc, preselectedAcadBlock);
             await ACadBlockVM.Async_Init();
 
             StatusMessage = string.Empty;
@@ -56,10 +119,10 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         private async Task InsertBlockAsync(object parameter)
         {
             var owner = parameter as Window;
-            var doc = _model.ActAcadDoc;
+            var doc = _currentAcadDoc;
 
             IsInserting = true;
-            _isCancelled = false;
+            _isInsertCancelled = false;
 
             ElementIdCode.IsAutoGenerateLoop = true;
 
@@ -93,11 +156,11 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
                 do
                 {
-                    if (_isCancelled) { break; }
+                    if (_isInsertCancelled) { break; }
                     ;
 
                     PromptPointResult pointResult = ed.GetPoint("\nPick insertion point: ");
-                    if (pointResult.Status != PromptStatus.OK || _isCancelled) { break; }
+                    if (pointResult.Status != PromptStatus.OK || _isInsertCancelled) { break; }
                     ;
 
                     // Must insert block or fail with error prompt.
@@ -129,7 +192,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                     using (doc.LockDocument())
                     using (var tr = doc.TransactionManager.StartTransaction())
                     {
-                        var pluginBlockRef = new PlugInBlockReference(_model.PluginInstance, doc, resolvedBTRRecord, tr);
+                        var pluginBlockRef = new PlugInBlockReference(_pluginInstance, doc, resolvedBTRRecord, tr);
 
                         var SetPositionResult = pluginBlockRef.Set_BlockPosition(pointResult.Value, out _);
 
@@ -183,7 +246,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                         " | ItemId: " + ElementIdCode.SelectedCodeValue + "\n");
 
                 }
-                while (ContinuousInsert && !_isCancelled);
+                while (ContinuousInsert && !_isInsertCancelled);
             }
             catch (Exception ex)
             {
@@ -204,7 +267,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         [RelayCommand]
         private void Cancel(object parameter)
         {
-            _isCancelled = true;
+            _isInsertCancelled = true;
             RequestClose?.Invoke(false);
         }
 

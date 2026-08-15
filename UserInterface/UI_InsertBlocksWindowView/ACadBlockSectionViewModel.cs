@@ -15,6 +15,17 @@ using System.Windows.Input;
 
 namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 {
+    public sealed class PredefinedBlockInfo
+    {
+        public string Name { get; set; }
+        public string FilePath { get; set; }
+
+        public override string ToString()
+        {
+            return Name;
+        }
+    }
+
     public enum BlockTypeModeEnum
     {
         Predefined,

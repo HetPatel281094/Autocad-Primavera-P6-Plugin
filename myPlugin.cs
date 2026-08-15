@@ -1,7 +1,6 @@
 ﻿// (C) Copyright 2026 by  
 //
 using Autocad_Primavera_P6_Plugin.ServiceReference.ActivityService;
-using Autocad_Primavera_P6_Plugin.ServiceReference.AuthenticationService;
 using Autocad_Primavera_P6_Plugin.Services;
 using Autocad_Primavera_P6_Plugin.Services.AutocadService;
 using Autocad_Primavera_P6_Plugin.Services.LiteDBService;
@@ -10,10 +9,8 @@ using Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView;
 using Autocad_Primavera_P6_Plugin.UserInterface.UI_LinkedFoldersManagerView;
 using Autodesk.AutoCAD.Runtime;
 using System.Diagnostics;
-using System.Linq;
-using System.ServiceModel.Channels;
 using System.Threading.Tasks;
-using acadApp = Autodesk.AutoCAD.ApplicationServices.Application;
+using AcadApp = Autodesk.AutoCAD.ApplicationServices.Application;
 
 [assembly: ExtensionApplication(typeof(Autocad_Primavera_P6_Plugin.MyPlugin))]
 
@@ -54,19 +51,19 @@ namespace Autocad_Primavera_P6_Plugin
             await _vm.Async_Init();
 
             var _view = new InsertBlocksWindowView(_vm);
-            acadApp.ShowModalWindow(_view);
+            AcadApp.ShowModalWindow(_view);
         }
 
         public void OpenLinkedFoldersManager()
         {
             var view = new LinkedFoldersManagerView(this);
-            acadApp.ShowModalWindow(view);
+            AcadApp.ShowModalWindow(view);
         }
 
         public void OpenP6ConnectionManager()
         {
             var view = new UserInterface.UI_P6ConnectionManagerView.P6ConnectionManagerView(this);
-            acadApp.ShowModalWindow(view);
+            AcadApp.ShowModalWindow(view);
         }
 
         public async void OpenTestButtonFunction()

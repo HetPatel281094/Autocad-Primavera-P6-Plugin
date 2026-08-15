@@ -1,5 +1,6 @@
 using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
 using Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView.ActivityCodePicker;
+using Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView.CopyActivityOptionsPicker;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
@@ -22,7 +23,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
     public partial class ElementIdCodeSectionViewModel : ObservableObject
     {
         private readonly MyPlugin _pluginInstance;
-        private P6ApiService P6ApiService => _pluginInstance.MyP6ApiService;
+        private P6ApiService _p6ApiService => _pluginInstance.MyP6ApiService;
 
         private Project Project;
 
@@ -92,6 +93,18 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         [ObservableProperty]
         public string _info = "-- Info --";
 
+        [RelayCommand]
+        public async Task ManageCopyActivitiesOptionsAsync(object parameter)
+        {
+            var _vm = new CopyActivityOptionsPickerViewModel();
+            var _view = new CopyActivityOptionsPickerView(_vm);
+
+            var owner = parameter as Window;
+            if (owner != null) { _view.Owner = owner; };
+
+            bool? result = _view.ShowDialog();
+        }
+
         public ElementIdCodeSectionViewModel(MyPlugin pluginInstance, Project project = null, ActivityCode preSelectedCode = null)
         {
             _pluginInstance = pluginInstance ?? throw new ArgumentNullException(nameof(pluginInstance));
@@ -101,7 +114,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
         public async Task Async_Init()
         {
-            ElementIdActivityCodeType = await P6ApiService.GetP6ActivityCodeTypeOfProject(Project, ActivityCodeTypeName);
+            ElementIdActivityCodeType = await _p6ApiService.GetP6ActivityCodeTypeOfProject(Project, ActivityCodeTypeName);
 
             var pickerVM = new ActivityCodePickerViewModel(
                 new ActivityCodePickerModel(_pluginInstance, IsAutoGenerate, ElementIdActivityCodeType)
@@ -134,8 +147,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             ;
 
             bool? result = activityCodePicker.ShowDialog();
-            if (result != true || activityCodePicker.ViewModel == null || activityCodePicker.ViewModel.SelectedNode == null) { return false; }
-            ;
+            if (result != true || activityCodePicker.ViewModel == null || activityCodePicker.ViewModel.SelectedNode == null) { return false; };
 
             SelectedActivityCodeNode = activityCodePicker.ViewModel.SelectedNode;
             SelectedActivityCode = SelectedActivityCodeNode.Code;
@@ -253,7 +265,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                     Description = description
                 };
 
-            var result = await P6ApiService.Client.CreateActivityCodeAsync(null, new[] { newCode });
+            var result = await _p6ApiService.Client.CreateActivityCodeAsync(null, new[] { newCode });
 
             string objectId = result.FirstOrDefault();
 

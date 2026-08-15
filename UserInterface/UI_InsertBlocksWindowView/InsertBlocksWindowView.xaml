@@ -274,6 +274,11 @@
                     </Grid>
 
                     <DockPanel Margin="0,6">
+                        <CheckBox
+                            VerticalAlignment="Center"
+                            Content="Auto Generate Element-Id Code Value"
+                            IsEnabled="{Binding ElementIdCode.CanAutoGenerate}"
+                            IsChecked="{Binding ElementIdCode.IsAutoGenerate, Mode=TwoWay}" />
                         <Button
                             Width="96"
                             Margin="6,0,0,0"
@@ -282,11 +287,6 @@
                             CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
                             Content="Select"
                             DockPanel.Dock="Right" />
-                        <CheckBox
-                            VerticalAlignment="Center"
-                            Content="Auto Generate Element-Id Code Value"
-                            IsEnabled="{Binding ElementIdCode.CanAutoGenerate}"
-                            IsChecked="{Binding ElementIdCode.IsAutoGenerate, Mode=TwoWay}" />
                     </DockPanel>
 
                     <Grid>
@@ -295,6 +295,7 @@
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
@@ -354,11 +355,27 @@
                             Grid.Column="1"
                             Style="{StaticResource ValueTextStyle}"
                             Text="{Binding ElementIdCode.Info}" />
+                        <DockPanel 
+                            Grid.Row="3"
+                            Grid.Column="0"
+                            Grid.ColumnSpan="2"
+                            Margin="0,6">
+                            <CheckBox
+                                Content="Copy Activities Under New Element ID"
+                                IsChecked="True" />
+                            <Button
+                                Width="120"
+                                HorizontalAlignment="Right"
+                                Content="Manage Options"
+                                DockPanel.Dock="Right" 
+                                Command="{Binding ElementIdCode.ManageCopyActivitiesOptionsCommand}"
+                                CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}" />
+                        </DockPanel>
                         <StackPanel 
                             Orientation="Horizontal"
                             HorizontalAlignment="Right"
                             Margin="0,6"                             
-                            Grid.Row="3"
+                            Grid.Row="4"
                             Grid.Column="1">
                             <Button
                                 Width="160"
@@ -524,7 +541,7 @@
                         IsChecked="{Binding EditLegendPosition, Mode=TwoWay}" />
                     <Button
                         Height="30"
-                        Margin="0,8,0,0"
+                        Margin="0,35,0,0"
                         Command="{Binding CancelCommand}"
                         Content="Cancel" />
                     <TextBlock
