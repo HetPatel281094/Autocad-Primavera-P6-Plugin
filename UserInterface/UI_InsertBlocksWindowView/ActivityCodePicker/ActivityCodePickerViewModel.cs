@@ -1,3 +1,8 @@
+using Autocad_Primavera_P6_Plugin.Services.LiteDBService;
+using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using PropertyChanged;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -5,14 +10,10 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using Autocad_Primavera_P6_Plugin.Services.LiteDBService;
-using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
-using PropertyChanged;
 
 namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView.ActivityCodePicker
 {
-    [AddINotifyPropertyChangedInterface]
-    public sealed class ActivityCodePickerViewModel
+    public partial class ActivityCodePickerViewModel : ObservableObject
     {
         private readonly ActivityCodePickerModel _model;
 
@@ -27,9 +28,6 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView.Ac
 
         public event Action<bool?> RequestClose;
 
-        public ICommand SearchButtonCommand { get; private set; }
-        public ICommand OkButtonCommand { get; private set; }
-        public ICommand CancelButtonCommand { get; private set; }
 
         public ActivityCodePickerViewModel(ActivityCodePickerModel model)
         {
@@ -42,10 +40,6 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView.Ac
             InstructionText = _model.IsAutoGenerate
                 ? "Select a code type or existing parent value to generate under."
                 : "Select an existing code value to assign.";
-
-            SearchButtonCommand = new RelayCommand(SearchButton);
-            OkButtonCommand = new RelayCommand(OkButton, _ => IsSelectionValid);
-            CancelButtonCommand = new RelayCommand(_ => RequestClose?.Invoke(false));
 
             var types = new List<ActivityCodeType>() { _model.SelectionActCodeType };
             var codes = _model.SelectionActCodes;
@@ -124,6 +118,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView.Ac
             }
             catch(Exception e)
             {
+                Debug.Print(e.ToString());
                 Debug.Print("Break Point");
             };
 
@@ -175,6 +170,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView.Ac
             node.AttachTo(root);
         }
 
+        [RelayCommand]
         private void SearchButton(object parameter)
         {
             string searchTerm = SearchString == null ? string.Empty : SearchString.Trim();
@@ -220,6 +216,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView.Ac
             return node.IsVisible;
         }
 
+        [RelayCommand(CanExecute = nameof(IsSelectionValid))]
         private void OkButton(object parameter)
         {
             if (!IsSelectionValid)
@@ -228,6 +225,12 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView.Ac
             }
 
             RequestClose?.Invoke(true);
+        }
+
+        [RelayCommand]
+        private void CancelButton()
+        {
+            RequestClose?.Invoke(false);
         }
 
         private void NodeSelectedHandler(ActivityCodePickerNodeViewModel newlySelectedNode)

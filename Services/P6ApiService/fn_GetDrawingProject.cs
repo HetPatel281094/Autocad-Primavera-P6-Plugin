@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -26,6 +27,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.P6ApiService
             }
             catch (Exception ex)
             {
+                Debug.Print(ex.ToString());
                 return null;
             }
         }

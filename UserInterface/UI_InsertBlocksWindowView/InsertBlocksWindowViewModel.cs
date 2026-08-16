@@ -24,12 +24,11 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         public Project _currentProject;
         public PlugInBlockReference _selectedPluginBlockRef;
 
-
-        private bool _isInsertCancelled;
-
         public BoundaryActivityCodeSectionViewModel BoundaryCode { get; private set; }
         public ElementIdCodeSectionViewModel ElementIdCode { get; private set; }
         public ACadBlockSectionViewModel ACadBlockVM { get; private set; }
+
+        private bool _isInsertCancelled;
 
         public bool ContinuousInsert { get; set; }
         public bool EditLegendPosition { get; set; }
@@ -55,6 +54,37 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
 
             // Get Selected Blockreferences
+            await SetSelectedPluginBlockRef();
+
+
+            // Get Preselected Codes and BlockRef
+            ActivityCode preSelectBoundaryCode = null;
+            ActivityCode preSelectElementIdCode = null;
+            BlockReference preselectedAcadBlock = null;
+
+            if (_selectedPluginBlockRef != null)
+            {
+                preSelectBoundaryCode = await _selectedPluginBlockRef.Get_BdryActCode();
+                preSelectElementIdCode = await _selectedPluginBlockRef.Get_ElementIdCode();
+                preselectedAcadBlock = _selectedPluginBlockRef.AcadBlockRef;
+            }
+
+
+            // Set and Init Child ViewModels
+            BoundaryCode = new BoundaryActivityCodeSectionViewModel(_pluginInstance, _currentProject, preSelectBoundaryCode);
+            await BoundaryCode.Async_Init();
+
+            ElementIdCode = new ElementIdCodeSectionViewModel(_pluginInstance, _currentProject, preSelectElementIdCode);
+            await ElementIdCode.Async_Init();
+
+            ACadBlockVM = new ACadBlockSectionViewModel(_currentAcadDoc, preselectedAcadBlock);
+            await ACadBlockVM.Async_Init();
+
+            StatusMessage = string.Empty;
+        }
+
+        private async Task SetSelectedPluginBlockRef()
+        {
             var editor = _currentAcadDoc.Editor;
             var database = _currentAcadDoc.Database;
             var impliedSelected = editor.SelectImplied();
@@ -98,21 +128,6 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                 editor.WriteMessage("\n No Plugin Block References were Selected. \n");
             }
 
-
-            var preSelectBoundaryCode = _selectedPluginBlockRef != null ? await _selectedPluginBlockRef?.Get_BdryActCode() : null;
-            var preSelectElementIdCode = _selectedPluginBlockRef != null ? await _selectedPluginBlockRef?.Get_ElementIdCode() : null;
-            var preselectedAcadBlock = _selectedPluginBlockRef != null ? _selectedPluginBlockRef.AcadBlockRef : null;
-
-            BoundaryCode = new BoundaryActivityCodeSectionViewModel(_pluginInstance, _currentProject, preSelectBoundaryCode);
-            await BoundaryCode.Async_Init();
-
-            ElementIdCode = new ElementIdCodeSectionViewModel(_pluginInstance, _currentProject, preSelectElementIdCode);
-            await ElementIdCode.Async_Init();
-
-            ACadBlockVM = new ACadBlockSectionViewModel(_currentAcadDoc, preselectedAcadBlock);
-            await ACadBlockVM.Async_Init();
-
-            StatusMessage = string.Empty;
         }
 
         [RelayCommand]

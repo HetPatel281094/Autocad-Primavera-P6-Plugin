@@ -9,11 +9,12 @@ using Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView;
 using Autocad_Primavera_P6_Plugin.UserInterface.UI_LinkedFoldersManagerView;
 using Autodesk.AutoCAD.Runtime;
 using System.Diagnostics;
+using System.Runtime.Versioning;
 using System.Threading.Tasks;
 using AcadApp = Autodesk.AutoCAD.ApplicationServices.Application;
 
 [assembly: ExtensionApplication(typeof(Autocad_Primavera_P6_Plugin.MyPlugin))]
-
+[assembly: SupportedOSPlatform("windows")]
 namespace Autocad_Primavera_P6_Plugin
 {
     public class MyPlugin : IExtensionApplication
