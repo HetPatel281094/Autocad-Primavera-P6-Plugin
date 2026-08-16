@@ -260,6 +260,17 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
                     };
 
+                    if(ElementIdCode.IsCopyActivities)
+                    {
+                        // Run copy activities from source elements id code to destination element id code
+                        //  Function again calls function copy list of activities
+                        //    Copy list of activites using soap
+                        //    Create relationships if required as per input options
+                        //    Regex support to update new activity id and name
+                        //    Return dict of old-new activity ids
+                        //  Set New Element id code to newly generated activities
+                    };
+
                     ed.WriteMessage("\n[Plugin] Inserted " + newPluginBlockRef.Get_ElementId() +
                         " | Boundary: " + BoundaryCode.SelectedCodeValue +
                         " | ItemId: " + ElementIdCode.SelectedCodeValue + "\n");

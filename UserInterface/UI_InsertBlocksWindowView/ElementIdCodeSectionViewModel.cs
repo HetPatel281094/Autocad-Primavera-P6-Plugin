@@ -93,6 +93,9 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         [ObservableProperty]
         public string _info = "-- Info --";
 
+        [ObservableProperty]
+        public bool _isCopyActivities;
+
         [RelayCommand]
         public async Task ManageCopyActivitiesOptionsAsync(object parameter)
         {
