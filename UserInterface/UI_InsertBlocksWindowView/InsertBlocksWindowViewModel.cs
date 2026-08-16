@@ -119,7 +119,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                     .Cast<SelectedObject>()
                     .Where(obj => obj != null && obj.ObjectId.ObjectClass.DxfName == "INSERT");
 
-                if (selectedBlockRefs != null && selectedBlockRefs.Count() > 0)
+                if (selectedBlockRefs != null && selectedBlockRefs.Any())
                 {
                     using (Transaction tr = database.TransactionManager.StartTransaction())
                     {
