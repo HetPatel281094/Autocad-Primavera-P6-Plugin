@@ -8,10 +8,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         {
             InitializeComponent();
 
-            viewModel.RequestClose += result =>
-            {
-                Close();
-            };
+            viewModel.WindowOwner = this;
 
             DataContext = viewModel;
         }

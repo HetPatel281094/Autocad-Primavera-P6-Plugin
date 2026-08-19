@@ -73,8 +73,8 @@
 
             <!-- Buttons -->
             <StackPanel Grid.Column="2" Margin="16,0,0,0">
-                <Button Content="OK" Command="{Binding OkButtonCommand}" Width="85" Margin="0,0,0,8"/>
-                <Button Content="Cancel" Command="{Binding CancelButtonCommand}" Width="85" Margin="0,0,0,8"/>
+                <Button Content="OK" Command="{Binding OkButtonCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}" Width="85" Margin="0,0,0,8"/>
+                <Button Content="Cancel" Command="{Binding CancelButtonCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}" Width="85" Margin="0,0,0,8"/>
             </StackPanel>
             
         </Grid>

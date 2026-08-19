@@ -65,6 +65,11 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         [NotifyPropertyChangedFor(nameof(GenerateFirstLeafVisibility))]
         public bool _isAutoGenerate;
 
+        partial void OnIsAutoGenerateChanged(bool oldValue, bool newValue)
+        {
+            if (newValue == false) { IsCopyActivities = false; };
+        }
+
         public string NextNumericValue => IsNumericSelection || ShowGenerateFirstLeafButton ? GetNextNumericValue().ToString() : String.Empty;
         public bool CanEditValue => IsAutoGenerate && IsTextSelection && !_isBranchLocked;
         public bool CanEditDescription => IsAutoGenerate && !_isBranchLocked;
@@ -96,16 +101,22 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         [ObservableProperty]
         public bool _isCopyActivities;
 
+        [ObservableProperty]
+        public CopyActivityOptionsPickerModel _CopyActivitiesOptions;
+
         [RelayCommand]
         public async Task ManageCopyActivitiesOptionsAsync(object parameter)
         {
-            var _vm = new CopyActivityOptionsPickerViewModel();
+            var _m_clone = CopyActivitiesOptions != null ? (CopyActivityOptionsPickerModel)CopyActivitiesOptions.Clone() : null;
+            var _vm = new CopyActivityOptionsPickerViewModel(_m_clone);
             var _view = new CopyActivityOptionsPickerView(_vm);
 
             var owner = parameter as Window;
             if (owner != null) { _view.Owner = owner; };
 
             bool? result = _view.ShowDialog();
+
+            if (result == true) { CopyActivitiesOptions = _vm.Model; };
         }
 
         public ElementIdCodeSectionViewModel(MyPlugin pluginInstance, Project project = null, ActivityCode preSelectedCode = null)

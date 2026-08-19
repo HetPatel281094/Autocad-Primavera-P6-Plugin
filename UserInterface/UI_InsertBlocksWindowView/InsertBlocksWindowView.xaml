@@ -365,12 +365,14 @@
                             Margin="0,6">
                             <CheckBox
                                 Content="Copy Activities Under New Element ID"
-                                IsChecked="True" />
+                                IsEnabled="{Binding ElementIdCode.IsAutoGenerate}"
+                                IsChecked="{Binding ElementIdCode.IsCopyActivities}" />
                             <Button
                                 Width="120"
                                 HorizontalAlignment="Right"
                                 Content="Manage Options"
                                 DockPanel.Dock="Right" 
+                                IsEnabled="{Binding ElementIdCode.IsAutoGenerate}"
                                 Command="{Binding ElementIdCode.ManageCopyActivitiesOptionsCommand}"
                                 CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}" />
                         </DockPanel>

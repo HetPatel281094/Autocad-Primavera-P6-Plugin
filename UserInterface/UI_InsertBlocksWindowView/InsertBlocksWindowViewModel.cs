@@ -1,3 +1,4 @@
+using Autocad_Primavera_P6_Plugin.ServiceReference.ActivityService;
 using Autocad_Primavera_P6_Plugin.Services.AutocadService;
 using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
 using Autodesk.AutoCAD.DatabaseServices;
@@ -13,11 +14,15 @@ using System.Threading.Tasks;
 using System.Windows;
 using AcadApp = Autodesk.AutoCAD.ApplicationServices.Application;
 using AcadDoc = Autodesk.AutoCAD.ApplicationServices.Document;
+using Activity = Autocad_Primavera_P6_Plugin.Services.P6ApiService.Activity;
 
 namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 {
     public partial class InsertBlocksWindowViewModel : ObservableObject
     {
+        public Window WindowOwner;
+
+
         private readonly MyPlugin _pluginInstance;
         private P6ApiService _p6ApiService => _pluginInstance.MyP6ApiService;
         private AutocadService _autocadService => _pluginInstance.MyAutocadService;
@@ -45,9 +50,6 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
         public bool IsInserting => InsertBlockCommand.IsRunning;
         public string InsertButtonText => IsInserting ? "Working..." : "Insert Block";
-
-
-        public event Action<bool?> RequestClose;
 
 
         public InsertBlocksWindowViewModel(MyPlugin pluginInstance)
@@ -165,7 +167,6 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             }
             catch (Exception ex)
             {
-
                 StatusMessage = "Failed before block insertion: " + ex.Message;
                 MessageBox.Show(StatusMessage, "Insert Blocks", MessageBoxButton.OK, MessageBoxImage.Error);
                 _currentAcadDoc.Editor.WriteMessage("\n[Plugin] Failed before block insertion: " + ex.Message);
@@ -193,6 +194,10 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                     PromptPointResult pointResult = ed.GetPoint("\nPick insertion point: ");
                     if (pointResult.Status != PromptStatus.OK || _isInsertCancelled) { break; };
 
+                    var oldBoundaryCode = BoundaryCode.SelectedActivityCode;
+                    var oldElementIdCode = ElementIdCode.SelectedActivityCode;
+                    var oldBTRRecord = ACadBlockVM.SelectedBlockTableRecord;
+
                     // Must insert block or fail with error prompt.
                     if (BoundaryCode.IsAutoGenerate) { await BoundaryCode.AutoGenerateActivityCodeAsync(); };
                     if (ElementIdCode.IsAutoGenerate) { await ElementIdCode.AutoGenerateActivityCodeAsync(); };
@@ -216,7 +221,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
                     using (doc.LockDocument())
                     using (var tr = doc.TransactionManager.StartTransaction())
-                    {
+                    { 
                         var pluginBlockRef = new PlugInBlockReference(_pluginInstance, doc, resolvedBTRRecord, tr);
 
                         var SetPositionResult = pluginBlockRef.Set_BlockPosition(pointResult.Value, out _);
@@ -262,6 +267,55 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
                     if(ElementIdCode.IsCopyActivities)
                     {
+                        var ActCodeAssignments = await _p6ApiService.Client.GetActivityCodeAssignmentsAsync(
+                            filter: $"ActivityCodeObjectId :eq: { oldElementIdCode.ObjectId }",
+                            fields: "ActivityId, ActivityName, ActivityObjectId, ActivityCodeObjectId, ActivityCodeValue, ActivityCodeDescription",
+                            orderBy: null,
+                            authToken: null
+                        );
+
+                        var ActIdsColln = ActCodeAssignments
+                            .Cast<ActivityCodeAssignment>()
+                            .Select(assi => assi.ActivityObjectId);
+
+                        var ActivitiesByElementId = await _p6ApiService.Client.GetActivitiesAsync(
+                            filter: $"ObjectId IN ({ string.Join(",", ActIdsColln) })",
+                            fields: "ObjectId, Id, Name",
+                            orderBy: null,
+                            authToken: null
+                        );
+
+                        var oldNewObjIdCopyActDict = new Dictionary<int, int>();
+
+                        foreach (var activity in ActivitiesByElementId)
+                        {
+                            var copyResp = _p6ApiService.SOAPClient.ActivityClient.CopyActivityAsync(
+                                new CopyActivityRequest(
+                                    new CopyActivity()
+                                    {
+                                        ObjectId = activity.ObjectId.Value,
+                                        TargetWBSObjectId = activity.WBSObjectId,
+                                        TargetWBSObjectIdSpecified = true
+                                    }
+                                )
+                            );
+
+                            var newActivityObjId = copyResp.Result.CopyActivityResponse.ObjectId;
+
+                            oldNewObjIdCopyActDict.Add(activity.ObjectId.Value, newActivityObjId);
+                        };
+
+                        var newActIds = oldNewObjIdCopyActDict.Values.ToList();
+
+                        var NewActivities = await _p6ApiService.Client.GetActivitiesAsync(
+                            filter: $"ObjectId IN ({string.Join(",", newActIds)})",
+                            fields: "ObjectId, Id, Name, WBSNamePath, WBSName, ProjectName",
+                            orderBy: null,
+                            authToken: null
+                        );
+
+                        Debug.Print("Break point");
+
                         // Run copy activities from source elements id code to destination element id code
                         //  Function again calls function copy list of activities
                         //    Copy list of activites using soap
@@ -269,7 +323,8 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                         //    Regex support to update new activity id and name
                         //    Return dict of old-new activity ids
                         //  Set New Element id code to newly generated activities
-                    };
+                    }
+                    ;
 
                     ed.WriteMessage("\n[Plugin] Inserted " + newPluginBlockRef.Get_ElementId() +
                         " | Boundary: " + BoundaryCode.SelectedCodeValue +
@@ -298,7 +353,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         private void Cancel(object parameter)
         {
             _isInsertCancelled = true;
-            RequestClose?.Invoke(false);
+            WindowOwner?.Close();
         }
 
     }
