@@ -38,9 +38,6 @@ namespace Autocad_Primavera_P6_Plugin.Services
 
         private static RibbonButton _testButton = null;
 
-        //Temp
-        static PaletteSet _PropertiesPalette = null;
-
         public RibbonService(MyPlugin pluginInstance)
         {
             // Initialize Ribbon UI setup here
@@ -144,22 +141,9 @@ namespace Autocad_Primavera_P6_Plugin.Services
 
         }
 
-        private static void ButtonHandler_Properties()
+        private static async void ButtonHandler_Properties()
         {
-
-            if (_PropertiesPalette == null)
-            {
-                _PropertiesPalette = new PaletteSet("Properties Palate UI", new Guid("99999999-4444-4444-4444-1234567890AC"))
-                {
-                    Dock = DockSides.Right,
-                };
-
-                var view = new Autocad_Primavera_P6_Plugin.UserInterface.UI_PropertiesPalateView.PropertiesPalateView();
-
-                _PropertiesPalette.AddVisual("Main", view);
-            }
-
-            _PropertiesPalette.Visible = true;
+            await _pluginInstance.P6ShowPropertirs();
         }
 
         // Button 2 : InsertBlocks

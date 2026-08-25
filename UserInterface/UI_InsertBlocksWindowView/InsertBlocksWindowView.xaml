@@ -372,7 +372,7 @@
                                 HorizontalAlignment="Right"
                                 Content="Manage Options"
                                 DockPanel.Dock="Right" 
-                                IsEnabled="{Binding ElementIdCode.IsAutoGenerate}"
+                                IsEnabled="{Binding ElementIdCode.IsCopyActivities}"
                                 Command="{Binding ElementIdCode.ManageCopyActivitiesOptionsCommand}"
                                 CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}" />
                         </DockPanel>

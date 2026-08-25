@@ -226,7 +226,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
                         var SetPositionResult = pluginBlockRef.Set_BlockPosition(pointResult.Value, out _);
 
-                        if (!SetPositionResult) { throw new InvalidOperationException("Failed to set activity-code values to plugin block reference."); };
+                        if (!SetPositionResult) { throw new InvalidOperationException("Failed to set new position value to plugin block reference."); };
 
                         var isBdrySet = pluginBlockRef.Set_BdryActCode(resolvedBoundaryCode, out _);
                         var isElementIdSet = pluginBlockRef.Set_ElementIdCode(resolvedElementIdCode, out _);
@@ -280,7 +280,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
                         var ActivitiesByElementId = await _p6ApiService.Client.GetActivitiesAsync(
                             filter: $"ObjectId IN ({ string.Join(",", ActIdsColln) })",
-                            fields: "ObjectId, Id, Name",
+                            fields: "ObjectId, Id, Name, WBSObjectId, WBSNamePath, WBSName, ProjectName",
                             orderBy: null,
                             authToken: null
                         );
@@ -289,7 +289,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
 
                         foreach (var activity in ActivitiesByElementId)
                         {
-                            var copyResp = _p6ApiService.SOAPClient.ActivityClient.CopyActivityAsync(
+                            var copyResp = await _p6ApiService.SOAPClient.ActivityClient.CopyActivityAsync(
                                 new CopyActivityRequest(
                                     new CopyActivity()
                                     {
@@ -300,18 +300,29 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                                 )
                             );
 
-                            var newActivityObjId = copyResp.Result.CopyActivityResponse.ObjectId;
+                            var newActivityObjId = copyResp.CopyActivityResponse.ObjectId;
 
                             oldNewObjIdCopyActDict.Add(activity.ObjectId.Value, newActivityObjId);
                         };
 
                         var newActIds = oldNewObjIdCopyActDict.Values.ToList();
 
-                        var NewActivities = await _p6ApiService.Client.GetActivitiesAsync(
-                            filter: $"ObjectId IN ({string.Join(",", newActIds)})",
-                            fields: "ObjectId, Id, Name, WBSNamePath, WBSName, ProjectName",
+                        var NewActivityCodeAssignments = await _p6ApiService.Client.GetActivityCodeAssignmentsAsync(
+                            filter: $"ActivityObjectId IN ({string.Join(",", newActIds)})",
+                            fields: "ActivityCodeObjectId, ActivityCodeTypeObjectId, ActivityObjectId",
                             orderBy: null,
                             authToken: null
+                        );
+
+                        foreach (var assi in NewActivityCodeAssignments)
+                        {
+                            assi.ActivityCodeTypeObjectId = resolvedElementIdCode.CodeTypeObjectId;
+                            assi.ActivityCodeObjectId = resolvedElementIdCode.ObjectId.Value;
+                        }
+
+                        var UpdateActivityCodeAssignments = await _p6ApiService.Client.UpdateActivityCodeAssignmentAsync(
+                            authToken: null,
+                            body: NewActivityCodeAssignments
                         );
 
                         Debug.Print("Break point");
@@ -323,8 +334,7 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
                         //    Regex support to update new activity id and name
                         //    Return dict of old-new activity ids
                         //  Set New Element id code to newly generated activities
-                    }
-                    ;
+                    };
 
                     ed.WriteMessage("\n[Plugin] Inserted " + newPluginBlockRef.Get_ElementId() +
                         " | Boundary: " + BoundaryCode.SelectedCodeValue +

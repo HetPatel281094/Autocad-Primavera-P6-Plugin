@@ -1,16 +1,21 @@
 ﻿// (C) Copyright 2026 by  
 //
-using Autocad_Primavera_P6_Plugin.ServiceReference.ActivityService;
 using Autocad_Primavera_P6_Plugin.Services;
 using Autocad_Primavera_P6_Plugin.Services.AutocadService;
 using Autocad_Primavera_P6_Plugin.Services.LiteDBService;
 using Autocad_Primavera_P6_Plugin.Services.P6ApiService;
 using Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView;
 using Autocad_Primavera_P6_Plugin.UserInterface.UI_LinkedFoldersManagerView;
+using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Runtime;
+using Autodesk.AutoCAD.Windows;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.Versioning;
 using System.Threading.Tasks;
+using System.Windows.Documents;
 using AcadApp = Autodesk.AutoCAD.ApplicationServices.Application;
 
 [assembly: ExtensionApplication(typeof(Autocad_Primavera_P6_Plugin.MyPlugin))]
@@ -24,6 +29,9 @@ namespace Autocad_Primavera_P6_Plugin
         public P6ApiService MyP6ApiService { get; private set; } = null;
         public RibbonService MyRibbonService { get; private set; } = null;
         public AutocadService MyAutocadService { get; private set; } = null;
+
+        private static string PropertiesPaletteSet_GUID = "99999999-4444-4444-4444-1234567890AC";
+        public static PaletteSet PropertiesPaletteSet = null;
 
 
         void IExtensionApplication.Initialize()
@@ -44,6 +52,23 @@ namespace Autocad_Primavera_P6_Plugin
             MyP6ApiService = null;  //P6ApiService instance cleanup
             MyRibbonService = null; //RibbonService instance cleanup
             MyAutocadService = null; //MyAutocadService instance cleanup
+        }
+
+        public async Task P6ShowPropertirs()
+        {
+            if (PropertiesPaletteSet == null)
+            {
+                PropertiesPaletteSet = new PaletteSet("Properties Palate UI", new Guid(PropertiesPaletteSet_GUID))
+                {
+                    Dock = DockSides.Right,
+                };
+
+                var view = new Autocad_Primavera_P6_Plugin.UserInterface.UI_PropertiesPalateView.PropertiesPalateView();
+
+                PropertiesPaletteSet.AddVisual("Main", view);
+            }
+
+            PropertiesPaletteSet.Visible = true;
         }
 
         public async Task P6InsertBlocks()
@@ -73,23 +98,34 @@ namespace Autocad_Primavera_P6_Plugin
             {
                 Debug.Print("Test Function is invoked.");
 
-                var soapClient = MyP6ApiService.SOAPClient;
+                var _doc = AcadApp.DocumentManager.MdiActiveDocument;
+                var _db = _doc.Database;
 
-                var sourceActivityObjId = 113976;
+                var _selectedObjs = MyAutocadService.GetPluginBlockImpliedSelected(_doc);
+                var _selectedObj = _selectedObjs.First();
 
-                var destinationWBSObjId = 27821;
+                List<ObjectId> _grpIds = new();
+                List<Group> _groups = new();
 
-                var copyActObj = new CopyActivity
+                using (var tr = _doc.TransactionManager.StartTransaction())
                 {
-                    ObjectId = sourceActivityObjId,
-                    TargetWBSObjectId = destinationWBSObjId,
-                    TargetWBSObjectIdSpecified = true,
-                    CopyResourceAndRoleAssignmentsSpecified = true
-                };
+                    var _obj = tr.GetObject(_selectedObj.ObjectId, OpenMode.ForRead);
 
-                var CopyActivityRes = await soapClient.ActivityClient.CopyActivityAsync(
-                    new CopyActivityRequest(copyActObj)
-                );
+                    var _objReactorIds = _obj.GetPersistentReactorIds();
+
+                    foreach (ObjectId id in _objReactorIds)
+                    {
+                        var reactorObj = tr.GetObject(id, OpenMode.ForRead);
+
+                        // Check if the reactor is an instance of an AutoCAD Group
+                        if (reactorObj is Group)
+                        {
+                            _grpIds.Add(id);
+                            _groups.Add((Group)reactorObj);
+                        }
+                    }
+
+                }
 
                 Debug.Print("Test Function is Completed without error.");
             }

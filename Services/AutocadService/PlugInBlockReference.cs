@@ -289,8 +289,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                 var nameAttribute = PluginBlockRefAutocadHelpers.TryGetValue_AttRefDict(attDefDict, nameTag);
                 var valueAttribute = PluginBlockRefAutocadHelpers.TryGetValue_AttRefDict(attDefDict, valueTag);
 
-                if (nameAttribute == null || valueAttribute == null || String.IsNullOrWhiteSpace(nameAttribute.TextString)) { continue; }
-                ;
+                if (nameAttribute == null || valueAttribute == null || String.IsNullOrWhiteSpace(nameAttribute.TextString)) { continue; };
 
                 SlotsDict[key] = new Slot()
                 {
@@ -334,92 +333,6 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
             ;
 
         }
-
-        // Rough Below
-
-        ///// <summary>
-        ///// Inserts this template into ownerSpace, creates its AttributeReferences, applies
-        ///// supplied values, and upgrades this same object to instance-bound state.
-        ///// Returns tags that were requested but absent from the block definition.
-        ///// </summary>
-        //public ObjectId CreateBlockReference(
-        //    ObjectId ownerSpaceId,
-        //    Point3d insertionPoint,
-        //    IDictionary<string, string> attributeValues,
-        //    Transaction tr,
-        //    out IList<string> missingAttributeTags)
-        //{
-        //    if (tr == null)
-        //    {
-        //        throw new ArgumentNullException(nameof(tr));
-        //    }
-        //    if (InitState != InitStateEnum.BTRInitialized)
-        //    {
-        //        throw new InvalidOperationException("A block table record must be attached before creating a block reference.");
-        //    }
-
-        //    EnsureBound(AcadBlockTblRec, "block table record");
-        //    var ownerSpace = (BlockTableRecord)tr.GetObject(ownerSpaceId, OpenMode.ForWrite);
-        //    var blockDefinition = (BlockTableRecord)tr.GetObject(AcadBlockTblRec, OpenMode.ForRead);
-        //    var blockReference = new BlockReference(insertionPoint, AcadBlockTblRec);
-        //    ownerSpace.AppendEntity(blockReference);
-        //    tr.AddNewlyCreatedDBObject(blockReference, true);
-
-        //    foreach (ObjectId entityId in blockDefinition)
-        //    {
-        //        var definition = tr.GetObject(entityId, OpenMode.ForRead) as AttributeDefinition;
-        //        if (definition == null || definition.Constant)
-        //        {
-        //            continue;
-        //        }
-
-        //        var attributeReference = new AttributeReference();
-        //        attributeReference.SetAttributeFromBlock(definition, blockReference.BlockTransform);
-        //        blockReference.AttributeCollection.AppendAttribute(attributeReference);
-        //        tr.AddNewlyCreatedDBObject(attributeReference, true);
-        //    }
-
-        //    AttachBlockReference(blockReference);
-        //    Init(tr);
-        //    missingAttributeTags = ApplyAttributeValues(attributeValues, tr);
-        //    Init(tr); // Reload the public handles after any attributes were opened for write.
-        //    return AcadBlockRef;
-        //}
-
-        ///// <summary>Writes only existing AttributeReferences; it never fabricates an orphan attribute.</summary>
-        //public IList<string> ApplyAttributeValues(IDictionary<string, string> attributeValues, Transaction tr)
-        //{
-        //    if (attributeValues == null || attributeValues.Count == 0)
-        //    {
-        //        return new List<string>();
-        //    }
-        //    if (tr == null)
-        //    {
-        //        throw new ArgumentNullException(nameof(tr));
-        //    }
-        //    if (InitState != InitStateEnum.BlockRefInitialized)
-        //    {
-        //        throw new InvalidOperationException("A block reference must be attached before writing attributes.");
-        //    }
-
-        //    var blockReference = (BlockReference)tr.GetObject(AcadBlockRef, OpenMode.ForRead);
-        //    var attributes = ReadAttributeReferences(blockReference, tr, OpenMode.ForWrite);
-        //    var missing = new List<string>();
-        //    foreach (var value in attributeValues)
-        //    {
-        //        if (!attributes.TryGetValue(value.Key, out AttributeReference attributeReference))
-        //        {
-        //            missing.Add(value.Key);
-        //            continue;
-        //        }
-
-        //        attributeReference.TextString = value.Value ?? string.Empty;
-        //    }
-
-        //    return missing;
-        //}
-
-        // Helper methods for repeat use
 
         public Point3d? Get_BlockPosition()
         {
@@ -637,8 +550,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
             var valueResult = Set_SlotProperty("BOUNDARY_CODE_VALUE", boundaryCodeValue, out _, tr);
             var pathResult = Set_SlotProperty("BOUNDARY_CODE_PATH", boundaryCodePath, out _, tr);
 
-            if (!idResult || !valueResult || !pathResult) { return false; }
-            ;
+            if (!idResult || !valueResult || !pathResult) { return false; };
 
             BdryActCode = actCode;
 
@@ -679,11 +591,12 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
             var valueResult = Set_SlotProperty("ELEMENT_ID_CODE_VALUE", elementIdCodeValue, out _, tr);
             var pathResult = Set_SlotProperty("ELEMENT_ID_CODE_PATH", elementIdCodePath, out _, tr);
 
-            if (!idResult || !valueResult || !pathResult) { return false; }
-            ;
+            if (!idResult || !valueResult || !pathResult) { return false; };
 
             ElementIdCode = actCode;
 
+            var setElementIdResult = Set_ElementId(out _, null, tr);
+            
             result = actCode;
             return true;
         }
@@ -776,12 +689,11 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
         {
             result = null;
 
-            if (InitState != InitStateEnum.BlockRefInitialized || BlockAttProps.Update_Status == null) { return false; }
-            ;
-            if (tr == null) { Debug.Print("Transaction is null"); return false; }
-            ;
-            if (!TryGetWritableDynamicProperty(tr, "Update Status", out var writableProp)) { return false; }
-            ;
+            if (InitState != InitStateEnum.BlockRefInitialized || BlockAttProps.Update_Status == null) { return false; };
+
+            if (tr == null) { Debug.Print("Transaction is null"); return false; };
+
+            if (!TryGetWritableDynamicProperty(tr, "Update Status", out var writableProp)) { return false; };
 
             writableProp.Value = value;
             BlockAttProps.Update_Status = writableProp;
@@ -851,7 +763,6 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                 default:
                     return false;
             }
-            ;
 
             static string Get_ElementIdString(string pathString)
             {
@@ -865,9 +776,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
                 {
                     return String.Empty;
                 }
-                ;
             }
-            ;
 
         }
 

@@ -104,21 +104,6 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
         [ObservableProperty]
         public CopyActivityOptionsPickerModel _CopyActivitiesOptions;
 
-        [RelayCommand]
-        public async Task ManageCopyActivitiesOptionsAsync(object parameter)
-        {
-            var _m_clone = CopyActivitiesOptions != null ? (CopyActivityOptionsPickerModel)CopyActivitiesOptions.Clone() : null;
-            var _vm = new CopyActivityOptionsPickerViewModel(_m_clone);
-            var _view = new CopyActivityOptionsPickerView(_vm);
-
-            var owner = parameter as Window;
-            if (owner != null) { _view.Owner = owner; };
-
-            bool? result = _view.ShowDialog();
-
-            if (result == true) { CopyActivitiesOptions = _vm.Model; };
-        }
-
         public ElementIdCodeSectionViewModel(MyPlugin pluginInstance, Project project = null, ActivityCode preSelectedCode = null)
         {
             _pluginInstance = pluginInstance ?? throw new ArgumentNullException(nameof(pluginInstance));
@@ -203,6 +188,22 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView
             ActivityCode firstLeaf = await CreateFirstLeafAsync();
 
             await RefreshSelectionAsync(firstLeaf);
+        }
+
+        [RelayCommand]
+        public async Task ManageCopyActivitiesOptionsAsync(object parameter)
+        {
+            var _m_clone = CopyActivitiesOptions != null ? (CopyActivityOptionsPickerModel)CopyActivitiesOptions.Clone() : null;
+            var _vm = new CopyActivityOptionsPickerViewModel(_m_clone);
+            var _view = new CopyActivityOptionsPickerView(_vm);
+
+            var owner = parameter as Window;
+            if (owner != null) { _view.Owner = owner; }
+            ;
+
+            bool? result = _view.ShowDialog();
+
+            if (result == true) { CopyActivitiesOptions = _vm.Model; };
         }
 
         private async Task GenerateNumericAsync()

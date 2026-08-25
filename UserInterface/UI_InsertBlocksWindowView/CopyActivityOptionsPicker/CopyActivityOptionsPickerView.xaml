@@ -76,8 +76,35 @@
                 <Button Content="OK" Command="{Binding OkButtonCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}" Width="85" Margin="0,0,0,8"/>
                 <Button Content="Cancel" Command="{Binding CancelButtonCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}" Width="85" Margin="0,0,0,8"/>
             </StackPanel>
-            
+
+        </Grid>
+
+        <Grid Grid.Row="2"  Margin="12">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,6" Text="Specify Regex Pattern to find and replace ActivityId and ActivityName" FontWeight="SemiBold"/>
+                <CheckBox Grid.Row="1" Grid.Column="0" Content="Activity Id" IsChecked="{Binding Model.IsActivityIdRegexReplace}"  Margin="0,6"/>
+                    <TextBlock Grid.Row="2" Grid.Column="0" HorizontalAlignment="Right" VerticalAlignment="Center" Text="RegEx Match" IsEnabled="{Binding Model.IsActivityIdRegexReplace}"/>
+                        <TextBox Grid.Row="2" Grid.Column="1" Margin="10,6" Text="{Binding Model.ActivityIdRegexReplaceStr}" IsEnabled="{Binding Model.IsActivityIdRegexReplace}"/>
+                    <TextBlock Grid.Row="3" Grid.Column="0" HorizontalAlignment="Right" VerticalAlignment="Center" Text="RegEx Replace" IsEnabled="{Binding Model.IsActivityIdRegexReplace}"/>
+                        <TextBox Grid.Row="3" Grid.Column="1" Margin="10,6" Text="{Binding Model.ActivityIdRegexMatchStr}" IsEnabled="{Binding Model.IsActivityIdRegexReplace}"/>
+                <CheckBox Grid.Row="4" Grid.Column="0" Content="Activity Name" IsChecked="{Binding Model.IsActivityNameRegexReplace}"  Margin="0,12,0,6"/>
+                    <TextBlock Grid.Row="5" Grid.Column="0" HorizontalAlignment="Right" VerticalAlignment="Center" Text="RegEx Match" IsEnabled="{Binding Model.IsActivityNameRegexReplace}"/>
+                        <TextBox Grid.Row="5" Grid.Column="1" Margin="10,6" Text="{Binding Model.ActivityNameRegexMatchStr}"  IsEnabled="{Binding Model.IsActivityNameRegexReplace}"/>
+                    <TextBlock Grid.Row="6" Grid.Column="0" HorizontalAlignment="Right" VerticalAlignment="Center" Text="RegEx Replace"  IsEnabled="{Binding Model.IsActivityNameRegexReplace}"/>
+                        <TextBox Grid.Row="6" Grid.Column="1" Margin="10,6" Text="{Binding Model.ActivityNameRegexReplaceStr}"  IsEnabled="{Binding Model.IsActivityNameRegexReplace}"/>
         </Grid>
     </Grid>
-    
+
 </Window>

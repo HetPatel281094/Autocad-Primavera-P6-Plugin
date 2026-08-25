@@ -48,6 +48,16 @@ namespace Autocad_Primavera_P6_Plugin.Services.P6ApiService
 
     }
 
+    public class LoginStatusChangedEventArgs : EventArgs
+    {
+        public bool IsLoggedIn { get; }
+
+        public LoginStatusChangedEventArgs(bool isLoggedIn)
+        {
+            IsLoggedIn = isLoggedIn;
+        }
+    }
+
     public partial class P6ApiService
     {
         private readonly MyPlugin _pluginInstance;
@@ -56,6 +66,11 @@ namespace Autocad_Primavera_P6_Plugin.Services.P6ApiService
         public bool                IsLoggedIn            { get; private set; }
         public P6ConnectionConfig  LoginConnectionConfig { get; private set; }
         public SOAPClient          SOAPClient            { get; private set; }
+
+
+        public event EventHandler<LoginStatusChangedEventArgs> LoginStatusChanged;
+        private void RaiseLoginStatusChanged() => LoginStatusChanged?.Invoke(this, new LoginStatusChangedEventArgs(IsLoggedIn));
+
 
         public P6ApiService(MyPlugin pluginInstance)
         {
@@ -86,6 +101,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.P6ApiService
                 Client                = null;
                 SOAPClient            = null;
                 Console.WriteLine("P6ApiService: No default connection configured.");
+                RaiseLoginStatusChanged();
                 return;
             }
 
@@ -106,6 +122,8 @@ namespace Autocad_Primavera_P6_Plugin.Services.P6ApiService
                 SOAPClient            = null;
                 Console.WriteLine("P6ApiService ReInitializeAsync: login failed for default config.");
             }
+
+            RaiseLoginStatusChanged();
         }
 
         /// <summary>

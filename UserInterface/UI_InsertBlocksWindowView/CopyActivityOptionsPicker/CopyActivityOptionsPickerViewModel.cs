@@ -47,6 +47,24 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView.Co
         [ObservableProperty]
         private bool _risks  = true;
 
+        [ObservableProperty]
+        private bool _isActivityIdRegexReplace = false;
+
+        [ObservableProperty]
+        private string _activityIdRegexMatchStr = "";
+
+        [ObservableProperty]
+        private string _activityIdRegexReplaceStr = "";
+
+        [ObservableProperty]
+        private bool _isActivityNameRegexReplace = false;
+
+        [ObservableProperty]
+        private string _activityNameRegexMatchStr = "";
+
+        [ObservableProperty]
+        private string _activityNameRegexReplaceStr = "";
+
         public object Clone()
         {
             return new CopyActivityOptionsPickerModel
@@ -61,7 +79,13 @@ namespace Autocad_Primavera_P6_Plugin.UserInterface.UI_InsertBlocksWindowView.Co
                 Steps = this.Steps,
                 FinancialPeriodData = this.FinancialPeriodData,
                 WPsAndDocs = this.WPsAndDocs,
-                Risks = this.Risks
+                Risks = this.Risks,
+                IsActivityIdRegexReplace = this.IsActivityIdRegexReplace,
+                ActivityIdRegexMatchStr = this.ActivityIdRegexMatchStr,
+                ActivityIdRegexReplaceStr = this.ActivityIdRegexReplaceStr,
+                IsActivityNameRegexReplace = this.IsActivityNameRegexReplace,
+                ActivityNameRegexMatchStr = this.ActivityNameRegexMatchStr,
+                ActivityNameRegexReplaceStr = this.ActivityNameRegexReplaceStr,
             };
         }
 
