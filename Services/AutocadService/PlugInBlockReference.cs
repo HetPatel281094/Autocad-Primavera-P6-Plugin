@@ -368,7 +368,6 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService
 
                 case InitStateEnum.BlockRefInitialized:
                     if (AcadBlockRef == null || tr == null) { return false; }
-                    ;
 
                     var blockRef = (BlockReference)tr.GetObject(AcadBlockRef.ObjectId, OpenMode.ForWrite);
 

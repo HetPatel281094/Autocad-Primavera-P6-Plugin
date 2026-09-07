@@ -17,6 +17,7 @@ using System.Runtime.Versioning;
 using System.Threading.Tasks;
 using System.Windows.Documents;
 using AcadApp = Autodesk.AutoCAD.ApplicationServices.Application;
+using AcadTest = Autocad_Primavera_P6_Plugin.Services.AutocadService.Temp;
 
 [assembly: ExtensionApplication(typeof(Autocad_Primavera_P6_Plugin.MyPlugin))]
 [assembly: SupportedOSPlatform("windows")]
@@ -104,28 +105,9 @@ namespace Autocad_Primavera_P6_Plugin
                 var _selectedObjs = MyAutocadService.GetPluginBlockImpliedSelected(_doc);
                 var _selectedObj = _selectedObjs.First();
 
-                List<ObjectId> _grpIds = new();
-                List<Group> _groups = new();
+                if (_selectedObj == null) { return; }
 
-                using (var tr = _doc.TransactionManager.StartTransaction())
-                {
-                    var _obj = tr.GetObject(_selectedObj.ObjectId, OpenMode.ForRead);
-
-                    var _objReactorIds = _obj.GetPersistentReactorIds();
-
-                    foreach (ObjectId id in _objReactorIds)
-                    {
-                        var reactorObj = tr.GetObject(id, OpenMode.ForRead);
-
-                        // Check if the reactor is an instance of an AutoCAD Group
-                        if (reactorObj is Group)
-                        {
-                            _grpIds.Add(id);
-                            _groups.Add((Group)reactorObj);
-                        }
-                    }
-
-                }
+                var _pluginBlockRef = new AcadTest.PlugInBlockReference(_selectedObj);
 
                 Debug.Print("Test Function is Completed without error.");
             }
