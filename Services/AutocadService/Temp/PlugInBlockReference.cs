@@ -2,6 +2,7 @@
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
+using Autodesk.AutoCAD.Runtime;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -190,6 +191,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService.Temp
         private Dictionary<string, string> PropSlotDict = new(StringComparer.OrdinalIgnoreCase);
         private Dictionary<string, Slot> SlotsDict = new() { ["Slot_1"] = null, ["Slot_2"] = null, ["Slot_3"] = null, ["Slot_4"] = null, ["Slot_5"] = null, ["Slot_6"] = null, ["Slot_7"] = null, ["Slot_8"] = null, ["Slot_9"] = null, ["Slot_10"] = null, ["Slot_11"] = null, ["Slot_12"] = null, ["Slot_13"] = null, ["Slot_14"] = null, ["Slot_15"] = null };
         public Group BlockRefGroup;
+        private BlockReference ReportTableHeaderBlockRef;
         public async Task Async_Init(Transaction tr = null)
         {
             PluginInstance = MyPlugin.Instance;
@@ -204,7 +206,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService.Temp
 
                          Attribute_Check_String_AttRef = PlugInBlockReference_Helpers.TryGetValue_AttRefDict(_attRefDict, "Attribute_Check_String");
 
-                         if (!IsValidBlock) { throw new Exception("Provided Block is not valid. Cannot initialize new plugin block instance"); }
+                         if (!IsValidBlock) { throw new System.Exception("Provided Block is not valid. Cannot initialize new plugin block instance"); }
 
                          ElementId_AttRef = PlugInBlockReference_Helpers.TryGetValue_AttRefDict(_attRefDict, "ELEMENT_ID");
 
@@ -222,6 +224,8 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService.Temp
                          }
 
                          BlockRefGroup = GetGroupOfBlockRef(currTr);
+
+                         if (IsGrouped) { ReportTableHeaderBlockRef = GetReportTableHeaderBlockRef(currTr); }
 
                          return TransactionAction.Nothing;
                      }
@@ -523,7 +527,7 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService.Temp
 
                             return new TransactionResult<(bool, Group)>((false, null), TransactionAction.Nothing);
                         }
-                        catch (Exception e)
+                        catch (System.Exception e)
                         {
                             Debug.Print(e.ToString());
                             return new TransactionResult<(bool, Group)>((false, null), TransactionAction.Nothing);
@@ -533,6 +537,124 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService.Temp
 
             return operationResult.Result.OutValue;
         }
+
+        private BlockReference GetReportTableHeaderBlockRef(Transaction tr = null)
+        {
+            TransactionResult<(bool Success, BlockReference OutValue)> operationResult =
+                PlugInBlockReference_Helpers.ExecuteWithTransaction(
+                    AcadDoc.Database,
+                    tr,
+                    currTr =>
+                    {
+                        try
+                        {
+                            RXClass blockReferenceClass = RXObject.GetClass(typeof(BlockReference));
+
+                            var allEntityIds = BlockRefGroup.GetAllEntityIds();
+
+                            var reportTableHeaderBlockRef = allEntityIds
+                                .Cast<ObjectId>()
+                                .Where(id => id.ObjectClass.IsDerivedFrom(blockReferenceClass))
+                                .Select(id => (BlockReference)tr.GetObject(id, OpenMode.ForRead))
+                                .FirstOrDefault(br =>
+                                    br.AttributeCollection
+                                    .Cast<ObjectId>()
+                                    .Select(id => (AttributeReference)tr.GetObject(id, OpenMode.ForRead))
+                                    .Any(att =>
+                                        att.Tag.Equals(
+                                            "table_header_block_check_string",
+                                            StringComparison.OrdinalIgnoreCase) &&
+                                        att.TextString.Equals(
+                                            "FoundOK",
+                                            StringComparison.OrdinalIgnoreCase)
+                                    ),
+                                    null
+                                );
+
+                            return new TransactionResult<(bool, BlockReference)>((true, reportTableHeaderBlockRef), TransactionAction.Nothing);
+                        }
+                        catch (System.Exception e)
+                        {
+                            Debug.Print(e.ToString());
+                            return new TransactionResult<(bool, BlockReference)>((false, null), TransactionAction.Nothing);
+                        }
+                    }
+                );
+
+            return operationResult.Result.OutValue;
+        }
+
+        public bool Refresh_ReportTable(Transaction tr = null)
+        {
+            if (!IsGrouped || ReportTableHeaderBlockRef == null) { return false; }
+
+            TransactionResult<bool> operationResult =
+                PlugInBlockReference_Helpers.ExecuteWithTransaction(
+                    AcadDoc.Database,
+                    tr,
+                    currTr =>
+                    {
+                        try
+                        {
+                            BlockTableRecord blockTableRecord = (BlockTableRecord)currTr.GetObject(ReportTableHeaderBlockRef.BlockTableRecord, OpenMode.ForRead);
+
+                            RXClass tableClass = RXObject.GetClass(typeof(Table));
+
+                            var reportHeaderTableObjectId = blockTableRecord
+                                .Cast<ObjectId>()
+                                .FirstOrDefault(id => id.ObjectClass.IsDerivedFrom(tableClass));
+
+                            var reportHeaderTable = (Table)currTr.GetObject(reportHeaderTableObjectId, OpenMode.ForRead);
+
+                            var attRefDict_HeaderBlock = PlugInBlockReference_Helpers.Get_AttRefDict(ReportTableHeaderBlockRef, currTr);
+
+                            var excelFilePathType = PlugInBlockReference_Helpers
+                                .TryGetValue_AttRefDict(attRefDict_HeaderBlock, "EXCEL_FILEPATH_TYPE")
+                                ?.TextString
+                                ?.Trim();
+
+                            var excelFilePath = PlugInBlockReference_Helpers
+                                .TryGetValue_AttRefDict(attRefDict_HeaderBlock, "EXCEL_FILEPATH")
+                                ?.TextString
+                                ?.Trim();
+
+                            var reportTableHandle = PlugInBlockReference_Helpers
+                                .TryGetValue_AttRefDict(attRefDict_HeaderBlock, "REPORT_TABLE_HANDLE")
+                                ?.TextString
+                                ?.Trim();
+
+                            if (reportHeaderTable == null || string.IsNullOrEmpty(excelFilePathType) || string.IsNullOrEmpty(excelFilePath)) { return new TransactionResult<bool>(false, TransactionAction.Nothing); }
+
+                            var excelFilePathResolved = excelFilePathType switch
+                            {
+                                "ABSOLUTE" => excelFilePath,
+                                "RELATIVE" => System.IO.Path.Combine(System.IO.Path.GetDirectoryName(AcadDoc.Name), excelFilePath),
+                                _ => System.IO.Path.Combine(System.IO.Path.GetDirectoryName(AcadDoc.Name), excelFilePath)
+                            };
+
+                            var reportTable = (Table)currTr.GetObject(
+                                AcadDoc.Database.GetObjectId(false, new Handle(Convert.ToInt64(reportTableHandle, 16)), 0),
+                                OpenMode.ForRead
+                            );
+
+                            var headerRow = reportHeaderTable.Rows[0];
+
+                            // Create a new report table from the Excel file and replace the existing one
+
+                            return new TransactionResult<bool>(true, TransactionAction.Nothing);
+                        }
+                        catch (System.Exception e)
+                        {
+                            Debug.Print(e.ToString());
+                            return new TransactionResult<bool>(false, TransactionAction.Nothing);
+                        }
+                    }
+                );
+
+            return operationResult.Result;
+
+        }
+
     }
 
 }
