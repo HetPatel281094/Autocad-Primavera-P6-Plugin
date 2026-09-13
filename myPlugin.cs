@@ -107,7 +107,10 @@ namespace Autocad_Primavera_P6_Plugin
 
                 if (_selectedObj == null) { return; }
 
-                var _pluginBlockRef = new AcadTest.PlugInBlockReference(_selectedObj);
+                var _pluginBlockRef = new AcadTest.PlugInBlockReference(_selectedObj, true);
+                await _pluginBlockRef.Async_Init();
+
+                _pluginBlockRef.Refresh_ReportTable();
 
                 Debug.Print("Test Function is Completed without error.");
             }
