@@ -618,6 +618,11 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService.Temp
                                 ?.TextString
                                 ?.Trim();
 
+                            var excelSheetName = PlugInBlockReference_Helpers
+                                .TryGetValue_AttRefDict(attRefDict_HeaderBlock, "EXCEL_SHEETNAME")
+                                ?.TextString
+                                ?.Trim();
+
                             var reportTableHandle = PlugInBlockReference_Helpers
                                 .TryGetValue_AttRefDict(attRefDict_HeaderBlock, "REPORT_TABLE_HANDLE")
                                 ?.TextString
