@@ -589,294 +589,154 @@ namespace Autocad_Primavera_P6_Plugin.Services.AutocadService.Temp
         {
             if (!IsGrouped || ReportTableHeaderBlockRef == null) { return false; }
 
-            using(var currTr = AcadDoc.Database.TransactionManager.StartTransaction())
-            {
-                try
-                {
-                    BlockTableRecord blockTableRecord = (BlockTableRecord)currTr.GetObject(ReportTableHeaderBlockRef.BlockTableRecord, OpenMode.ForRead);
-
-                    RXClass tableClass = RXObject.GetClass(typeof(Table));
-
-                    var reportHeaderTableObjectId = blockTableRecord
-                        .Cast<ObjectId>()
-                        .FirstOrDefault(id => id.ObjectClass.IsDerivedFrom(tableClass));
-
-                    var reportHeaderTable = (Table)currTr.GetObject(reportHeaderTableObjectId, OpenMode.ForRead);
-
-                    var attRefDict_HeaderBlock = PlugInBlockReference_Helpers.Get_AttRefDict(ReportTableHeaderBlockRef, currTr);
-
-                    var excelFilePathType = PlugInBlockReference_Helpers
-                        .TryGetValue_AttRefDict(attRefDict_HeaderBlock, "EXCEL_FILEPATH_TYPE")
-                        ?.TextString
-                        ?.Trim();
-
-                    var excelFilePath = PlugInBlockReference_Helpers
-                        .TryGetValue_AttRefDict(attRefDict_HeaderBlock, "EXCEL_FILEPATH")
-                        ?.TextString
-                        ?.Trim();
-
-                    var excelSheetName = PlugInBlockReference_Helpers
-                        .TryGetValue_AttRefDict(attRefDict_HeaderBlock, "EXCEL_SHEETNAME")
-                        ?.TextString
-                        ?.Trim();
-
-                    var reportTableHandle = PlugInBlockReference_Helpers
-                        .TryGetValue_AttRefDict(attRefDict_HeaderBlock, "REPORT_TABLE_HANDLE")
-                        ?.TextString
-                        ?.Trim();
-
-                    if (reportHeaderTable == null || string.IsNullOrEmpty(excelFilePath)) { return false; }
-
-                    var excelFilePathResolved = excelFilePathType switch
-                    {
-                        "ABSOLUTE" => excelFilePath,
-                        "RELATIVE" => System.IO.Path.Combine(System.IO.Path.GetDirectoryName(AcadDoc.Name), excelFilePath),
-                        _ => System.IO.Path.Combine(System.IO.Path.GetDirectoryName(AcadDoc.Name), excelFilePath)
-                    };
-
-                    var excelWorkBook = new XLWorkbook(excelFilePathResolved);
-
-                    var excelWorkSheet = string.IsNullOrEmpty(excelSheetName) ? excelWorkBook.Worksheet(1) : excelWorkBook.Worksheet(excelSheetName);
-
-                    var excelTable = excelWorkSheet.RangeUsed().AsTable();
-
-                    var headerRow_HeaderBlock = reportHeaderTable.Rows[0];
-
-                    var newTable = new Table() { TableStyle = reportHeaderTable.TableStyle };
-                    newTable.SetSize(0, reportHeaderTable.Columns.Count);
-                    newTable.SetRowHeight(headerRow_HeaderBlock.Height);
-                    for (int i = 0; i < newTable.Columns.Count; i++)
-                    {
-                        newTable.Columns[i].Width = reportHeaderTable.Columns[i].Width;
-                        newTable.Columns[i].TextHeight = reportHeaderTable.Columns[i].TextHeight;
-                    }
-                    newTable.Position = ReportTableHeaderBlockRef.Position;
-                    newTable.ScaleFactors = ReportTableHeaderBlockRef.ScaleFactors;
-                    newTable.Rotation = ReportTableHeaderBlockRef.Rotation;
-
-                    foreach (var tableRow in excelTable.DataRange.Rows())
-                    {
-                        newTable.InsertRows(newTable.Rows.Count, headerRow_HeaderBlock.Height, 1);
-
-                        foreach (var headerCell_HeaderBlock in headerRow_HeaderBlock)
-                        {
-                            var columnHeaderCell = reportHeaderTable.Cells[headerCell_HeaderBlock.Row, headerCell_HeaderBlock.Column];
-                            var columnHeaderName = columnHeaderCell.TextString.Trim();
-
-                            var excelCellValue = tableRow.Field(columnHeaderName).GetFormattedString();
-                            var lastRow = newTable.Rows.Last();
-
-                            newTable.Cells[newTable.Rows.Count, headerCell_HeaderBlock.Column].TextString = excelCellValue;
-                        }
-
-                        newTable.GenerateLayout();
-                    }
-
-                    Table reportTable = null;
-
-                    if (!string.IsNullOrEmpty(reportTableHandle))
+            TransactionResult<bool> operationResult =
+                PlugInBlockReference_Helpers.ExecuteWithTransaction(
+                    AcadDoc.Database,
+                    tr,
+                    currTr =>
                     {
                         try
                         {
-                            ObjectId reportTableId = AcadDoc.Database.GetObjectId(false, new Handle(Convert.ToInt64(reportTableHandle, 16)), 0);
+                            BlockTableRecord blockTableRecord = (BlockTableRecord)currTr.GetObject(ReportTableHeaderBlockRef.BlockTableRecord, OpenMode.ForRead);
 
-                            if (!reportTableId.IsNull && !reportTableId.IsErased)
+                            RXClass tableClass = RXObject.GetClass(typeof(Table));
+
+                            var reportHeaderTableObjectId = blockTableRecord
+                                .Cast<ObjectId>()
+                                .FirstOrDefault(id => id.ObjectClass.IsDerivedFrom(tableClass));
+
+                            var reportHeaderTable = (Table)currTr.GetObject(reportHeaderTableObjectId, OpenMode.ForRead);
+
+                            var attRefDict_HeaderBlock = PlugInBlockReference_Helpers.Get_AttRefDict(ReportTableHeaderBlockRef, currTr);
+
+                            var excelFilePathType = PlugInBlockReference_Helpers
+                                .TryGetValue_AttRefDict(attRefDict_HeaderBlock, "EXCEL_FILEPATH_TYPE")
+                                ?.TextString
+                                ?.Trim();
+
+                            var excelFilePath = PlugInBlockReference_Helpers
+                                .TryGetValue_AttRefDict(attRefDict_HeaderBlock, "EXCEL_FILEPATH")
+                                ?.TextString
+                                ?.Trim();
+
+                            var excelSheetName = PlugInBlockReference_Helpers
+                                .TryGetValue_AttRefDict(attRefDict_HeaderBlock, "EXCEL_SHEETNAME")
+                                ?.TextString
+                                ?.Trim();
+
+                            var reportTableHandle = PlugInBlockReference_Helpers
+                                .TryGetValue_AttRefDict(attRefDict_HeaderBlock, "REPORT_TABLE_HANDLE")
+                                ?.TextString
+                                ?.Trim();
+
+                            if (reportHeaderTable == null || string.IsNullOrEmpty(excelFilePath)) { return new TransactionResult<bool>(false, TransactionAction.Nothing); }
+
+                            var excelFilePathResolved = excelFilePathType switch
                             {
-                                reportTable = currTr.GetObject(reportTableId, OpenMode.ForWrite) as Table;
+                                "ABSOLUTE" => excelFilePath,
+                                "RELATIVE" => System.IO.Path.Combine(System.IO.Path.GetDirectoryName(AcadDoc.Name), excelFilePath),
+                                _ => System.IO.Path.Combine(System.IO.Path.GetDirectoryName(AcadDoc.Name), excelFilePath)
+                            };
+
+                            var excelWorkBook = new XLWorkbook(excelFilePathResolved);
+
+                            var excelWorkSheet = string.IsNullOrEmpty(excelSheetName) ? excelWorkBook.Worksheet(1) : excelWorkBook.Worksheet(excelSheetName);
+
+                            var excelTable = excelWorkSheet.RangeUsed().AsTable();
+
+                            var headerRow_HeaderBlock = reportHeaderTable.Rows[0];
+
+                            var newTable = new Table() { TableStyle = reportHeaderTable.TableStyle };
+                            newTable.SetSize(1, reportHeaderTable.Columns.Count);
+                            newTable.SetRowHeight(headerRow_HeaderBlock.Height);
+                            for (int i = 0; i < newTable.Columns.Count; i++)
+                            {
+                                newTable.Columns[i].Width = reportHeaderTable.Columns[i].Width;
+                                newTable.Columns[i].TextHeight = reportHeaderTable.Columns[i].TextHeight;
                             }
+                            newTable.Position = ReportTableHeaderBlockRef.Position;
+                            newTable.ScaleFactors = ReportTableHeaderBlockRef.ScaleFactors;
+                            newTable.Rotation = ReportTableHeaderBlockRef.Rotation;
+
+                            foreach (var tableRow in excelTable.DataRange.Rows())
+                            {
+                                newTable.InsertRows(newTable.Rows.Count, headerRow_HeaderBlock.Height, 1);
+
+                                foreach (var headerCell_HeaderBlock in headerRow_HeaderBlock)
+                                {
+                                    var columnHeaderCell = reportHeaderTable.Cells[headerCell_HeaderBlock.Row, headerCell_HeaderBlock.Column];
+                                    var columnHeaderCellMText = new MText { Contents = columnHeaderCell.TextString };
+                                    var columnHeaderName = columnHeaderCellMText.Text.Trim();
+
+                                    var excelCellValue = tableRow.Field(columnHeaderName).GetFormattedString();
+                                    newTable.Cells[newTable.Rows.Count - 1, headerCell_HeaderBlock.Column].TextString = excelCellValue;
+                                }
+
+                                newTable.GenerateLayout();
+                            }
+
+                            newTable.DeleteRows(0, 1);
+                            newTable.GenerateLayout();
+
+                            Table reportTable = null;
+
+                            if (!string.IsNullOrEmpty(reportTableHandle))
+                            {
+                                try
+                                {
+                                    ObjectId reportTableId = AcadDoc.Database.GetObjectId(false, new Handle(Convert.ToInt64(reportTableHandle, 16)), 0);
+
+                                    if (!reportTableId.IsNull && !reportTableId.IsErased)
+                                    {
+                                        reportTable = currTr.GetObject(reportTableId, OpenMode.ForWrite) as Table;
+                                    }
+                                }
+                                catch (System.Exception e)
+                                {
+                                    Debug.Print(e.ToString());
+                                    reportTable = null;
+                                }
+                            }
+
+                            if (reportTable != null)
+                            {
+                                reportTable.HandOverTo(newTable, false, false);
+                            }
+                            else
+                            {
+                                var blockTable = (BlockTable)currTr.GetObject(AcadDoc.Database.BlockTableId, OpenMode.ForRead);
+                                var modelSpaceId = blockTable[BlockTableRecord.ModelSpace];
+                                var modelSpace = (BlockTableRecord)currTr.GetObject(modelSpaceId, OpenMode.ForWrite);
+                                modelSpace.AppendEntity(newTable);
+                                currTr.AddNewlyCreatedDBObject(newTable, true);
+
+                                var handleAttRef = PlugInBlockReference_Helpers.TryGetValue_AttRefDict(attRefDict_HeaderBlock, "REPORT_TABLE_HANDLE");
+                                handleAttRef.UpgradeOpen();
+                                handleAttRef.TextString = newTable.Handle.ToString();
+
+                            }
+
+                            if (BlockRefGroup != null)
+                            {
+                                var group = (Group)currTr.GetObject(BlockRefGroup.ObjectId, OpenMode.ForWrite);
+
+                                if (!group.Has(newTable))
+                                {
+                                    group.Append(new ObjectIdCollection(new[] { newTable.ObjectId }));
+                                }
+                            }
+
+                            return new TransactionResult<bool>(true, TransactionAction.Commit);
                         }
                         catch (System.Exception e)
                         {
                             Debug.Print(e.ToString());
-                            reportTable = null;
+                            return new TransactionResult<bool>(false, TransactionAction.Nothing);
                         }
                     }
+                );
 
-                    if (reportTable != null)
-                    {
-                        reportTable.HandOverTo(newTable, false, false);
-                    }
-                    else
-                    {
-                        var blockTable = (BlockTable)currTr.GetObject(AcadDoc.Database.BlockTableId, OpenMode.ForRead);
-                        var modelSpaceId = blockTable[BlockTableRecord.ModelSpace];
-                        var modelSpace = (BlockTableRecord)currTr.GetObject(modelSpaceId, OpenMode.ForWrite);
-                        modelSpace.AppendEntity(newTable);
-                        currTr.AddNewlyCreatedDBObject(newTable, true);
-
-                        var handleAttRef = PlugInBlockReference_Helpers.TryGetValue_AttRefDict(attRefDict_HeaderBlock, "REPORT_TABLE_HANDLE");
-                        handleAttRef.UpgradeOpen();
-                        handleAttRef.TextString = newTable.Handle.ToString();
-
-                    }
-
-                    if (BlockRefGroup != null)
-                    {
-                        var group = (Group)currTr.GetObject(BlockRefGroup.ObjectId, OpenMode.ForWrite);
-
-                        if (!group.Has(newTable))
-                        {
-                            group.Append(new ObjectIdCollection(new[] { newTable.ObjectId }));
-                        }
-                    }
-
-                    currTr.Commit();
-
-                    return true;
-                }
-                catch (System.Exception e)
-                {
-                    Debug.Print(e.ToString());
-                    return false;
-                }
-            }
-
-            //TransactionResult<bool> operationResult =
-            //    PlugInBlockReference_Helpers.ExecuteWithTransaction(
-            //        AcadDoc.Database,
-            //        tr,
-            //        currTr =>
-            //        {
-            //            try
-            //            {
-            //                BlockTableRecord blockTableRecord = (BlockTableRecord)currTr.GetObject(ReportTableHeaderBlockRef.BlockTableRecord, OpenMode.ForRead);
-
-            //                RXClass tableClass = RXObject.GetClass(typeof(Table));
-
-            //                var reportHeaderTableObjectId = blockTableRecord
-            //                    .Cast<ObjectId>()
-            //                    .FirstOrDefault(id => id.ObjectClass.IsDerivedFrom(tableClass));
-
-            //                var reportHeaderTable = (Table)currTr.GetObject(reportHeaderTableObjectId, OpenMode.ForRead);
-
-            //                var attRefDict_HeaderBlock = PlugInBlockReference_Helpers.Get_AttRefDict(ReportTableHeaderBlockRef, currTr);
-
-            //                var excelFilePathType = PlugInBlockReference_Helpers
-            //                    .TryGetValue_AttRefDict(attRefDict_HeaderBlock, "EXCEL_FILEPATH_TYPE")
-            //                    ?.TextString
-            //                    ?.Trim();
-
-            //                var excelFilePath = PlugInBlockReference_Helpers
-            //                    .TryGetValue_AttRefDict(attRefDict_HeaderBlock, "EXCEL_FILEPATH")
-            //                    ?.TextString
-            //                    ?.Trim();
-
-            //                var excelSheetName = PlugInBlockReference_Helpers
-            //                    .TryGetValue_AttRefDict(attRefDict_HeaderBlock, "EXCEL_SHEETNAME")
-            //                    ?.TextString
-            //                    ?.Trim();
-
-            //                var reportTableHandle = PlugInBlockReference_Helpers
-            //                    .TryGetValue_AttRefDict(attRefDict_HeaderBlock, "REPORT_TABLE_HANDLE")
-            //                    ?.TextString
-            //                    ?.Trim();
-
-            //                if (reportHeaderTable == null || string.IsNullOrEmpty(excelFilePath)) { return new TransactionResult<bool>(false, TransactionAction.Nothing); }
-
-            //                var excelFilePathResolved = excelFilePathType switch
-            //                {
-            //                    "ABSOLUTE" => excelFilePath,
-            //                    "RELATIVE" => System.IO.Path.Combine(System.IO.Path.GetDirectoryName(AcadDoc.Name), excelFilePath),
-            //                    _ => System.IO.Path.Combine(System.IO.Path.GetDirectoryName(AcadDoc.Name), excelFilePath)
-            //                };
-
-            //                var excelWorkBook = new XLWorkbook(excelFilePathResolved);
-
-            //                var excelWorkSheet = string.IsNullOrEmpty(excelSheetName) ? excelWorkBook.Worksheet(1) : excelWorkBook.Worksheet(excelSheetName);
-
-            //                var excelTable = excelWorkSheet.RangeUsed().AsTable();
-
-            //                var headerRow_HeaderBlock = reportHeaderTable.Rows[0];
-
-            //                var newTable = new Table(){ TableStyle = reportHeaderTable.TableStyle };
-            //                newTable.SetSize(0, reportHeaderTable.Columns.Count);
-            //                newTable.SetRowHeight(headerRow_HeaderBlock.Height);
-            //                for (int i = 0; i < newTable.Columns.Count; i++) 
-            //                { 
-            //                    newTable.Columns[i].Width = reportHeaderTable.Columns[i].Width;
-            //                    newTable.Columns[i].TextHeight = reportHeaderTable.Columns[i].TextHeight;
-            //                }
-            //                newTable.Position = ReportTableHeaderBlockRef.Position;
-            //                newTable.ScaleFactors = ReportTableHeaderBlockRef.ScaleFactors;
-            //                newTable.Rotation = ReportTableHeaderBlockRef.Rotation;
-
-            //                foreach (var tableRow in excelTable.DataRange.Rows())
-            //                {
-            //                    newTable.InsertRows(newTable.Rows.Count, headerRow_HeaderBlock.Height, 1);
-
-            //                    foreach (var headerCell_HeaderBlock in headerRow_HeaderBlock)
-            //                    {
-            //                        var columnHeaderCell = reportHeaderTable.Cells[headerCell_HeaderBlock.Row, headerCell_HeaderBlock.Column];
-            //                        var columnHeaderName = columnHeaderCell.TextString.Trim();
-
-            //                        var excelCellValue = tableRow.Field(columnHeaderName).GetFormattedString();
-            //                        var lastRow = newTable.Rows.Last();
-
-            //                        newTable.Cells[newTable.Rows.Count, headerCell_HeaderBlock.Column].TextString = excelCellValue;
-            //                    }
-
-            //                    newTable.GenerateLayout();
-            //                }
-
-            //                Table reportTable = null;
-
-            //                if (!string.IsNullOrEmpty(reportTableHandle))
-            //                {
-            //                    try
-            //                    {
-            //                        ObjectId reportTableId = AcadDoc.Database.GetObjectId(false, new Handle(Convert.ToInt64(reportTableHandle, 16)), 0);
-
-            //                        if (!reportTableId.IsNull && !reportTableId.IsErased)
-            //                        {
-            //                            reportTable = currTr.GetObject(reportTableId, OpenMode.ForWrite) as Table;
-            //                        }
-            //                    }
-            //                    catch (System.Exception e)
-            //                    {
-            //                        Debug.Print(e.ToString());
-            //                        reportTable = null;
-            //                    }
-            //                }
-
-            //                if (reportTable != null)
-            //                {
-            //                    reportTable.HandOverTo(newTable, false, false);
-            //                }
-            //                else
-            //                {
-            //                    var blockTable = (BlockTable)currTr.GetObject(AcadDoc.Database.BlockTableId, OpenMode.ForRead);
-            //                    var modelSpaceId = blockTable[BlockTableRecord.ModelSpace];
-            //                    var modelSpace = (BlockTableRecord)currTr.GetObject(modelSpaceId, OpenMode.ForWrite);
-            //                    modelSpace.AppendEntity(newTable);
-            //                    currTr.AddNewlyCreatedDBObject(newTable, true);
-
-            //                    var handleAttRef = PlugInBlockReference_Helpers.TryGetValue_AttRefDict(attRefDict_HeaderBlock, "REPORT_TABLE_HANDLE");
-            //                    handleAttRef.UpgradeOpen();
-            //                    handleAttRef.TextString = newTable.Handle.ToString();
-
-            //                }
-
-            //                if (BlockRefGroup != null)
-            //                {
-            //                    var group = (Group)currTr.GetObject(BlockRefGroup.ObjectId, OpenMode.ForWrite);
-
-            //                    if (!group.Has(newTable))
-            //                    {
-            //                        group.Append(new ObjectIdCollection(new[] { newTable.ObjectId }));
-            //                    }
-            //                }
-
-            //                return new TransactionResult<bool>(true, TransactionAction.Commit);
-            //            }
-            //            catch (System.Exception e)
-            //            {
-            //                Debug.Print(e.ToString());
-            //                return new TransactionResult<bool>(false, TransactionAction.Nothing);
-            //            }
-            //        }
-            //    );
-
-            //return operationResult.Result;
+            return operationResult.Result;
 
         }
 
